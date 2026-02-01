@@ -16,7 +16,7 @@
     - 01-06 所有 Agent 基础课程
 
 环境要求：
-    - pip install openai python-dotenv
+    - pip install google-generativeai python-dotenv
 """
 
 import os
@@ -260,7 +260,7 @@ def langchain_implementation():
     print("=" * 60)
 
     code = """
-from langchain.chat_models import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_experimental.plan_and_execute import (
     PlanAndExecute,
     load_agent_executor,
@@ -275,7 +275,7 @@ tools = [
 ]
 
 # 创建规划器和执行器
-llm = ChatOpenAI(model="gpt-4")
+llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
 planner = load_chat_planner(llm)
 executor = load_agent_executor(llm, tools, verbose=True)
 

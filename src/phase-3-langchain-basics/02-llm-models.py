@@ -1,10 +1,10 @@
 """
-LLM 模型封装
-============
+LLM 模型封装 - Gemini 版本
+==========================
 
 学习目标：
     1. 理解 LangChain 中的模型类型
-    2. 掌握 ChatOpenAI 的配置和使用
+    2. 掌握 ChatGoogleGenerativeAI 的配置和使用
     3. 了解 Embeddings 模型的使用
 
 核心概念：
@@ -15,7 +15,7 @@ LLM 模型封装
     - 01-langchain-intro.py
 
 环境要求：
-    - pip install langchain langchain-openai python-dotenv
+    - pip install langchain langchain-google-genai python-dotenv
 """
 
 import os
@@ -38,8 +38,8 @@ def model_types_overview():
     
     | 类型        | 输入           | 输出        | 典型模型          |
     |------------|---------------|------------|------------------|
-    | Chat Models| 消息列表       | AI消息对象   | gpt-4, gpt-3.5   |
-    | Embeddings | 文本           | 向量        | text-embedding-3 |
+    | Chat Models| 消息列表       | AI消息对象   | gemini-2.0-flash |
+    | Embeddings | 文本           | 向量        | embedding-001    |
     
     💡 Chat Models 最常用，是开发的首选。
     """)
@@ -55,12 +55,12 @@ def chat_models_demo():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.messages import HumanMessage, SystemMessage
 
         # 创建模型
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7)
-        print(f"\n✅ 模型已创建: {llm.model_name}")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.7)
+        print(f"\n✅ 模型已创建: gemini-2.0-flash")
 
         # 简单调用
         print("\n📌 简单调用：")
@@ -92,20 +92,20 @@ def model_configuration():
     print("""
     关键参数：
     - temperature (0-2): 0=确定性, 1+=创造性
-    - max_tokens: 最大输出长度
+    - max_output_tokens: 最大输出长度
     - timeout: 超时时间
     - max_retries: 最大重试次数
     """)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
 
         # 对比不同温度
         print("\n📌 温度对比：")
         prompt = "用一句话描述月亮"
 
-        llm_low = ChatOpenAI(temperature=0)
-        llm_high = ChatOpenAI(temperature=1.2)
+        llm_low = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
+        llm_high = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=1.2)
 
         print(f"temperature=0: {llm_low.invoke(prompt).content}")
         print(f"temperature=1.2: {llm_high.invoke(prompt).content}")
@@ -131,10 +131,10 @@ def embeddings_demo():
     """)
 
     try:
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
         import numpy as np
 
-        embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
         # 单个文本嵌入
         text = "LangChain 是一个强大的框架"
@@ -172,7 +172,7 @@ def exercises():
 
     print("""
     练习 1：创建代码生成模型
-        使用低温度和大 max_tokens 创建适合代码生成的模型。
+        使用低温度和大 max_output_tokens 创建适合代码生成的模型。
 
     练习 2：多轮对话
         使用消息列表实现连续的多轮对话。
@@ -191,12 +191,12 @@ def exercises():
 
 def main():
     """主函数"""
-    print("🚀 LLM 模型封装")
+    print("🚀 LLM 模型封装 - Gemini 版本")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     print(f"✅ API Key 已配置: {api_key[:8]}...{api_key[-4:]}")

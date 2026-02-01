@@ -8,7 +8,7 @@ from typing import List, Tuple
 from dataclasses import dataclass
 
 from langchain.schema import Document
-from langchain_openai import OpenAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 
 from config import config
@@ -27,9 +27,9 @@ class VectorRetriever:
     """向量检索器"""
 
     def __init__(self):
-        self.embeddings = OpenAIEmbeddings(
+        self.embeddings = GoogleGenerativeAIEmbeddings(
             model=config.embedding_model,
-            openai_api_key=config.openai_api_key,
+            google_api_key=config.google_api_key,
         )
 
         os.makedirs(config.data_dir, exist_ok=True)

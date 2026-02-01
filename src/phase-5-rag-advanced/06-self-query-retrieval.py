@@ -16,7 +16,7 @@
     - 05-multi-query-retrieval.py
 
 环境要求：
-    - pip install langchain langchain-openai chromadb lark python-dotenv
+    - pip install langchain langchain-google-genai chromadb lark python-dotenv
 """
 
 import os
@@ -149,47 +149,50 @@ def langchain_self_query():
     try:
         from langchain.chains.query_constructor.base import AttributeInfo
         from langchain.retrievers.self_query.base import SelfQueryRetriever
-        from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+        from langchain_google_genai import (
+            ChatGoogleGenerativeAI,
+            GoogleGenerativeAIEmbeddings,
+        )
         from langchain_chroma import Chroma
         from langchain_core.documents import Document
 
-        # 准备带元数据的文档
+        # 文档元数据描述
+        metadata_field_info = [
+            AttributeInfo(
+                name="category",
+                description="文档类别：教程、API文档、博客",
+                type="string",
+            ),
+            AttributeInfo(
+                name="difficulty",
+                description="难度级别：初级、中级、高级",
+                type="string",
+            ),
+            AttributeInfo(name="year", description="发布年份", type="integer"),
+        ]
+
+        # 准备文档
         docs = [
             Document(
-                page_content="RAG (Retrieval-Augmented Generation) 是一种结合检索和生成的技术",
-                metadata={"source": "paper", "year": 2023, "topic": "RAG"},
+                page_content="Python 基础语法教程",
+                metadata={"category": "教程", "difficulty": "初级", "year": 2023},
             ),
             Document(
-                page_content="向量数据库用于高效存储和检索向量",
-                metadata={"source": "tutorial", "year": 2024, "topic": "vector_db"},
+                page_content="机器学习算法详解",
+                metadata={"category": "教程", "difficulty": "中级", "year": 2024},
             ),
             Document(
-                page_content="LangChain 是构建 LLM 应用的框架",
-                metadata={"source": "doc", "year": 2023, "topic": "LangChain"},
-            ),
-            Document(
-                page_content="GPT-4 的多模态能力使其可以处理图像",
-                metadata={"source": "news", "year": 2024, "topic": "LLM"},
+                page_content="FastAPI 官方文档",
+                metadata={"category": "API文档", "difficulty": "中级", "year": 2024},
             ),
         ]
 
         # 创建向量存储
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
-        # 定义元数据属性
-        metadata_field_info = [
-            AttributeInfo(
-                name="source",
-                description="文档来源类型: paper, tutorial, doc, news",
-                type="string",
-            ),
-            AttributeInfo(name="year", description="发布年份", type="integer"),
-            AttributeInfo(name="topic", description="主题标签", type="string"),
-        ]
-
-        # 创建自查询检索器
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+        # 创建 SelfQueryRetriever
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
         retriever = SelfQueryRetriever.from_llm(
             llm=llm,
             vectorstore=vectorstore,
@@ -241,7 +244,7 @@ def custom_filter():
     """)
 
     try:
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
         from langchain_chroma import Chroma
         from langchain_core.documents import Document
 
@@ -257,7 +260,7 @@ def custom_filter():
             ),
         ]
 
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
         # 带过滤的检索

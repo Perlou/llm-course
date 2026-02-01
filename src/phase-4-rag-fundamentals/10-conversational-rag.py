@@ -16,7 +16,7 @@
     - 09-qa-chains.py
 
 环境要求：
-    - pip install langchain langchain-openai chromadb python-dotenv
+    - pip install langchain langchain-google-genai chromadb python-dotenv
 """
 
 import os
@@ -71,11 +71,11 @@ def question_rewriting():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import StrOutputParser
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
 
         rewrite_prompt = ChatPromptTemplate.from_template("""
 基于对话历史，将用户的后续问题改写为独立的完整问题。
@@ -112,7 +112,10 @@ def conversational_rag_chain():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+        from langchain_google_genai import (
+            ChatGoogleGenerativeAI,
+            GoogleGenerativeAIEmbeddings,
+        )
         from langchain_chroma import Chroma
         from langchain_core.documents import Document
         from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -130,11 +133,11 @@ def conversational_rag_chain():
             ),
         ]
 
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         vectorstore = Chroma.from_documents(docs, embeddings)
         retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
 
         # 问题改写链
         rewrite_prompt = ChatPromptTemplate.from_messages(
@@ -276,9 +279,9 @@ def main():
     print("🚀 对话式 RAG")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

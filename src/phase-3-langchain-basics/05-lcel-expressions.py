@@ -16,7 +16,7 @@ LCEL 表达式
     - 04-chains-basics.py
 
 环境要求：
-    - pip install langchain langchain-openai python-dotenv
+    - pip install langchain langchain-google-genai python-dotenv
 """
 
 import os
@@ -60,12 +60,12 @@ def runnable_parallel():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import StrOutputParser
         from langchain_core.runnables import RunnableParallel
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         # 创建并行链
         parallel_chain = RunnableParallel(
@@ -101,12 +101,12 @@ def runnable_branch():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import StrOutputParser
         from langchain_core.runnables import RunnableBranch
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         # 分类函数
         def is_technical(x):
@@ -149,11 +149,11 @@ def bind_parameters():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import StrOutputParser
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         # 绑定停止词
         llm_with_stop = llm.bind(stop=["\n\n"])
@@ -179,13 +179,13 @@ def fallbacks_demo():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import StrOutputParser
 
-        # 主模型和回退模型
-        primary = ChatOpenAI(model="gpt-4")
-        fallback = ChatOpenAI(model="gpt-3.5-turbo")
+        # 主模型和回退模型（都使用 Gemini）
+        primary = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.7)
+        fallback = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.3)
 
         # 配置回退
         llm_with_fallback = primary.with_fallbacks([fallback])
@@ -234,9 +234,9 @@ def main():
     print("🚀 LCEL 表达式")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

@@ -16,7 +16,7 @@
     - 02-llm-models.py
 
 环境要求：
-    - pip install langchain langchain-openai python-dotenv
+    - pip install langchain langchain-google-genai python-dotenv
 """
 
 import os
@@ -89,10 +89,10 @@ def chat_prompt_template_demo():
     # 与 LLM 结合
     print("\n📌 与 LLM 结合使用")
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.output_parsers import StrOutputParser
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
         chain = chat_template | llm | StrOutputParser()
 
         result = chain.invoke(
@@ -147,9 +147,9 @@ def messages_placeholder_demo():
     # 实际调用
     print("\n📌 实际调用测试")
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
         chain = template | llm
 
         response = chain.invoke({"history": history, "input": "我叫什么名字？"})
@@ -196,10 +196,10 @@ def few_shot_demo():
     # 实际调用
     print("\n📌 实际调用测试")
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.output_parsers import StrOutputParser
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
         chain = few_shot_prompt | llm | StrOutputParser()
 
         result = chain.invoke({"input": "困惑"})
@@ -242,9 +242,9 @@ def main():
     print("🚀 提示词模板")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

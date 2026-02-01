@@ -1,6 +1,6 @@
 """
-提示词模板设计
-==============
+提示词模板设计 - Gemini 版本
+============================
 
 学习目标：
     1. 掌握提示词模板的设计方法
@@ -16,13 +16,12 @@
     - 08-structured-extraction.py
 
 环境要求：
-    - pip install openai python-dotenv
+    - pip install google-generativeai python-dotenv
 """
 
 import os
 from string import Template
 from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
@@ -55,13 +54,15 @@ ${text}
     print(prompt)
 
     # 调用 API
-    client = OpenAI()
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=100,
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel("gemini-2.0-flash")
+
+    response = model.generate_content(
+        prompt, generation_config={"max_output_tokens": 100}
     )
-    print(f"\n翻译结果: {response.choices[0].message.content}")
+    print(f"\n翻译结果: {response.text}")
 
 
 # ==================== 第二部分：角色模板 ====================
@@ -83,7 +84,9 @@ def role_template():
 
         return system, user_question
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
     # 测试不同角色
     roles = [
@@ -94,17 +97,14 @@ def role_template():
     for role, expertise, question in roles:
         system, user = create_expert_prompt(role, expertise, question)
 
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-            max_tokens=200,
+        model = genai.GenerativeModel("gemini-2.0-flash", system_instruction=system)
+
+        response = model.generate_content(
+            user, generation_config={"max_output_tokens": 200}
         )
 
         print(f"\n📌 {role} 回答：")
-        print(response.choices[0].message.content[:200] + "...")
+        print(response.text[:200] + "...")
 
 
 # ==================== 第三部分：任务模板库 ====================
@@ -254,12 +254,12 @@ def exercises():
 
 def main():
     """主函数"""
-    print("🚀 提示词模板设计")
+    print("🚀 提示词模板设计 - Gemini 版本")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

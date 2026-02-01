@@ -16,7 +16,7 @@
     - 01-03 Agent 基础课程
 
 环境要求：
-    - pip install openai python-dotenv pydantic
+    - pip install google-generativeai python-dotenv pydantic
 """
 
 import os
@@ -240,50 +240,60 @@ def complete_flow():
     print("=" * 60)
 
     code_example = """
-from openai import OpenAI
+import google.generativeai as genai
+import json
 
-client = OpenAI()
+genai.configure(api_key="YOUR_API_KEY")
 
-# 1. 定义工具
-tools = [{
-    "type": "function",
-    "function": {
-        "name": "get_weather",
-        "description": "获取天气",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "city": {"type": "string"}
-            },
-            "required": ["city"]
-        }
+# 1. 定义工具（Gemini Function Declaration）
+get_weather_func = genai.types.FunctionDeclaration(
+    name="get_weather",
+    description="获取天气",
+    parameters={
+        "type_": "OBJECT",
+        "properties": {
+            "city": {"type_": "STRING", "description": "城市名称"}
+        },
+        "required": ["city"]
     }
-}]
-
-# 2. 调用 LLM（带工具）
-response = client.chat.completions.create(
-    model="gpt-4",
-    messages=[{"role": "user", "content": "北京天气"}],
-    tools=tools,
-    tool_choice="auto"
 )
 
-# 3. 检查工具调用
-if response.choices[0].message.tool_calls:
-    tool_call = response.choices[0].message.tool_calls[0]
-    name = tool_call.function.name
-    args = json.loads(tool_call.function.arguments)
-    
-    # 4. 执行工具
-    result = get_weather(**args)
-    
-    # 5. 返回结果给 LLM
-    messages.append({"role": "tool", 
-                     "tool_call_id": tool_call.id,
-                     "content": result})
+tools = [genai.types.Tool(function_declarations=[get_weather_func])]
+
+# 2. 创建模型（带工具）
+model = genai.GenerativeModel(
+    'gemini-1.5-flash',
+    tools=tools
+)
+
+# 3. 调用 LLM
+response = model.generate_content("北京天气")
+
+# 4. 检查工具调用
+if response.candidates[0].content.parts:
+    for part in response.candidates[0].content.parts:
+        if fn := part.function_call:
+            name = fn.name
+            args = dict(fn.args)
+            
+            # 5. 执行工具
+            result = get_weather(**args)
+            
+            # 6. 返回结果给 LLM
+            chat = model.start_chat()
+            response = chat.send_message(
+                genai.types.Content(
+                    parts=[genai.types.Part(
+                        function_response=genai.types.FunctionResponse(
+                            name=name,
+                            response={"result": result}
+                        )
+                    )]
+                )
+            )
 """
 
-    print("📌 OpenAI 工具调用流程：")
+    print("📌 Gemini 工具调用流程：")
     print(code_example)
 
 

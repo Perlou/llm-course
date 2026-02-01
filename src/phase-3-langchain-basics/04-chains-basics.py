@@ -16,7 +16,7 @@ Chain 基础
     - 03-prompt-templates.py
 
 环境要求：
-    - pip install langchain langchain-openai python-dotenv
+    - pip install langchain langchain-google-genai python-dotenv
 """
 
 import os
@@ -64,13 +64,13 @@ def basic_chain():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import StrOutputParser
 
         # 创建组件
         prompt = ChatPromptTemplate.from_template("用一句话解释{concept}")
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
         parser = StrOutputParser()
 
         # 使用 | 构建链
@@ -96,12 +96,12 @@ def chain_methods():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import StrOutputParser
 
         prompt = ChatPromptTemplate.from_template("用一句话描述{topic}")
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
         chain = prompt | llm | StrOutputParser()
 
         # 1. invoke - 同步调用
@@ -143,14 +143,14 @@ def runnable_passthrough():
     """)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import StrOutputParser
         from langchain_core.runnables import RunnablePassthrough
 
         # 示例: 保留原始问题
         prompt = ChatPromptTemplate.from_template("问题: {question}\n\n请简洁回答。")
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         chain = {"question": RunnablePassthrough()} | prompt | llm | StrOutputParser()
 
@@ -171,7 +171,7 @@ def runnable_lambda():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import StrOutputParser
         from langchain_core.runnables import RunnableLambda
@@ -184,7 +184,7 @@ def runnable_lambda():
             return f"【总结】{text}"
 
         prompt = ChatPromptTemplate.from_template("解释: {input}")
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         chain = (
             RunnableLambda(preprocess)
@@ -235,9 +235,9 @@ def main():
     print("🚀 Chain 基础")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

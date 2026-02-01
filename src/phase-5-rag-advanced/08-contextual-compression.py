@@ -16,7 +16,7 @@
     - 07-hypothetical-questions.py
 
 环境要求：
-    - pip install langchain langchain-openai python-dotenv
+    - pip install langchain langchain-google-genai chromadb python-dotenv
 """
 
 import os
@@ -77,10 +77,10 @@ def extractive_compression():
     print("=" * 60)
 
     try:
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
         import numpy as np
 
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
 
         # 示例文档
         document = """
@@ -130,7 +130,10 @@ def langchain_compression():
     try:
         from langchain.retrievers import ContextualCompressionRetriever
         from langchain.retrievers.document_compressors import LLMChainExtractor
-        from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+        from langchain_google_genai import (
+            ChatGoogleGenerativeAI,
+            GoogleGenerativeAIEmbeddings,
+        )
         from langchain_chroma import Chroma
         from langchain_core.documents import Document
 
@@ -148,12 +151,12 @@ Python 的标准库非常丰富，涵盖网络、文件处理等功能。
         ]
 
         # 创建基础检索器
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         vectorstore = Chroma.from_documents(docs, embeddings)
         base_retriever = vectorstore.as_retriever()
 
         # 创建压缩器
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
         compressor = LLMChainExtractor.from_llm(llm)
 
         # 创建压缩检索器
@@ -184,10 +187,10 @@ def generative_compression():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
 
         document = """
 Python 是一种高级编程语言，由 Guido van Rossum 于 1991 年创建。
@@ -232,10 +235,10 @@ def filter_compression():
 
     try:
         from langchain.retrievers.document_compressors import EmbeddingsFilter
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
         from langchain_core.documents import Document
 
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
 
         # 创建相关性过滤器
         embeddings_filter = EmbeddingsFilter(

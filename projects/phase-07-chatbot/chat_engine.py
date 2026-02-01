@@ -4,7 +4,7 @@
 """
 
 from typing import Generator, Optional
-from openai import OpenAI
+import google.generativeai as genai
 
 from config import config
 from memory import ConversationMemory
@@ -16,7 +16,18 @@ class ChatEngine:
     """聊天引擎"""
 
     def __init__(self, mode: str = "通用助手"):
-        self.client = OpenAI(api_key=config.openai_api_key)
+        # 配置 Gemini API
+        genai.configure(api_key=config.google_api_key)
+
+        # 创建模型实例
+        self.model = genai.GenerativeModel(
+            model_name=config.model_name,
+            generation_config={
+                "temperature": config.temperature,
+                "max_output_tokens": config.max_tokens,
+            },
+        )
+
         self.memory = ConversationMemory()
         self.mode = mode
         self._set_mode(mode)
@@ -31,6 +42,33 @@ class ChatEngine:
         """切换模式（保留历史）"""
         self._set_mode(mode)
 
+    def _messages_to_gemini_format(self, messages: list) -> tuple:
+        """将消息转换为Gemini格式
+
+        Returns:
+            (system_instruction, history, current_message)
+        """
+        system_instruction = None
+        history = []
+        current_message = None
+
+        for msg in messages:
+            role = msg.get("role", "")
+            content = msg.get("content", "")
+
+            if role == "system":
+                system_instruction = content
+            elif role == "user":
+                current_message = content
+            elif role == "assistant":
+                # Gemini的历史格式：{"role": "user"/"model", "parts": [text]}
+                if current_message:  # 只有当有user消息时才添加到历史
+                    history.append({"role": "user", "parts": [current_message]})
+                    history.append({"role": "model", "parts": [content]})
+                    current_message = None
+
+        return system_instruction, history, current_message
+
     def chat(self, message: str) -> str:
         """同步聊天"""
         # 添加用户消息
@@ -38,17 +76,18 @@ class ChatEngine:
 
         # 构建消息
         messages = self.memory.get_messages()
-
-        # 调用 API
-        response = self.client.chat.completions.create(
-            model=config.model_name,
-            messages=messages,
-            temperature=config.temperature,
-            max_tokens=config.max_tokens,
+        system_instruction, history, current_message = self._messages_to_gemini_format(
+            messages
         )
 
+        # 创建聊天会话
+        chat = self.model.start_chat(history=history)
+
+        # 调用 API
+        response = chat.send_message(current_message or message)
+
         # 提取回复
-        assistant_message = response.choices[0].message.content
+        assistant_message = response.text
 
         # 添加助手消息
         self.memory.add_assistant(assistant_message)
@@ -62,22 +101,22 @@ class ChatEngine:
 
         # 构建消息
         messages = self.memory.get_messages()
+        system_instruction, history, current_message = self._messages_to_gemini_format(
+            messages
+        )
+
+        # 创建聊天会话
+        chat = self.model.start_chat(history=history)
 
         # 流式调用 API
-        stream = self.client.chat.completions.create(
-            model=config.model_name,
-            messages=messages,
-            temperature=config.temperature,
-            max_tokens=config.max_tokens,
-            stream=True,
-        )
+        response = chat.send_message(current_message or message, stream=True)
 
         # 收集完整回复
         full_response = ""
 
-        for chunk in stream:
-            if chunk.choices[0].delta.content:
-                content = chunk.choices[0].delta.content
+        for chunk in response:
+            if chunk.text:
+                content = chunk.text
                 full_response += content
                 yield content
 

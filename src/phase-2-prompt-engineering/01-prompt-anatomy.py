@@ -1,6 +1,6 @@
 """
-提示词结构解析
-==============
+提示词结构解析 (Gemini 版本)
+============================
 
 学习目标：
     1. 理解提示词的基本组成部分
@@ -15,16 +15,15 @@
 
 前置知识：
     - Phase 1 LLM 基础
-    - OpenAI API 基础使用
+    - Gemini API 基础使用
 
 环境要求：
-    - pip install openai python-dotenv
-    - 配置 OPENAI_API_KEY
+    - pip install google-generativeai python-dotenv
+    - 配置 GOOGLE_API_KEY
 """
 
 import os
 from dotenv import load_dotenv
-from openai import OpenAI
 
 # 加载环境变量
 load_dotenv()
@@ -111,7 +110,10 @@ def prompt_structure():
     print("\n📌 实际示例对比：")
     print("-" * 40)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     # 简单的提示词
     simple_prompt = "帮我写个代码审查反馈"
@@ -119,12 +121,10 @@ def prompt_structure():
     print("\n❌ 简单提示词：")
     print(f'   "{simple_prompt}"')
 
-    response1 = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": simple_prompt}],
-        max_tokens=200,
+    response1 = model.generate_content(
+        simple_prompt, generation_config={"max_output_tokens": 200}
     )
-    print(f"\n   回复（截取）：{response1.choices[0].message.content[:150]}...")
+    print(f"\n   回复（截取）：{response1.text[:150]}...")
 
     # 结构化的提示词
     structured_prompt = """# 角色设定
@@ -155,12 +155,10 @@ def get_user(id):
     print("\n\n✅ 结构化提示词：")
     print("   （包含角色、上下文、任务、输入、输出格式）")
 
-    response2 = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": structured_prompt}],
-        max_tokens=500,
+    response2 = model.generate_content(
+        structured_prompt, generation_config={"max_output_tokens": 500}
     )
-    print(f"\n   回复：\n{response2.choices[0].message.content}")
+    print(f"\n   回复：\n{response2.text}")
 
     print("\n💡 结论：结构化的提示词能获得更专业、更符合需求的回复")
 
@@ -195,7 +193,10 @@ def clear_principles():
     """
     print(principles_text)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     # 演示：具体 vs 模糊
     print("\n📌 原则一：具体而非模糊")
@@ -209,12 +210,10 @@ def clear_principles():
     print(f'\n❌ 模糊: "{vague_prompt}"')
     print(f'\n✅ 具体: "{specific_prompt}"')
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": specific_prompt}],
-        max_tokens=400,
+    response = model.generate_content(
+        specific_prompt, generation_config={"max_output_tokens": 400}
     )
-    print(f"\n📤 具体提示词的回复：\n{response.choices[0].message.content}")
+    print(f"\n📤 具体提示词的回复：\n{response.text}")
 
     # 演示：分步骤拆解
     print("\n\n📌 原则二：分步骤拆解复杂任务")
@@ -233,12 +232,10 @@ def clear_principles():
     print(f"✅ 分步骤提示词：")
     print(step_by_step_prompt)
 
-    response2 = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": step_by_step_prompt}],
-        max_tokens=400,
+    response2 = model.generate_content(
+        step_by_step_prompt, generation_config={"max_output_tokens": 400}
     )
-    print(f"\n📤 回复：\n{response2.choices[0].message.content}")
+    print(f"\n📤 回复：\n{response2.text}")
 
 
 # ==================== 第四部分：约束与边界设定 ====================
@@ -271,7 +268,10 @@ def constraints_demo():
     """
     print(constraints_text)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     # 带约束的提示词
     constrained_prompt = """请写一段产品介绍，主题是"智能手表"。
@@ -293,15 +293,13 @@ def constraints_demo():
     print("\n📌 带约束的提示词演示：")
     print(constrained_prompt)
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": constrained_prompt}],
-        max_tokens=300,
+    response = model.generate_content(
+        constrained_prompt, generation_config={"max_output_tokens": 300}
     )
-    print(f"\n📤 回复：\n{response.choices[0].message.content}")
+    print(f"\n📤 回复：\n{response.text}")
 
     # 验证字数
-    reply = response.choices[0].message.content
+    reply = response.text
     char_count = len(reply.replace(" ", "").replace("\n", ""))
     print(f"\n📊 字符数统计：{char_count} 个字符")
 
@@ -315,7 +313,10 @@ def practical_comparison():
     print("第五部分：实战对比")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     # 场景：客服回复
     print("\n📌 场景：电商客服回复")
@@ -328,12 +329,10 @@ def practical_comparison():
 
     print(f'\n❌ 未优化提示词："{bad_prompt}"')
 
-    response1 = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": bad_prompt}],
-        max_tokens=200,
+    response1 = model.generate_content(
+        bad_prompt, generation_config={"max_output_tokens": 200}
     )
-    print(f"   回复：{response1.choices[0].message.content}")
+    print(f"   回复：{response1.text}")
 
     # 优化后的提示词
     good_prompt = f"""你是电商平台客服"小智"，处理客户投诉。
@@ -356,12 +355,10 @@ def practical_comparison():
     print(f"\n✅ 优化后提示词：")
     print(good_prompt)
 
-    response2 = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": good_prompt}],
-        max_tokens=200,
+    response2 = model.generate_content(
+        good_prompt, generation_config={"max_output_tokens": 200}
     )
-    print(f"\n   回复：{response2.choices[0].message.content}")
+    print(f"\n   回复：{response2.text}")
 
 
 # ==================== 第六部分：练习与思考 ====================
@@ -379,21 +376,6 @@ def exercises():
         "帮我写个邮件请假"
         
         提示：添加角色、上下文、具体要求、输出格式
-        
-        参考答案：
-        ```
-        你是一位职场沟通专家。
-        
-        背景：我是一名软件工程师，需要请假 2 天处理家庭事务。
-        
-        任务：帮我写一封请假邮件给直属领导张经理。
-        
-        要求：
-        - 语气正式但不生硬
-        - 说明请假原因（家庭事务，不需要太具体）
-        - 说明已安排好工作交接
-        - 100 字左右
-        ```
 
     练习 2：应用 CLEAR 原则
         评估以下提示词，指出违反了哪些 CLEAR 原则：
@@ -419,16 +401,16 @@ def exercises():
 
 def main():
     """主函数 - 按顺序执行所有部分"""
-    print("🚀 提示词结构解析")
+    print("🚀 提示词结构解析 (Gemini 版本)")
     print("=" * 60)
-    print("⚠️ 注意：本课程将调用 OpenAI API，会产生少量费用")
+    print("💡 本课程使用 Google Gemini API（免费额度较多）")
     print("预估消耗：约 2000-3000 tokens")
     print("=" * 60)
 
     # 检查环境
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY 环境变量")
+        print("❌ 错误：未设置 GOOGLE_API_KEY 环境变量")
         return
 
     print(f"✅ API Key 已配置: {api_key[:8]}...{api_key[-4:]}")

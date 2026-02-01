@@ -17,7 +17,7 @@ ReAct Agent
     - 01-agent-fundamentals.py
 
 环境要求：
-    - pip install openai python-dotenv
+    - pip install google-generativeai python-dotenv
 """
 
 import os
@@ -336,14 +336,15 @@ Action Input: 请提供更具体的问题，以便我能够帮助您。"""
 def openai_react_agent():
     """使用 OpenAI 的 ReAct Agent"""
     print("\n" + "=" * 60)
-    print("第五部分：OpenAI ReAct Agent（代码示例）")
+    print("第五部分：Gemini ReAct Agent（代码示例）")
     print("=" * 60)
 
     code_example = '''
-from openai import OpenAI
+from google.generativeai import GenerativeModel
+import google.generativeai as genai
 
-class OpenAIReActAgent:
-    """使用 OpenAI 的 ReAct Agent"""
+class GeminiReActAgent:
+    """使用 Gemini 的 ReAct Agent"""
     
     SYSTEM_PROMPT = """你是一个使用 ReAct 方法的智能助手。
 
@@ -358,7 +359,8 @@ Action: [工具名]
 Action Input: [参数]"""
 
     def __init__(self):
-        self.client = OpenAI()
+        genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
         self.tools = {
             "search": self.search,
             "calculate": self.calculate,
@@ -379,12 +381,12 @@ Action Input: [参数]"""
         
         for _ in range(max_steps):
             # 调用 LLM
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=messages
+            chat = self.model.start_chat(history=[])
+            response = chat.send_message(
+                "\n".join([m["content"] for m in messages])
             )
             
-            content = response.choices[0].message.content
+            content = response.text
             parsed = self.parse_response(content)
             
             if parsed["action"] == "finish":
@@ -408,7 +410,7 @@ Action Input: [参数]"""
         return "未能完成任务"
 '''
 
-    print("📌 完整 OpenAI ReAct Agent 实现：")
+    print("📌 完整 Gemini ReAct Agent 实现：")
     print(code_example)
 
 

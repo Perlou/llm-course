@@ -1,6 +1,6 @@
 """
-指令优化技巧
-============
+指令优化技巧 (Gemini 版本)
+==========================
 
 学习目标：
     1. 掌握清晰指令的编写方法
@@ -16,12 +16,11 @@
     - 02-system-prompts.py
 
 环境要求：
-    - pip install openai python-dotenv
+    - pip install google-generativeai python-dotenv
 """
 
 import os
 from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
@@ -35,7 +34,10 @@ def instruction_clarity():
     print("第一部分：指令清晰度")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     print("""
     模糊指令 vs 清晰指令：
@@ -47,26 +49,18 @@ def instruction_clarity():
 
     # 模糊指令
     print("📌 模糊指令：")
-    r1 = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": "写点东西介绍 AI"}],
-        max_tokens=200,
+    r1 = model.generate_content(
+        "写点东西介绍 AI", generation_config={"max_output_tokens": 200}
     )
-    print(f"回复长度: {len(r1.choices[0].message.content)} 字符")
+    print(f"回复长度: {len(r1.text)} 字符")
 
     # 清晰指令
     print("\n📌 清晰指令：")
-    r2 = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {
-                "role": "user",
-                "content": "写一段 100 字的科普文章，面向高中生，介绍人工智能的基本概念。要求通俗易懂，不使用专业术语。",
-            }
-        ],
-        max_tokens=200,
+    r2 = model.generate_content(
+        "写一段 100 字的科普文章，面向高中生，介绍人工智能的基本概念。要求通俗易懂，不使用专业术语。",
+        generation_config={"max_output_tokens": 200},
     )
-    print(f"回复:\n{r2.choices[0].message.content}")
+    print(f"回复：\n{r2.text}")
 
 
 # ==================== 第二部分：使用分隔符 ====================
@@ -78,7 +72,10 @@ def use_delimiters():
     print("第二部分：使用分隔符")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     print("""
     分隔符的作用：
@@ -102,12 +99,10 @@ AI技术的应用越来越广泛。专家预测，未来十年AI
 请用3个要点总结。'''
 
     print("📌 使用分隔符隔离内容：")
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=200,
+    response = model.generate_content(
+        prompt, generation_config={"max_output_tokens": 200}
     )
-    print(f"回复:\n{response.choices[0].message.content}")
+    print(f"回复：\n{response.text}")
 
 
 # ==================== 第三部分：分步骤指令 ====================
@@ -119,7 +114,10 @@ def step_by_step():
     print("第三部分：分步骤指令")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     # 一次性复杂指令
     print("📌 复杂指令拆分为步骤：")
@@ -138,12 +136,10 @@ def fibonacci(n):
 步骤3：指出潜在问题
 步骤4：给出优化建议"""
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": step_prompt}],
-        max_tokens=400,
+    response = model.generate_content(
+        step_prompt, generation_config={"max_output_tokens": 400}
     )
-    print(f"回复:\n{response.choices[0].message.content}")
+    print(f"回复：\n{response.text}")
 
 
 # ==================== 第四部分：提供示例 ====================
@@ -155,7 +151,10 @@ def provide_examples():
     print("第四部分：提供示例")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     # 无示例
     print("📌 无示例 vs 有示例：")
@@ -169,12 +168,10 @@ def provide_examples():
 
 现在转换：惊讶"""
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": example_prompt}],
-        max_tokens=50,
+    response = model.generate_content(
+        example_prompt, generation_config={"max_output_tokens": 50}
     )
-    print(f"回复: {response.choices[0].message.content}")
+    print(f"回复: {response.text}")
 
 
 # ==================== 第五部分：指定输出长度 ====================
@@ -186,7 +183,10 @@ def specify_length():
     print("第五部分：指定输出长度")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     prompts = [
         ("一句话", "用一句话解释机器学习"),
@@ -195,13 +195,11 @@ def specify_length():
     ]
 
     for name, prompt in prompts:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=200,
+        response = model.generate_content(
+            prompt, generation_config={"max_output_tokens": 200}
         )
         print(f"\n📌 {name}格式:")
-        print(response.choices[0].message.content)
+        print(response.text)
 
 
 # ==================== 第六部分：练习与思考 ====================
@@ -234,12 +232,12 @@ def exercises():
 
 def main():
     """主函数"""
-    print("🚀 指令优化技巧")
+    print("🚀 指令优化技巧 (Gemini 版本)")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

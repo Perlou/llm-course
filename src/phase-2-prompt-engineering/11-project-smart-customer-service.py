@@ -1,6 +1,6 @@
 """
-实战项目：智能客服系统
-======================
+实战项目：智能客服系统 - Gemini 版本
+===================================
 
 学习目标：
     1. 综合运用所学提示词技术
@@ -17,13 +17,12 @@
     - 本阶段所有课程
 
 环境要求：
-    - pip install openai python-dotenv
+    - pip install google-generativeai python-dotenv
 """
 
 import os
 import json
 from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
@@ -65,7 +64,10 @@ class SmartCustomerService:
     """智能客服系统"""
 
     def __init__(self):
-        self.client = OpenAI()
+        import google.generativeai as genai
+
+        genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+        self.genai = genai
         self.conversation_history = []
 
     def detect_intent(self, user_input: str) -> dict:
@@ -84,14 +86,15 @@ class SmartCustomerService:
 返回JSON格式：
 {{"intent": "意图代码", "confidence": 0.0-1.0}}"""
 
-        response = self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"},
-            max_tokens=50,
+        model = self.genai.GenerativeModel(
+            "gemini-2.0-flash", system_instruction="只返回JSON格式，不要添加任何说明。"
         )
 
-        return json.loads(response.choices[0].message.content)
+        response = model.generate_content(
+            prompt, generation_config={"max_output_tokens": 50}
+        )
+
+        return json.loads(response.text)
 
     def analyze_sentiment(self, user_input: str) -> dict:
         """情感分析"""
@@ -102,14 +105,15 @@ class SmartCustomerService:
 返回JSON格式：
 {{"sentiment": "positive/negative/neutral", "intensity": "low/medium/high"}}"""
 
-        response = self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"},
-            max_tokens=50,
+        model = self.genai.GenerativeModel(
+            "gemini-2.0-flash", system_instruction="只返回JSON格式。"
         )
 
-        return json.loads(response.choices[0].message.content)
+        response = model.generate_content(
+            prompt, generation_config={"max_output_tokens": 50}
+        )
+
+        return json.loads(response.text)
 
     def filter_input(self, text: str) -> tuple:
         """输入过滤"""
@@ -129,19 +133,20 @@ class SmartCustomerService:
         # 添加意图上下文
         intent_name = INTENTS.get(intent, "其他问题")
 
-        messages = [
-            {"role": "system", "content": SYSTEM_PROMPT + f"\n\n{style_hint}"},
-            {
-                "role": "user",
-                "content": f"<user_input>\n{user_input}\n</user_input>\n\n问题类型：{intent_name}",
-            },
-        ]
-
-        response = self.client.chat.completions.create(
-            model="gpt-3.5-turbo", messages=messages, max_tokens=200
+        system_instruction = SYSTEM_PROMPT + f"\n\n{style_hint}"
+        user_message = (
+            f"<user_input>\n{user_input}\n</user_input>\n\n问题类型：{intent_name}"
         )
 
-        return response.choices[0].message.content
+        model = self.genai.GenerativeModel(
+            "gemini-2.0-flash", system_instruction=system_instruction
+        )
+
+        response = model.generate_content(
+            user_message, generation_config={"max_output_tokens": 200}
+        )
+
+        return response.text
 
     def chat(self, user_input: str) -> dict:
         """完整对话流程"""
@@ -227,12 +232,12 @@ while True:
 
 def main():
     """主函数"""
-    print("🚀 实战项目：智能客服系统")
+    print("🚀 实战项目：智能客服系统 - Gemini 版本")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

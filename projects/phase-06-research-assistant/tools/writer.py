@@ -7,7 +7,7 @@ import os
 from datetime import datetime
 from typing import List
 from langchain.tools import BaseTool
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import Field
 
 from config import config
@@ -37,9 +37,9 @@ class WriterTool(BaseTool):
             )
 
             # 使用 LLM 生成报告
-            llm = ChatOpenAI(
+            llm = ChatGoogleGenerativeAI(
                 model=config.llm_model,
-                openai_api_key=config.openai_api_key,
+                google_api_key=config.google_api_key,
                 temperature=0.7,
             )
 

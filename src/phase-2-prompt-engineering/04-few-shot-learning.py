@@ -1,6 +1,6 @@
 """
-少样本学习 (Few-Shot Learning)
-==============================
+少样本学习 (Few-Shot Learning) - Gemini 版本
+=============================================
 
 学习目标：
     1. 理解少样本学习的原理
@@ -16,12 +16,11 @@
     - 03-instruction-tuning.py
 
 环境要求：
-    - pip install openai python-dotenv
+    - pip install google-generativeai python-dotenv
 """
 
 import os
 from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
@@ -65,17 +64,18 @@ def zero_vs_few_shot():
     print("第二部分：Zero-Shot vs Few-Shot 对比")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     # Zero-Shot
     print("📌 Zero-Shot（无示例）：")
     zero_prompt = "判断这句话的情感是正面还是负面：今天天气真糟糕"
-    r1 = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": zero_prompt}],
-        max_tokens=50,
+    r1 = model.generate_content(
+        zero_prompt, generation_config={"max_output_tokens": 50}
     )
-    print(f"回复: {r1.choices[0].message.content}")
+    print(f"回复: {r1.text}")
 
     # Few-Shot
     print("\n📌 Few-Shot（有示例）：")
@@ -94,12 +94,10 @@ def zero_vs_few_shot():
 句子：今天天气真糟糕
 情感："""
 
-    r2 = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": few_shot_prompt}],
-        max_tokens=20,
+    r2 = model.generate_content(
+        few_shot_prompt, generation_config={"max_output_tokens": 20}
     )
-    print(f"回复: {r2.choices[0].message.content}")
+    print(f"回复: {r2.text}")
 
 
 # ==================== 第三部分：分类任务 ====================
@@ -111,7 +109,10 @@ def classification_task():
     print("第三部分：分类任务")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     classify_prompt = """将客户反馈分类为以下类别之一：产品问题、物流问题、服务问题、其他
 
@@ -128,12 +129,10 @@ def classification_task():
 反馈：包装发货很慢，等了一周才到
 分类："""
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": classify_prompt}],
-        max_tokens=20,
+    response = model.generate_content(
+        classify_prompt, generation_config={"max_output_tokens": 20}
     )
-    print(f"分类结果: {response.choices[0].message.content}")
+    print(f"分类结果: {response.text}")
 
 
 # ==================== 第四部分：格式转换 ====================
@@ -145,7 +144,10 @@ def format_conversion():
     print("第四部分：格式转换")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     format_prompt = """将自然语言转换为 SQL 查询。
 
@@ -159,12 +161,10 @@ SQL：SELECT city, COUNT(*) FROM users GROUP BY city
 问题：找出购买金额最高的前10个订单
 SQL："""
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": format_prompt}],
-        max_tokens=50,
+    response = model.generate_content(
+        format_prompt, generation_config={"max_output_tokens": 50}
     )
-    print(f"SQL: {response.choices[0].message.content}")
+    print(f"SQL: {response.text}")
 
 
 # ==================== 第五部分：示例选择技巧 ====================
@@ -226,12 +226,12 @@ def exercises():
 
 def main():
     """主函数"""
-    print("🚀 少样本学习 (Few-Shot Learning)")
+    print("🚀 少样本学习 (Few-Shot Learning) - Gemini 版本")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

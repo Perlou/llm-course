@@ -16,7 +16,7 @@
     - 01-hybrid-search.py
 
 环境要求：
-    - pip install langchain langchain-openai sentence-transformers python-dotenv
+    - pip install langchain langchain-google-genai sentence-transformers python-dotenv
 """
 
 import os
@@ -151,10 +151,10 @@ def llm_reranking():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
 
         query = "Python 的优点"
         documents = [

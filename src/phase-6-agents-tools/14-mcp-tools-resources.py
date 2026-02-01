@@ -186,7 +186,7 @@ def complete_agent():
 
     code = '''
 # mcp_agent.py
-from openai import OpenAI
+import google.generativeai as genai
 import asyncio
 import json
 
@@ -194,7 +194,8 @@ class MCPReActAgent:
     """集成 MCP 的 ReAct Agent"""
     
     def __init__(self, mcp_clients: dict):
-        self.llm = OpenAI()
+        genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+        self.llm = genai.GenerativeModel('gemini-1.5-flash')
         self.mcp_clients = mcp_clients  # {name: client}
         self.tools = []
         self.tool_map = {}  # tool_name -> (client, original_name)
@@ -365,7 +366,7 @@ def summary():
     ✅ Agent 架构和核心概念
     ✅ ReAct、Plan-Execute、Self-Ask 模式
     ✅ 工具定义、调用和路由
-    ✅ OpenAI Function Calling
+    ✅ Gemini Function Calling
     ✅ Agent 记忆管理
     ✅ MCP 协议和 Server/Client 开发
     

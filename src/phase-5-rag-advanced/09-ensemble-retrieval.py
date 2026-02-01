@@ -16,7 +16,7 @@
     - 08-contextual-compression.py
 
 环境要求：
-    - pip install langchain langchain-openai chromadb rank_bm25 python-dotenv
+    - pip install langchain langchain-google-genai chromadb rank_bm25 python-dotenv
 """
 
 import os
@@ -82,19 +82,18 @@ def langchain_ensemble():
     print("=" * 60)
 
     try:
-        from langchain.retrievers import EnsembleRetriever
-        from langchain_community.retrievers import BM25Retriever
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
         from langchain_chroma import Chroma
+        from langchain_community.retrievers import BM25Retriever
+        from langchain.retrievers import EnsembleRetriever
         from langchain_core.documents import Document
 
         # 准备文档
         docs = [
-            Document(page_content="Python 是一种高级编程语言"),
-            Document(page_content="机器学习的核心是从数据中学习模式"),
-            Document(page_content="深度学习使用多层神经网络"),
-            Document(page_content="Python 非常适合数据科学和 AI 开发"),
-            Document(page_content="TensorFlow 和 PyTorch 是流行的深度学习框架"),
+            Document(page_content="Python 是一种解释型编程语言"),
+            Document(page_content="机器学习需要大量数据训练模型"),
+            Document(page_content="深度学习使用神经网络"),
+            Document(page_content="Python 广泛用于数据科学"),
         ]
 
         # 创建 BM25 检索器
@@ -102,7 +101,7 @@ def langchain_ensemble():
         bm25_retriever.k = 2
 
         # 创建向量检索器
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         vectorstore = Chroma.from_documents(docs, embeddings)
         vector_retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
 
@@ -148,10 +147,10 @@ def adaptive_retrieval():
     """)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
 
         classify_prompt = ChatPromptTemplate.from_template("""
 分析以下查询的类型，选择最佳检索策略。

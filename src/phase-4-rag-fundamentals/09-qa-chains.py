@@ -16,7 +16,7 @@
     - 08-retrieval-basics.py
 
 环境要求：
-    - pip install langchain langchain-openai chromadb python-dotenv
+    - pip install langchain langchain-google-genai chromadb python-dotenv
 """
 
 import os
@@ -67,7 +67,10 @@ def basic_qa_chain():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+        from langchain_google_genai import (
+            ChatGoogleGenerativeAI,
+            GoogleGenerativeAIEmbeddings,
+        )
         from langchain_chroma import Chroma
         from langchain_core.documents import Document
         from langchain_core.prompts import ChatPromptTemplate
@@ -87,12 +90,12 @@ def basic_qa_chain():
             ),
         ]
 
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         vectorstore = Chroma.from_documents(docs, embeddings)
         retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
 
         # 构建 QA 链
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
 
         prompt = ChatPromptTemplate.from_template("""
 基于以下信息回答问题。如果信息中没有相关内容，请说明无法回答。
@@ -135,7 +138,10 @@ def qa_with_sources():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+        from langchain_google_genai import (
+            ChatGoogleGenerativeAI,
+            GoogleGenerativeAIEmbeddings,
+        )
         from langchain_chroma import Chroma
         from langchain_core.documents import Document
         from langchain_core.prompts import ChatPromptTemplate
@@ -151,11 +157,11 @@ def qa_with_sources():
             ),
         ]
 
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         vectorstore = Chroma.from_documents(docs, embeddings)
         retriever = vectorstore.as_retriever()
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
 
         prompt = ChatPromptTemplate.from_template("""
 基于以下信息回答问题，并引用来源。
@@ -304,9 +310,9 @@ def main():
     print("🚀 问答链")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

@@ -17,7 +17,7 @@
     - 06-sequential-chains.py
 
 环境要求：
-    - pip install langchain langchain-openai python-dotenv
+    - pip install langchain langchain-google-genai python-dotenv
 """
 
 import os
@@ -131,7 +131,7 @@ def memory_in_chain():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
         from langchain_core.runnables.history import RunnableWithMessageHistory
         from langchain_community.chat_message_histories import ChatMessageHistory
@@ -145,7 +145,7 @@ def memory_in_chain():
             return store[session_id]
 
         # 创建链
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", "你是一个友好的助手"),
@@ -218,9 +218,9 @@ def main():
     print("🚀 记忆类型详解")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

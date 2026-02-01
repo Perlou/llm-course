@@ -16,7 +16,7 @@
     - 06-self-query-retrieval.py
 
 环境要求：
-    - pip install langchain langchain-openai chromadb python-dotenv
+    - pip install langchain langchain-google-genai chromadb python-dotenv
 """
 
 import os
@@ -89,7 +89,10 @@ def hyde_implementation():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+        from langchain_google_genai import (
+            ChatGoogleGenerativeAI,
+            GoogleGenerativeAIEmbeddings,
+        )
         from langchain_chroma import Chroma
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.documents import Document
@@ -108,10 +111,10 @@ def hyde_implementation():
         ]
 
         # 创建向量存储
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
 
         # 传统检索
         query = "什么是梯度下降"
@@ -157,12 +160,17 @@ def langchain_hyde():
 
     try:
         from langchain.chains import HypotheticalDocumentEmbedder
-        from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+        from langchain_google_genai import (
+            ChatGoogleGenerativeAI,
+            GoogleGenerativeAIEmbeddings,
+        )
         from langchain_core.prompts import ChatPromptTemplate
 
         # 创建 HyDE embedder
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
-        base_embeddings = OpenAIEmbeddings()
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        base_embeddings = GoogleGenerativeAIEmbeddings(
+            model="models/text-embedding-004"
+        )
 
         prompt = ChatPromptTemplate.from_template("""
 请根据以下问题，写一段可能出现在相关文档中的回答。

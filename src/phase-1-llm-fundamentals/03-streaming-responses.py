@@ -1,16 +1,16 @@
 """
-流式响应处理
-============
+流式响应处理 (Gemini 版本)
+==========================
 
 学习目标：
     1. 理解流式响应的优势
-    2. 掌握 OpenAI 流式 API 的使用方法
+    2. 掌握 Gemini 流式 API 的使用方法
     3. 学会处理流式响应的数据结构
     4. 实现流式输出的用户界面
 
 核心概念：
     - Streaming：逐块返回响应，而非等待完整结果
-    - Delta：每个流式块中的增量内容
+    - Chunk：每个流式块中的增量内容
     - 首字延迟（TTFT）：Time To First Token
 
 前置知识：
@@ -18,13 +18,12 @@
     - 完成 02-openai-parameters.py
 
 环境要求：
-    - pip install openai python-dotenv
+    - pip install google-generativeai python-dotenv
 """
 
 import os
 import time
 from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
@@ -38,7 +37,11 @@ def compare_streaming_modes():
     print("第一部分：流式 vs 非流式对比")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+    model = genai.GenerativeModel("gemini-2.0-flash")
     prompt = "写一首关于春天的四句诗"
 
     print("""
@@ -58,14 +61,10 @@ def compare_streaming_modes():
     print("-" * 40)
 
     start_time = time.time()
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        stream=False,
-    )
+    response = model.generate_content(prompt, stream=False)
     end_time = time.time()
 
-    print(f"回复: {response.choices[0].message.content}")
+    print(f"回复: {response.text}")
     print(f"⏱️ 总耗时: {end_time - start_time:.2f} 秒")
 
     # 流式调用
@@ -75,23 +74,20 @@ def compare_streaming_modes():
     start_time = time.time()
     first_token_time = None
 
-    stream = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        stream=True,
-    )
+    response = model.generate_content(prompt, stream=True)
 
     print("回复: ", end="", flush=True)
-    for chunk in stream:
-        if chunk.choices[0].delta.content:
+    for chunk in response:
+        if chunk.text:
             if first_token_time is None:
                 first_token_time = time.time()
-            print(chunk.choices[0].delta.content, end="", flush=True)
+            print(chunk.text, end="", flush=True)
 
     print()  # 换行
     end_time = time.time()
 
-    print(f"⏱️ 首字延迟 (TTFT): {first_token_time - start_time:.2f} 秒")
+    if first_token_time:
+        print(f"⏱️ 首字延迟 (TTFT): {first_token_time - start_time:.2f} 秒")
     print(f"⏱️ 总耗时: {end_time - start_time:.2f} 秒")
     print("\n💡 注意：流式模式下，用户第一时间就能看到输出开始！")
 
@@ -105,37 +101,28 @@ def examine_stream_structure():
     print("第二部分：流式响应数据结构")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
     print("""
-流式响应的 chunk 结构：
-- 每个 chunk 只包含增量内容 (delta)
-- 第一个 chunk 包含 role 信息
-- 最后一个 chunk 的 finish_reason 不为 None
+Gemini 流式响应的 chunk 结构：
+- 每个 chunk 包含部分生成的文本
+- chunk.text 获取当前块的内容
+- 最后可以检查 response.candidates[0].finish_reason
     """)
 
-    stream = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": "说3个数字"}],
-        stream=True,
-    )
+    model = genai.GenerativeModel("gemini-2.0-flash")
+    response = model.generate_content("说3个数字", stream=True)
 
     print("📦 各个 chunk 的内容：")
     print("-" * 40)
 
     chunk_count = 0
-    for chunk in stream:
+    for chunk in response:
         chunk_count += 1
-        delta = chunk.choices[0].delta
-        finish_reason = chunk.choices[0].finish_reason
-
-        # 格式化输出
-        content_str = repr(delta.content) if delta.content else "None"
-        role_str = delta.role if delta.role else "None"
-
-        print(
-            f"Chunk {chunk_count:2d}: role={role_str:10s} content={content_str:10s} finish_reason={finish_reason}"
-        )
+        content = chunk.text if chunk.text else ""
+        print(f"Chunk {chunk_count:2d}: content={repr(content)}")
 
     print(f"\n📊 共收到 {chunk_count} 个 chunks")
 
@@ -149,44 +136,44 @@ def stream_with_full_handling():
     print("第三部分：完整的流式处理函数")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
     print("下面是一个生产级的流式处理函数示例：\n")
 
-    def stream_chat(messages, on_token=None, on_complete=None):
+    def stream_chat(prompt, system=None, on_token=None, on_complete=None):
         """
-        流式聊天函数
+        流式聊天函数 (Gemini 版本)
 
         Args:
-            messages: 消息列表
+            prompt: 用户消息
+            system: 系统提示词（可选）
             on_token: 每收到一个 token 时的回调函数
             on_complete: 完成时的回调函数
 
         Returns:
             完整的回复内容
         """
-        stream = client.chat.completions.create(
-            model="gpt-3.5-turbo", messages=messages, stream=True
-        )
+        if system:
+            model = genai.GenerativeModel("gemini-2.0-flash", system_instruction=system)
+        else:
+            model = genai.GenerativeModel("gemini-2.0-flash")
+
+        response = model.generate_content(prompt, stream=True)
 
         collected_content = []
 
-        for chunk in stream:
-            delta = chunk.choices[0].delta
-            finish_reason = chunk.choices[0].finish_reason
-
-            if delta.content:
-                collected_content.append(delta.content)
+        for chunk in response:
+            if chunk.text:
+                collected_content.append(chunk.text)
                 if on_token:
-                    on_token(delta.content)
+                    on_token(chunk.text)
 
-            if finish_reason == "stop":
-                full_content = "".join(collected_content)
-                if on_complete:
-                    on_complete(full_content)
-                return full_content
-
-        return "".join(collected_content)
+        full_content = "".join(collected_content)
+        if on_complete:
+            on_complete(full_content)
+        return full_content
 
     # 使用示例
     print("📝 使用示例：")
@@ -200,7 +187,7 @@ def stream_with_full_handling():
 
     print("回复: ", end="")
     result = stream_chat(
-        messages=[{"role": "user", "content": "用一句话解释什么是机器学习"}],
+        prompt="用一句话解释什么是机器学习",
         on_token=print_token,
         on_complete=on_done,
     )
@@ -219,33 +206,32 @@ def async_streaming_intro():
 在 Web 应用中，通常使用异步流式处理：
 
 ┌─────────────────────────────────────────────────────────────┐
-│ # 异步流式示例 (FastAPI + SSE)                              │
+│ # Gemini 异步流式示例 (FastAPI + SSE)                        │
 ├─────────────────────────────────────────────────────────────┤
 │ from fastapi import FastAPI                                 │
 │ from fastapi.responses import StreamingResponse             │
-│ from openai import AsyncOpenAI                              │
+│ import google.generativeai as genai                         │
 │                                                             │
 │ app = FastAPI()                                             │
-│ client = AsyncOpenAI()                                      │
+│ genai.configure(api_key="your-key")                         │
 │                                                             │
 │ @app.post("/chat/stream")                                   │
 │ async def chat_stream(message: str):                        │
 │     async def generate():                                   │
-│         stream = await client.chat.completions.create(      │
-│             model="gpt-3.5-turbo",                          │
-│             messages=[{"role": "user", "content": message}],│
-│             stream=True                                     │
-│         )                                                   │
-│         async for chunk in stream:                          │
-│             if chunk.choices[0].delta.content:              │
-│                 yield chunk.choices[0].delta.content        │
+│         model = genai.GenerativeModel("gemini-2.0-flash")   │
+│         response = model.generate_content(message,          │
+│                                          stream=True)       │
+│         for chunk in response:                              │
+│             if chunk.text:                                  │
+│                 yield f"data: {chunk.text}\\n\\n"           │
 │                                                             │
-│     return StreamingResponse(generate())                    │
+│     return StreamingResponse(generate(),                    │
+│                             media_type="text/event-stream") │
 └─────────────────────────────────────────────────────────────┘
 
 💡 关键点：
-1. 使用 AsyncOpenAI 客户端
-2. 使用 async for 遍历流
+1. 使用 stream=True 参数启用流式
+2. 遍历 response 获取 chunks
 3. 使用 yield 生成 SSE (Server-Sent Events)
 4. 前端使用 EventSource 或 fetch 接收流
     """)
@@ -260,29 +246,27 @@ def typewriter_effect():
     print("第五部分：模拟打字机效果")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
     print("📝 打字机效果演示：")
     print("-" * 40)
     print()
 
-    stream = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {
-                "role": "system",
-                "content": "你是一个讲故事的人，用简短有趣的方式讲故事。",
-            },
-            {"role": "user", "content": "讲一个关于一只勇敢的小猫的50字小故事"},
-        ],
-        stream=True,
+    model = genai.GenerativeModel(
+        "gemini-2.0-flash",
+        system_instruction="你是一个讲故事的人，用简短有趣的方式讲故事。",
+    )
+
+    response = model.generate_content(
+        "讲一个关于一只勇敢的小猫的50字小故事", stream=True
     )
 
     # 添加少量延迟增强打字机效果
-    for chunk in stream:
-        if chunk.choices[0].delta.content:
-            content = chunk.choices[0].delta.content
-            for char in content:
+    for chunk in response:
+        if chunk.text:
+            for char in chunk.text:
                 print(char, end="", flush=True)
                 time.sleep(0.02)  # 每个字符延迟 20ms
 
@@ -316,7 +300,7 @@ def exercises():
 
 思考题：
     1. 流式输出时，API 是如何知道何时结束的？
-    2. 流式模式是否会影响 token 计费？
+    2. Gemini 的流式 API 和 OpenAI 有什么区别？
     3. 在什么情况下，非流式可能比流式更合适？
     """
     print(exercises_text)
@@ -327,14 +311,14 @@ def exercises():
 
 def main():
     """主函数"""
-    print("🚀 流式响应处理")
+    print("🚀 流式响应处理 (Gemini 版本)")
     print("=" * 60)
     print("⚠️ 注意：本课程会多次调用 API，预估消耗约 1000-2000 tokens")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 请先配置 OPENAI_API_KEY 环境变量")
+        print("❌ 请先配置 GOOGLE_API_KEY 环境变量")
         return
 
     try:

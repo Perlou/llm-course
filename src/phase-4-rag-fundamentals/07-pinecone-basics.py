@@ -16,7 +16,7 @@ Pinecone 向量数据库
     - 06-chroma-basics.py
 
 环境要求：
-    - pip install langchain langchain-openai pinecone-client python-dotenv
+    - pip install langchain langchain-google-genai pinecone-client python-dotenv
     - 需要 Pinecone API Key
 """
 
@@ -117,7 +117,7 @@ def langchain_integration():
     print("=" * 60)
 
     code_example = """
-    from langchain_openai import OpenAIEmbeddings
+    from langchain_google_genai import GoogleGenerativeAIEmbeddings
     from langchain_pinecone import PineconeVectorStore
     from langchain_core.documents import Document
     
@@ -128,7 +128,7 @@ def langchain_integration():
     ]
     
     # 创建向量存储
-    embeddings = OpenAIEmbeddings()
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
     vectorstore = PineconeVectorStore.from_documents(
         docs,
         embeddings,

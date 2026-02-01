@@ -1,6 +1,6 @@
 """
-LangChain 框架概述
-==================
+LangChain 框架概述 - Gemini 版本
+================================
 
 学习目标：
     1. 理解 LangChain 框架的定位和核心价值
@@ -18,8 +18,8 @@ LangChain 框架概述
     - Python 基础
 
 环境要求：
-    - pip install langchain langchain-openai python-dotenv
-    - 配置 OPENAI_API_KEY
+    - pip install langchain langchain-google-genai python-dotenv
+    - 配置 GOOGLE_API_KEY
 """
 
 import os
@@ -139,10 +139,10 @@ def setup_demo():
     ─────────
     
     # 基础安装
-    pip install langchain langchain-openai
+    pip install langchain langchain-google-genai
     
     # 完整安装（包含常用依赖）
-    pip install langchain langchain-openai langchain-community
+    pip install langchain langchain-google-genai langchain-community
     
     # 向量数据库支持
     pip install chromadb faiss-cpu
@@ -152,13 +152,13 @@ def setup_demo():
     
     方式一：使用 .env 文件
     ```
-    OPENAI_API_KEY=sk-your-key-here
+    GOOGLE_API_KEY=your-api-key-here
     ```
     
     方式二：代码中设置
     ```python
     import os
-    os.environ["OPENAI_API_KEY"] = "sk-your-key-here"
+    os.environ["GOOGLE_API_KEY"] = "your-api-key-here"
     ```
     """
     print(setup_text)
@@ -167,11 +167,11 @@ def setup_demo():
     print("\n📌 当前环境检查：")
     print("-" * 40)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if api_key:
-        print(f"✅ OPENAI_API_KEY 已配置: {api_key[:8]}...{api_key[-4:]}")
+        print(f"✅ GOOGLE_API_KEY 已配置: {api_key[:8]}...{api_key[-4:]}")
     else:
-        print("❌ OPENAI_API_KEY 未配置")
+        print("❌ GOOGLE_API_KEY 未配置")
         return
 
     # 测试 LangChain 导入
@@ -184,11 +184,13 @@ def setup_demo():
         return
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
 
-        print("✅ langchain-openai 已安装")
+        print("✅ langchain-google-genai 已安装")
     except ImportError:
-        print("❌ langchain-openai 未安装，请运行: pip install langchain-openai")
+        print(
+            "❌ langchain-google-genai 未安装，请运行: pip install langchain-google-genai"
+        )
         return
 
     print("\n✅ 环境配置完成，可以开始学习！")
@@ -203,15 +205,15 @@ def first_langchain_app():
     print("第四部分：第一个 LangChain 应用")
     print("=" * 60)
 
-    print("\n📌 示例 1：使用 ChatOpenAI")
+    print("\n📌 示例 1：使用 ChatGoogleGenerativeAI")
     print("-" * 40)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.messages import HumanMessage, SystemMessage
 
         # 创建模型实例
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7)
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.7)
 
         # 方式一：简单调用
         print("\n方式一：直接调用 invoke()")
@@ -313,11 +315,11 @@ def lcel_intro():
     print("-" * 40)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import StrOutputParser
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7)
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.7)
         prompt = ChatPromptTemplate.from_template("用一句话描述{topic}的特点")
         chain = prompt | llm | StrOutputParser()
 
@@ -372,11 +374,11 @@ def exercises():
         
         参考答案：
         ```python
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import StrOutputParser
 
-        llm = ChatOpenAI()
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
         prompt = ChatPromptTemplate.from_template(
             "请将以下中文翻译成英文：{text}"
         )
@@ -420,11 +422,11 @@ def main():
     print("=" * 60)
 
     # 检查环境
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY 环境变量")
+        print("❌ 错误：未设置 GOOGLE_API_KEY 环境变量")
         print("请在 .env 文件中设置或运行：")
-        print('export OPENAI_API_KEY="your-key-here"')
+        print('export GOOGLE_API_KEY="your-key-here"')
         return
 
     try:

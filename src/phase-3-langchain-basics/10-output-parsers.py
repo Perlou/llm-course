@@ -16,7 +16,7 @@
     - 09-memory-persistence.py
 
 环境要求：
-    - pip install langchain langchain-openai python-dotenv pydantic
+    - pip install langchain langchain-google-genai python-dotenv pydantic
 """
 
 import os
@@ -67,11 +67,11 @@ def str_parser_demo():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import StrOutputParser
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
         prompt = ChatPromptTemplate.from_template("用一句话解释{topic}")
 
         # 不使用解析器
@@ -101,11 +101,11 @@ def json_parser_demo():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import JsonOutputParser
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
         parser = JsonOutputParser()
 
         prompt = ChatPromptTemplate.from_template("""
@@ -142,7 +142,7 @@ def pydantic_parser_demo():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import PydanticOutputParser
         from pydantic import BaseModel, Field
@@ -164,7 +164,7 @@ def pydantic_parser_demo():
 产品描述：{description}
 """)
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
         chain = prompt | llm | parser
 
         result = chain.invoke(
@@ -260,9 +260,9 @@ def main():
     print("🚀 输出解析器")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

@@ -14,7 +14,7 @@
     - 来源引用
 
 环境要求：
-    - pip install langchain langchain-openai chromadb python-dotenv
+    - pip install langchain langchain-google-genai chromadb python-dotenv
 """
 
 import os
@@ -30,12 +30,17 @@ class PersonalKnowledgeBase:
     """个人知识库问答系统"""
 
     def __init__(self, persist_directory: str = None):
-        from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+        from langchain_google_genai import (
+            ChatGoogleGenerativeAI,
+            GoogleGenerativeAIEmbeddings,
+        )
         from langchain_chroma import Chroma
         from langchain_core.messages import HumanMessage, AIMessage
 
-        self.embeddings = OpenAIEmbeddings()
-        self.llm = ChatOpenAI(model="gpt-3.5-turbo")
+        self.embeddings = GoogleGenerativeAIEmbeddings(
+            model="models/text-embedding-004"
+        )
+        self.llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
         self.persist_dir = persist_directory
         self.vectorstore = None
         self.history = []
@@ -272,9 +277,9 @@ while True:
 
 def main():
     """主函数"""
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

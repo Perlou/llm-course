@@ -6,7 +6,7 @@
 import os
 from typing import List, Optional, Dict, Any
 from langchain.schema import Document
-from langchain_openai import OpenAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 
 from config import config
@@ -16,9 +16,9 @@ class VectorStore:
     """向量存储管理器"""
 
     def __init__(self):
-        self.embeddings = OpenAIEmbeddings(
+        self.embeddings = GoogleGenerativeAIEmbeddings(
             model=config.embedding_model,
-            openai_api_key=config.openai_api_key,
+            google_api_key=config.google_api_key,
         )
 
         # 确保数据目录存在

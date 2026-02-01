@@ -1,6 +1,6 @@
 """
-系统提示词设计
-==============
+系统提示词设计 (Gemini 版本)
+============================
 
 学习目标：
     1. 理解系统提示词的作用和重要性
@@ -8,7 +8,7 @@
     3. 学会构建角色化的系统提示词
 
 核心概念：
-    - System Prompt：定义 AI 行为和角色的指令
+    - System Instruction：定义 AI 行为和角色的指令
     - 角色设定：让 AI 扮演特定角色
     - 边界约束：定义 AI 应该和不应该做的事情
 
@@ -16,12 +16,11 @@
     - 01-prompt-anatomy.py
 
 环境要求：
-    - pip install openai python-dotenv
+    - pip install google-generativeai python-dotenv
 """
 
 import os
 from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
@@ -43,24 +42,24 @@ def system_prompt_overview():
     用于定义 AI 的角色、行为边界和回复风格。
     
     ┌─────────────────────────────────────────────────┐
-    │                   消息结构                        │
+    │              Gemini 系统指令结构                  │
     ├─────────────────────────────────────────────────┤
-    │  System: "你是一个专业的 Python 导师..."          │
+    │  system_instruction: "你是一个专业的 Python 导师" │
     │  ──────────────────────────────────────────     │
     │  User: "如何写一个递归函数？"                     │
     │  ──────────────────────────────────────────     │
-    │  Assistant: "递归函数是..."                      │
+    │  Model: "递归函数是..."                          │
     └─────────────────────────────────────────────────┘
     
-    系统提示词 vs 用户提示词：
-    ─────────────────────────
+    OpenAI vs Gemini 系统提示词：
+    ─────────────────────────────
     
-    | 特性     | System Prompt    | User Prompt     |
-    |---------|------------------|-----------------|
-    | 可见性   | 用户通常看不到    | 用户直接输入     |
-    | 作用范围 | 整个对话         | 单次请求         |
-    | 优先级   | 较高             | 较低            |
-    | 用途     | 定义角色和规则    | 具体任务        |
+    | 特性         | OpenAI              | Gemini              |
+    |-------------|---------------------|---------------------|
+    | 设置位置     | messages 中 role    | GenerativeModel 参数|
+    | 参数名       | "system" role       | system_instruction  |
+    | 设置时机     | 每次请求时          | 创建模型时           |
+    | 可见性       | 在消息列表中        | 模型配置的一部分      |
     """)
 
 
@@ -73,31 +72,28 @@ def basic_system_prompt():
     print("第二部分：基础系统提示词")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
     # 无系统提示词
     print("📌 无系统提示词：")
-    response1 = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": "用一句话介绍自己"}],
-        max_tokens=100,
+    model1 = genai.GenerativeModel("gemini-2.0-flash")
+    response1 = model1.generate_content(
+        "用一句话介绍自己", generation_config={"max_output_tokens": 100}
     )
-    print(f"回复: {response1.choices[0].message.content}")
+    print(f"回复: {response1.text}")
 
     # 有系统提示词
     print("\n📌 有系统提示词（设定为海盗角色）：")
-    response2 = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {
-                "role": "system",
-                "content": "你是一个说话像海盗的 AI 助手，总是用海盗的语气回答问题，喜欢说'啊呵'和'宝藏'。",
-            },
-            {"role": "user", "content": "用一句话介绍自己"},
-        ],
-        max_tokens=100,
+    model2 = genai.GenerativeModel(
+        "gemini-2.0-flash",
+        system_instruction="你是一个说话像海盗的 AI 助手，总是用海盗的语气回答问题，喜欢说'啊呵'和'宝藏'。",
     )
-    print(f"回复: {response2.choices[0].message.content}")
+    response2 = model2.generate_content(
+        "用一句话介绍自己", generation_config={"max_output_tokens": 100}
+    )
+    print(f"回复: {response2.text}")
 
 
 # ==================== 第三部分：角色设计模式 ====================
@@ -109,7 +105,9 @@ def role_design_patterns():
     print("第三部分：角色设计模式")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
     # 专家角色
     expert_prompt = """你是一位资深的 Python 开发专家，有 15 年编程经验。
@@ -120,15 +118,11 @@ def role_design_patterns():
 - 回答简洁专业"""
 
     print("📌 专家角色演示：")
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": expert_prompt},
-            {"role": "user", "content": "怎么提高 Python 代码性能？"},
-        ],
-        max_tokens=300,
+    model = genai.GenerativeModel("gemini-2.0-flash", system_instruction=expert_prompt)
+    response = model.generate_content(
+        "怎么提高 Python 代码性能？", generation_config={"max_output_tokens": 300}
     )
-    print(f"回复:\n{response.choices[0].message.content}")
+    print(f"回复：\n{response.text}")
 
 
 # ==================== 第四部分：行为边界设定 ====================
@@ -140,7 +134,9 @@ def behavior_boundaries():
     print("第四部分：行为边界设定")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
     boundary_prompt = """你是一个专业的客服助手。
 
@@ -155,29 +151,23 @@ def behavior_boundaries():
 - 透露公司内部信息
 - 与用户争论"""
 
+    model = genai.GenerativeModel(
+        "gemini-2.0-flash", system_instruction=boundary_prompt
+    )
+
     print("📌 带边界约束的客服：")
 
     # 正常问题
-    response1 = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": boundary_prompt},
-            {"role": "user", "content": "你们的退货政策是什么？"},
-        ],
-        max_tokens=150,
+    response1 = model.generate_content(
+        "你们的退货政策是什么？", generation_config={"max_output_tokens": 150}
     )
-    print(f"正常问题回复: {response1.choices[0].message.content}")
+    print(f"正常问题回复: {response1.text}")
 
     # 越界问题
-    response2 = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": boundary_prompt},
-            {"role": "user", "content": "你怎么看美国大选？"},
-        ],
-        max_tokens=150,
+    response2 = model.generate_content(
+        "你怎么看美国大选？", generation_config={"max_output_tokens": 150}
     )
-    print(f"\n越界问题回复: {response2.choices[0].message.content}")
+    print(f"\n越界问题回复: {response2.text}")
 
 
 # ==================== 第五部分：输出格式控制 ====================
@@ -189,7 +179,9 @@ def output_format_control():
     print("第五部分：输出格式控制")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
     format_prompt = """你是一个数据分析助手。
 
@@ -201,15 +193,11 @@ def output_format_control():
 5. 回复控制在 200 字以内"""
 
     print("📌 格式化输出演示：")
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": format_prompt},
-            {"role": "user", "content": "对比一下 Python 和 Java 的特点"},
-        ],
-        max_tokens=300,
+    model = genai.GenerativeModel("gemini-2.0-flash", system_instruction=format_prompt)
+    response = model.generate_content(
+        "对比一下 Python 和 Java 的特点", generation_config={"max_output_tokens": 300}
     )
-    print(f"回复:\n{response.choices[0].message.content}")
+    print(f"回复：\n{response.text}")
 
 
 # ==================== 第六部分：练习与思考 ====================
@@ -234,7 +222,7 @@ def exercises():
     思考题：
         1. 系统提示词太长会有什么问题？
         2. 如何平衡角色设定和用户自由度？
-        3. 系统提示词能被用户覆盖吗？
+        3. Gemini 的 system_instruction 和 OpenAI 的 system role 有什么区别？
     """)
 
 
@@ -243,14 +231,14 @@ def exercises():
 
 def main():
     """主函数"""
-    print("🚀 系统提示词设计")
+    print("🚀 系统提示词设计 (Gemini 版本)")
     print("=" * 60)
-    print("⚠️ 注意：本课程将调用 OpenAI API")
+    print("💡 本课程使用 Google Gemini API")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

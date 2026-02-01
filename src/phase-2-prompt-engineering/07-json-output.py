@@ -1,28 +1,27 @@
 """
-JSON 格式输出
-=============
+JSON 格式输出 - Gemini 版本
+==========================
 
 学习目标：
     1. 掌握让 LLM 输出 JSON 的技巧
     2. 学会处理 JSON 解析错误
-    3. 了解 response_format 参数
+    3. 了解 Gemini 的 JSON 输出方式
 
 核心概念：
-    - JSON Mode：强制 JSON 输出
-    - Schema 定义：定义期望的结构
+    - JSON Schema：定义期望的结构
     - 错误处理：解析异常处理
+    - 提示词技巧：引导 JSON 输出
 
 前置知识：
     - 06-self-consistency.py
 
 环境要求：
-    - pip install openai python-dotenv
+    - pip install google-generativeai python-dotenv
 """
 
 import os
 import json
 from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
@@ -36,10 +35,13 @@ def basic_json_output():
     print("第一部分：基础 JSON 输出")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     # 简单方式
-    print("📌 方式一：在提示词中要求 JSON")
+    print("📌 在提示词中要求 JSON")
     prompt = """提取以下文本中的信息，以JSON格式返回：
 
 文本：张三今年25岁，住在北京，是一名软件工程师。
@@ -52,13 +54,11 @@ def basic_json_output():
     "job": "职业"
 }"""
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=150,
+    response = model.generate_content(
+        prompt, generation_config={"max_output_tokens": 150}
     )
 
-    content = response.choices[0].message.content
+    content = response.text
     print(f"原始回复:\n{content}")
 
     # 解析 JSON
@@ -69,33 +69,32 @@ def basic_json_output():
         print(f"\n解析失败: {e}")
 
 
-# ==================== 第二部分：JSON Mode ====================
+# ==================== 第二部分：使用 System Instruction ====================
 
 
-def json_mode():
-    """JSON Mode"""
+def json_with_system_instruction():
+    """使用系统指令确保 JSON 输出"""
     print("\n" + "=" * 60)
-    print("第二部分：JSON Mode（推荐）")
+    print("第二部分：使用 System Instruction（推荐）")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
 
-    print("📌 使用 response_format 参数：")
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "你是一个数据提取助手，总是返回JSON格式。"},
-            {
-                "role": "user",
-                "content": "提取信息：李四，30岁，上海，产品经理。返回包含name、age、city、job的JSON。",
-            },
-        ],
-        response_format={"type": "json_object"},
-        max_tokens=150,
+    print("📌 使用 system_instruction 参数：")
+
+    model = genai.GenerativeModel(
+        "gemini-2.0-flash",
+        system_instruction="你是一个数据提取助手，总是返回有效的JSON格式，不要添加任何额外的文字说明。",
     )
 
-    content = response.choices[0].message.content
+    response = model.generate_content(
+        "提取信息：李四，30岁，上海，产品经理。返回包含name、age、city、job的JSON。",
+        generation_config={"max_output_tokens": 150},
+    )
+
+    content = response.text
     print(f"回复:\n{content}")
 
     data = json.loads(content)
@@ -111,7 +110,14 @@ def complex_structure():
     print("第三部分：复杂结构")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+    model = genai.GenerativeModel(
+        "gemini-2.0-flash",
+        system_instruction="返回纯JSON格式，不要添加markdown代码块标记。",
+    )
 
     prompt = """分析以下产品评论，返回JSON格式的分析结果：
 
@@ -126,14 +132,11 @@ def complex_structure():
     "summary": "一句话总结"
 }"""
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        response_format={"type": "json_object"},
-        max_tokens=300,
+    response = model.generate_content(
+        prompt, generation_config={"max_output_tokens": 300}
     )
 
-    data = json.loads(response.choices[0].message.content)
+    data = json.loads(response.text)
     print("分析结果：")
     print(json.dumps(data, ensure_ascii=False, indent=2))
 
@@ -147,7 +150,13 @@ def batch_extraction():
     print("第四部分：批量处理")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+    model = genai.GenerativeModel(
+        "gemini-2.0-flash", system_instruction="只返回JSON，不要任何额外说明。"
+    )
 
     prompt = """从以下新闻标题中提取所有公司名称和相关事件，返回JSON数组：
 
@@ -163,14 +172,11 @@ def batch_extraction():
     ]
 }"""
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        response_format={"type": "json_object"},
-        max_tokens=200,
+    response = model.generate_content(
+        prompt, generation_config={"max_output_tokens": 200}
     )
 
-    data = json.loads(response.choices[0].message.content)
+    data = json.loads(response.text)
     print("提取结果：")
     for item in data.get("extractions", []):
         print(f"  - {item['company']}: {item['event']}")
@@ -248,7 +254,7 @@ def exercises():
         实现JSON结构验证函数，检查必填字段。
 
     思考题：
-        1. JSON Mode 有什么限制？
+        1. Gemini 和 OpenAI 在 JSON 输出上有什么区别？
         2. 如何处理嵌套层级很深的结构？
     """)
 
@@ -258,17 +264,17 @@ def exercises():
 
 def main():
     """主函数"""
-    print("🚀 JSON 格式输出")
+    print("🚀 JSON 格式输出 - Gemini 版本")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:
         basic_json_output()
-        json_mode()
+        json_with_system_instruction()
         complex_structure()
         batch_extraction()
         error_handling()

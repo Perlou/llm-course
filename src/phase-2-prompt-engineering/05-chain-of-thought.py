@@ -1,6 +1,6 @@
 """
-思维链提示 (Chain of Thought)
-=============================
+思维链提示 (Chain of Thought) - Gemini 版本
+==========================================
 
 学习目标：
     1. 理解思维链提示的原理
@@ -16,12 +16,11 @@
     - 04-few-shot-learning.py
 
 环境要求：
-    - pip install openai python-dotenv
+    - pip install google-generativeai python-dotenv
 """
 
 import os
 from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
@@ -68,28 +67,25 @@ def zero_shot_cot():
     print("第二部分：Zero-Shot CoT")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     problem = "一个水池有两个进水管和一个出水管。进水管A每小时进水10升，进水管B每小时进水15升，出水管每小时放水8升。如果水池初始有100升水，2小时后水池有多少升水？"
 
     # 无 CoT
     print("📌 无 CoT：")
-    r1 = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": problem}],
-        max_tokens=100,
-    )
-    print(f"回复: {r1.choices[0].message.content}")
+    r1 = model.generate_content(problem, generation_config={"max_output_tokens": 100})
+    print(f"回复: {r1.text}")
 
     # Zero-Shot CoT
-    # print("\n📌 Zero-Shot CoT（添加让我们一步步思考"）：")
+    print("\n📌 Zero-Shot CoT（添加'让我们一步步思考'）：")
     cot_prompt = problem + "\n\n让我们一步步思考："
-    r2 = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": cot_prompt}],
-        max_tokens=300,
+    r2 = model.generate_content(
+        cot_prompt, generation_config={"max_output_tokens": 300}
     )
-    print(f"回复:\n{r2.choices[0].message.content}")
+    print(f"回复：\n{r2.text}")
 
 
 # ==================== 第三部分：Few-Shot CoT ====================
@@ -101,7 +97,10 @@ def few_shot_cot():
     print("第三部分：Few-Shot CoT")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     few_shot_prompt = """解决数学问题，展示思考过程。
 
@@ -123,12 +122,10 @@ def few_shot_cot():
 问题：火车从A站到B站需要3小时，速度是80公里/小时。如果速度提高到100公里/小时，需要多长时间？
 思考过程："""
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": few_shot_prompt}],
-        max_tokens=200,
+    response = model.generate_content(
+        few_shot_prompt, generation_config={"max_output_tokens": 200}
     )
-    print(f"回复:\n{response.choices[0].message.content}")
+    print(f"回复：\n{response.text}")
 
 
 # ==================== 第四部分：代码问题 CoT ====================
@@ -140,7 +137,10 @@ def code_cot():
     print("第四部分：代码问题 CoT")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     code_prompt = """分析这段代码的问题，逐步思考：
 
@@ -162,12 +162,10 @@ print(result)  # 输出：0
 3. 找出问题所在
 4. 给出修复建议"""
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": code_prompt}],
-        max_tokens=400,
+    response = model.generate_content(
+        code_prompt, generation_config={"max_output_tokens": 400}
     )
-    print(f"回复:\n{response.choices[0].message.content}")
+    print(f"回复：\n{response.text}")
 
 
 # ==================== 第五部分：CoT 使用技巧 ====================
@@ -236,12 +234,12 @@ def exercises():
 
 def main():
     """主函数"""
-    print("🚀 思维链提示 (Chain of Thought)")
+    print("🚀 思维链提示 (Chain of Thought) - Gemini 版本")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

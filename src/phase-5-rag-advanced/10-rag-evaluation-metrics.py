@@ -8,7 +8,7 @@ RAG 评估指标
     3. 理解生成质量评估
 
 环境要求：
-    - pip install langchain langchain-openai python-dotenv
+    - pip install langchain langchain-google-genai python-dotenv
 """
 
 import os
@@ -87,9 +87,9 @@ def generation_metrics():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
 
         context = "Python 是一种解释型编程语言。"
         answer = "Python 是一种解释型编程语言。"

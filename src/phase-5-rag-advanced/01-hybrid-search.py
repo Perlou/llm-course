@@ -16,7 +16,7 @@
     - Phase 4 RAG 基础
 
 环境要求：
-    - pip install langchain langchain-openai chromadb rank_bm25 python-dotenv
+    - pip install langchain langchain-google-genai chromadb rank_bm25 python-dotenv
 """
 
 import os
@@ -165,7 +165,7 @@ def langchain_hybrid():
     print("=" * 60)
 
     try:
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
         from langchain_chroma import Chroma
         from langchain_community.retrievers import BM25Retriever
         from langchain.retrievers import EnsembleRetriever
@@ -184,7 +184,7 @@ def langchain_hybrid():
         bm25_retriever.k = 2
 
         # 创建向量检索器
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         vectorstore = Chroma.from_documents(docs, embeddings)
         vector_retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
 

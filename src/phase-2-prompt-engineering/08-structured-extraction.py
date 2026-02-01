@@ -1,6 +1,6 @@
 """
-结构化信息提取
-==============
+结构化信息提取 - Gemini 版本
+============================
 
 学习目标：
     1. 掌握从文本中提取结构化信息的技巧
@@ -16,13 +16,12 @@
     - 07-json-output.py
 
 环境要求：
-    - pip install openai python-dotenv
+    - pip install google-generativeai python-dotenv
 """
 
 import os
 import json
 from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
@@ -36,7 +35,13 @@ def entity_extraction():
     print("第一部分：实体提取")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+    model = genai.GenerativeModel(
+        "gemini-2.0-flash", system_instruction="只返回JSON格式，不要添加任何说明文字。"
+    )
 
     prompt = """从以下新闻中提取实体信息，返回JSON格式：
 
@@ -56,14 +61,11 @@ def entity_extraction():
     ]
 }"""
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        response_format={"type": "json_object"},
-        max_tokens=300,
+    response = model.generate_content(
+        prompt, generation_config={"max_output_tokens": 300}
     )
 
-    data = json.loads(response.choices[0].message.content)
+    data = json.loads(response.text)
     print("提取的实体：")
     for entity in data.get("entities", []):
         print(f"  [{entity['type']}] {entity['text']}")
@@ -78,7 +80,13 @@ def relation_extraction():
     print("第二部分：关系抽取")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+    model = genai.GenerativeModel(
+        "gemini-2.0-flash", system_instruction="只返回JSON格式。"
+    )
 
     prompt = """从以下文本中提取实体及其关系：
 
@@ -92,14 +100,11 @@ def relation_extraction():
     ]
 }"""
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        response_format={"type": "json_object"},
-        max_tokens=300,
+    response = model.generate_content(
+        prompt, generation_config={"max_output_tokens": 300}
     )
 
-    data = json.loads(response.choices[0].message.content)
+    data = json.loads(response.text)
 
     print("实体:", data.get("entities", []))
     print("\n关系：")
@@ -116,7 +121,14 @@ def form_extraction():
     print("第三部分：表单信息提取")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+    model = genai.GenerativeModel(
+        "gemini-2.0-flash",
+        system_instruction="只返回JSON格式，不要添加markdown代码块。",
+    )
 
     prompt = """从以下简历文本中提取结构化信息：
 
@@ -147,14 +159,11 @@ def form_extraction():
     }
 }"""
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        response_format={"type": "json_object"},
-        max_tokens=400,
+    response = model.generate_content(
+        prompt, generation_config={"max_output_tokens": 400}
     )
 
-    data = json.loads(response.choices[0].message.content)
+    data = json.loads(response.text)
     print("提取结果：")
     print(json.dumps(data, ensure_ascii=False, indent=2))
 
@@ -168,7 +177,13 @@ def event_extraction():
     print("第四部分：事件提取")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+    model = genai.GenerativeModel(
+        "gemini-2.0-flash", system_instruction="只返回JSON格式。"
+    )
 
     prompt = """从以下新闻中提取事件信息：
 
@@ -190,14 +205,11 @@ def event_extraction():
     ]
 }"""
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        response_format={"type": "json_object"},
-        max_tokens=400,
+    response = model.generate_content(
+        prompt, generation_config={"max_output_tokens": 400}
     )
 
-    data = json.loads(response.choices[0].message.content)
+    data = json.loads(response.text)
     print("提取的事件：")
     for i, event in enumerate(data.get("events", []), 1):
         print(f"\n事件 {i}:")
@@ -236,12 +248,12 @@ def exercises():
 
 def main():
     """主函数"""
-    print("🚀 结构化信息提取")
+    print("🚀 结构化信息提取 - Gemini 版本")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

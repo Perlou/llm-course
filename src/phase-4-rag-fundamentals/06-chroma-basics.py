@@ -16,7 +16,7 @@ Chroma 向量数据库
     - 05-vector-stores-intro.py
 
 环境要求：
-    - pip install langchain langchain-openai chromadb python-dotenv
+    - pip install langchain langchain-google-genai chromadb python-dotenv
 """
 
 import os
@@ -66,7 +66,7 @@ def basic_usage():
     print("=" * 60)
 
     try:
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
         from langchain_chroma import Chroma
         from langchain_core.documents import Document
 
@@ -85,7 +85,7 @@ def basic_usage():
         ]
 
         # 创建 Chroma（内存模式）
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
         # 相似度搜索
@@ -109,7 +109,7 @@ def search_with_score():
     print("=" * 60)
 
     try:
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
         from langchain_chroma import Chroma
         from langchain_core.documents import Document
 
@@ -119,7 +119,7 @@ def search_with_score():
             Document(page_content="强化学习通过试错优化策略"),
         ]
 
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
         # 带分数搜索
@@ -143,7 +143,7 @@ def metadata_filtering():
     print("=" * 60)
 
     try:
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
         from langchain_chroma import Chroma
         from langchain_core.documents import Document
 
@@ -164,7 +164,7 @@ def metadata_filtering():
             ),
         ]
 
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
         # 过滤搜索
@@ -196,7 +196,7 @@ def persistent_storage():
     print("=" * 60)
 
     try:
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
         from langchain_chroma import Chroma
         from langchain_core.documents import Document
         import shutil
@@ -209,7 +209,7 @@ def persistent_storage():
             Document(page_content="持久化测试文档二"),
         ]
 
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
 
         # 保存
         vectorstore = Chroma.from_documents(
@@ -266,9 +266,9 @@ def main():
     print("🚀 Chroma 向量数据库")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

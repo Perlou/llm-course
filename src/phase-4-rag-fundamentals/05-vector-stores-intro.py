@@ -16,7 +16,7 @@
     - 04-embeddings-basics.py
 
 环境要求：
-    - pip install langchain langchain-openai python-dotenv
+    - pip install langchain langchain-google-genai python-dotenv
 """
 
 import os
@@ -188,7 +188,7 @@ def in_memory_store():
     print("=" * 60)
 
     try:
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
         from langchain_core.documents import Document
         from langchain_community.vectorstores import DocArrayInMemorySearch
 
@@ -200,7 +200,7 @@ def in_memory_store():
         ]
 
         # 创建向量存储
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
         vectorstore = DocArrayInMemorySearch.from_documents(docs, embeddings)
 
         # 搜索

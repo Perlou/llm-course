@@ -16,7 +16,7 @@
     - 02-reranking.py
 
 环境要求：
-    - pip install langchain langchain-openai chromadb python-dotenv
+    - pip install langchain langchain-google-genai chromadb python-dotenv
 """
 
 import os
@@ -140,7 +140,7 @@ def langchain_parent_retriever():
         from langchain.retrievers import ParentDocumentRetriever
         from langchain.storage import InMemoryStore
         from langchain.text_splitter import RecursiveCharacterTextSplitter
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
         from langchain_chroma import Chroma
         from langchain_core.documents import Document
 
@@ -166,7 +166,7 @@ Python 是一种高级编程语言，由 Guido van Rossum 于 1991 年创建。�
         child_splitter = RecursiveCharacterTextSplitter(chunk_size=100)
 
         # 创建检索器
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         vectorstore = Chroma(
             collection_name="child_chunks", embedding_function=embeddings
         )

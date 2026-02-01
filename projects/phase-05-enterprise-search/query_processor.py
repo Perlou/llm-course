@@ -4,7 +4,7 @@
 """
 
 from typing import List
-from openai import OpenAI
+import google.generativeai as genai
 
 from config import config
 
@@ -36,24 +36,21 @@ class QueryProcessor:
 改写后的查询:"""
 
     def __init__(self):
-        self.client = OpenAI(api_key=config.openai_api_key)
+        genai.configure(api_key=config.google_api_key)
+        self.model = genai.GenerativeModel(config.llm_model)
 
     def expand_query(self, query: str) -> List[str]:
         """查询扩展"""
         try:
-            response = self.client.chat.completions.create(
-                model=config.llm_model,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": self.EXPANSION_PROMPT.format(query=query),
-                    }
-                ],
-                temperature=0.3,
-                max_tokens=100,
+            response = self.model.generate_content(
+                self.EXPANSION_PROMPT.format(query=query),
+                generation_config=genai.GenerationConfig(
+                    temperature=0.3,
+                    max_output_tokens=100,
+                ),
             )
 
-            expanded = response.choices[0].message.content.strip()
+            expanded = response.text.strip()
             # 解析扩展词
             terms = [t.strip() for t in expanded.split(",") if t.strip()]
             return terms
@@ -65,19 +62,15 @@ class QueryProcessor:
     def rewrite_query(self, query: str) -> str:
         """查询改写"""
         try:
-            response = self.client.chat.completions.create(
-                model=config.llm_model,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": self.REWRITE_PROMPT.format(query=query),
-                    }
-                ],
-                temperature=0.1,
-                max_tokens=50,
+            response = self.model.generate_content(
+                self.REWRITE_PROMPT.format(query=query),
+                generation_config=genai.GenerationConfig(
+                    temperature=0.1,
+                    max_output_tokens=50,
+                ),
             )
 
-            return response.choices[0].message.content.strip()
+            return response.text.strip()
 
         except Exception as e:
             print(f"查询改写失败: {e}")

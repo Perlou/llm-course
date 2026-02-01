@@ -14,12 +14,11 @@ class Config:
     """应用配置"""
 
     # API 配置
-    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
-    openai_base_url: str = os.getenv("OPENAI_BASE_URL", "")
+    google_api_key: str = os.getenv("GOOGLE_API_KEY", "")
 
     # 模型配置
-    llm_model: str = os.getenv("LLM_MODEL", "gpt-4o-mini")
-    embedding_model: str = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+    llm_model: str = os.getenv("LLM_MODEL", "gemini-1.5-flash")
+    embedding_model: str = os.getenv("EMBEDDING_MODEL", "models/text-embedding-004")
 
     # RAG 参数
     chunk_size: int = int(os.getenv("CHUNK_SIZE", "500"))
@@ -33,8 +32,8 @@ class Config:
 
     def validate(self) -> bool:
         """验证配置"""
-        if not self.openai_api_key:
-            print("❌ 错误: 请设置 OPENAI_API_KEY 环境变量")
+        if not self.google_api_key:
+            print("❌ 错误: 请设置 GOOGLE_API_KEY 环境变量")
             return False
         return True
 

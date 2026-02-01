@@ -1,6 +1,6 @@
 """
-自洽性提示 (Self-Consistency)
-=============================
+自洽性提示 (Self-Consistency) - Gemini 版本
+==========================================
 
 学习目标：
     1. 理解自洽性提示的原理
@@ -16,13 +16,12 @@
     - 05-chain-of-thought.py
 
 环境要求：
-    - pip install openai python-dotenv
+    - pip install google-generativeai python-dotenv
 """
 
 import os
 from collections import Counter
 from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
@@ -73,7 +72,9 @@ def basic_self_consistency():
     print("第二部分：基础实现")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
     problem = """问题：一个班有45名学生，男生比女生多9人。男生有多少人？
 
@@ -83,14 +84,16 @@ def basic_self_consistency():
     answers = []
 
     for i in range(5):
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": problem}],
-            temperature=0.7,  # 增加多样性
-            max_tokens=200,
+        model = genai.GenerativeModel("gemini-2.0-flash")
+        response = model.generate_content(
+            problem,
+            generation_config={
+                "temperature": 0.7,  # 增加多样性
+                "max_output_tokens": 200,
+            },
         )
 
-        content = response.choices[0].message.content
+        content = response.text
         # 提取答案
         if "答案是" in content:
             answer = content.split("答案是")[-1].strip()[:10]
@@ -119,7 +122,9 @@ def cot_self_consistency():
     print("第三部分：CoT + Self-Consistency")
     print("=" * 60)
 
-    client = OpenAI()
+    import google.generativeai as genai
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
     problem = """逻辑问题：
 小明说："我不在周一和周三工作。"
@@ -134,14 +139,12 @@ def cot_self_consistency():
     answers = []
 
     for i in range(3):
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": problem}],
-            temperature=0.8,
-            max_tokens=400,
+        model = genai.GenerativeModel("gemini-2.0-flash")
+        response = model.generate_content(
+            problem, generation_config={"temperature": 0.8, "max_output_tokens": 400}
         )
 
-        content = response.choices[0].message.content
+        content = response.text
         print(f"\n--- 采样 {i + 1} ---")
         print(content[:200] + "..." if len(content) > 200 else content)
 
@@ -166,7 +169,6 @@ def self_consistency_function():
 
     code_example = '''
 def self_consistent_answer(
-    client, 
     prompt: str, 
     n_samples: int = 5,
     answer_extractor = None
@@ -175,7 +177,6 @@ def self_consistent_answer(
     使用自洽性方法获取答案
     
     Args:
-        client: OpenAI 客户端
         prompt: 问题提示词
         n_samples: 采样次数
         answer_extractor: 答案提取函数
@@ -183,17 +184,22 @@ def self_consistent_answer(
     Returns:
         最可能的答案
     """
+    import google.generativeai as genai
+    from collections import Counter
+    
     answers = []
     
     for _ in range(n_samples):
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
-            max_tokens=300
+        model = genai.GenerativeModel("gemini-2.0-flash")
+        response = model.generate_content(
+            prompt,
+            generation_config={
+                "temperature": 0.7,
+                "max_output_tokens": 300
+            }
         )
         
-        content = response.choices[0].message.content
+        content = response.text
         if answer_extractor:
             answer = answer_extractor(content)
         else:
@@ -201,7 +207,6 @@ def self_consistent_answer(
         answers.append(answer)
     
     # 投票
-    from collections import Counter
     vote_count = Counter(answers)
     return vote_count.most_common(1)[0][0]
     '''
@@ -271,12 +276,12 @@ def exercises():
 
 def main():
     """主函数"""
-    print("🚀 自洽性提示 (Self-Consistency)")
+    print("🚀 自洽性提示 (Self-Consistency) - Gemini 版本")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

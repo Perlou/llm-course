@@ -6,7 +6,7 @@
 from typing import List
 from dataclasses import dataclass
 
-from openai import OpenAI
+import google.generativeai as genai
 from langchain.schema import Document
 
 from config import config
@@ -38,7 +38,8 @@ class Reranker:
 相关度分数:"""
 
     def __init__(self):
-        self.client = OpenAI(api_key=config.openai_api_key)
+        genai.configure(api_key=config.google_api_key)
+        self.model = genai.GenerativeModel(config.llm_model)
 
     def rerank(
         self,
@@ -91,21 +92,15 @@ class Reranker:
             if len(content) > max_len:
                 content = content[:max_len] + "..."
 
-            response = self.client.chat.completions.create(
-                model=config.llm_model,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": self.RERANK_PROMPT.format(
-                            query=query, content=content
-                        ),
-                    }
-                ],
-                temperature=0,
-                max_tokens=10,
+            response = self.model.generate_content(
+                self.RERANK_PROMPT.format(query=query, content=content),
+                generation_config=genai.GenerationConfig(
+                    temperature=0,
+                    max_output_tokens=10,
+                ),
             )
 
-            score_text = response.choices[0].message.content.strip()
+            score_text = response.text.strip()
             # 提取数字
             score = float("".join(c for c in score_text if c.isdigit() or c == "."))
             return min(100, max(0, score))

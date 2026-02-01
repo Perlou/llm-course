@@ -4,7 +4,7 @@ ReAct Agent 实现
 """
 
 from typing import List, Optional
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain.prompts import PromptTemplate
 from langchain.tools import BaseTool
@@ -74,9 +74,9 @@ Thought: {agent_scratchpad}"""
 
     def _create_agent(self) -> AgentExecutor:
         """创建 Agent"""
-        llm = ChatOpenAI(
+        llm = ChatGoogleGenerativeAI(
             model=config.llm_model,
-            openai_api_key=config.openai_api_key,
+            google_api_key=config.google_api_key,
             temperature=0.3,
         )
 

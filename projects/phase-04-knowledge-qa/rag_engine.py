@@ -6,7 +6,7 @@ RAG 引擎模块
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import Document, HumanMessage, AIMessage
 from langchain.schema.output_parser import StrOutputParser
@@ -42,10 +42,10 @@ class RAGEngine:
 
     def __init__(self, vector_store: VectorStore):
         self.vector_store = vector_store
-        self.llm = ChatOpenAI(
+        self.llm = ChatGoogleGenerativeAI(
             model=config.llm_model,
             temperature=0.7,
-            openai_api_key=config.openai_api_key,
+            google_api_key=config.google_api_key,
         )
 
         self.prompt = ChatPromptTemplate.from_messages(

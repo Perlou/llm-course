@@ -16,7 +16,7 @@
     - 04-query-expansion.py
 
 环境要求：
-    - pip install langchain langchain-openai chromadb python-dotenv
+    - pip install langchain langchain-google-genai chromadb python-dotenv
 """
 
 import os
@@ -86,7 +86,10 @@ def langchain_multi_query():
 
     try:
         from langchain.retrievers.multi_query import MultiQueryRetriever
-        from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+        from langchain_google_genai import (
+            ChatGoogleGenerativeAI,
+            GoogleGenerativeAIEmbeddings,
+        )
         from langchain_chroma import Chroma
         from langchain_core.documents import Document
 
@@ -100,12 +103,12 @@ def langchain_multi_query():
         ]
 
         # 创建向量存储
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         vectorstore = Chroma.from_documents(docs, embeddings)
         base_retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
 
         # 创建多查询检索器
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
         multi_retriever = MultiQueryRetriever.from_llm(
             retriever=base_retriever, llm=llm
         )
@@ -140,11 +143,11 @@ def custom_query_generator():
     print("=" * 60)
 
     try:
-        from langchain_openai import ChatOpenAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import StrOutputParser
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
 
         # 自定义提示模板
         prompt = ChatPromptTemplate.from_template("""

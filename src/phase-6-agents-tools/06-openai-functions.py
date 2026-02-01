@@ -1,9 +1,9 @@
 """
-OpenAI Function Calling
+Gemini Function Calling
 =======================
 
 学习目标：
-    1. 掌握 OpenAI Function Calling 机制
+    1. 掌握 Gemini Function Calling 机制
     2. 理解 tool_choice 参数
     3. 处理并行工具调用
 
@@ -17,7 +17,7 @@ OpenAI Function Calling
     - 05-custom-tools.py
 
 环境要求：
-    - pip install openai python-dotenv
+    - pip install google-generativeai python-dotenv
 """
 
 import os
@@ -37,7 +37,7 @@ def function_calling_overview():
     print("=" * 60)
 
     print("""
-    OpenAI Function Calling
+    Gemini Function Calling
     ─────────────────────────
     
     1. 注册工具（tools 参数）
@@ -131,10 +131,7 @@ def complete_implementation():
     print("=" * 60)
 
     code = """
-from openai import OpenAI
-import json
-
-client = OpenAI()
+import google.generativeai as genai
 
 # 工具函数
 def get_weather(city: str) -> str:
@@ -318,7 +315,7 @@ def exercises():
 
 
 def main():
-    print("⚡ OpenAI Function Calling")
+    print("⚡ Gemini Function Calling")
     print("=" * 60)
 
     function_calling_overview()

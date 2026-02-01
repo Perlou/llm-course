@@ -16,7 +16,7 @@
     - 06-chroma-basics.py
 
 环境要求：
-    - pip install langchain langchain-openai chromadb python-dotenv
+    - pip install langchain langchain-google-genai chromadb python-dotenv
 """
 
 import os
@@ -67,7 +67,7 @@ def vectorstore_retriever():
     print("=" * 60)
 
     try:
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
         from langchain_chroma import Chroma
         from langchain_core.documents import Document
 
@@ -79,7 +79,7 @@ def vectorstore_retriever():
             Document(page_content="JavaScript 是 Web 开发的核心语言"),
         ]
 
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
         # 创建 Retriever
@@ -124,7 +124,7 @@ def mmr_retrieval():
     """)
 
     try:
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
         from langchain_chroma import Chroma
         from langchain_core.documents import Document
 
@@ -136,7 +136,7 @@ def mmr_retrieval():
             Document(page_content="JavaScript 用于前端开发"),
         ]
 
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
         # MMR 检索
@@ -164,7 +164,7 @@ def similarity_threshold():
     print("=" * 60)
 
     try:
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
         from langchain_chroma import Chroma
         from langchain_core.documents import Document
 
@@ -174,7 +174,7 @@ def similarity_threshold():
             Document(page_content="今天天气晴朗"),
         ]
 
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
         # 带阈值的检索
@@ -219,9 +219,9 @@ def multi_query_retriever():
 
     code_example = """
     from langchain.retrievers.multi_query import MultiQueryRetriever
-    from langchain_openai import ChatOpenAI
+    from langchain_google_genai import ChatGoogleGenerativeAI
     
-    llm = ChatOpenAI(temperature=0)
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
     
     retriever = MultiQueryRetriever.from_llm(
         retriever=vectorstore.as_retriever(),
@@ -268,9 +268,9 @@ def main():
     print("🚀 基础检索")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:

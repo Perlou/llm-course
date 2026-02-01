@@ -4,7 +4,7 @@ Embedding 模型
 
 学习目标：
     1. 理解 Embedding 的原理
-    2. 掌握 OpenAI Embedding 使用
+    2. 掌握 Google Gemini Embedding 使用
     3. 了解其他 Embedding 选项
 
 核心概念：
@@ -16,7 +16,7 @@ Embedding 模型
     - 03-document-transformers.py
 
 环境要求：
-    - pip install langchain langchain-openai numpy python-dotenv
+    - pip install langchain langchain-google-genai numpy python-dotenv
 """
 
 import os
@@ -59,19 +59,19 @@ def embedding_concept():
     """)
 
 
-# ==================== 第二部分：OpenAI Embedding ====================
+# ==================== 第二部分：Google Gemini Embedding ====================
 
 
-def openai_embedding():
-    """OpenAI Embedding"""
+def gemini_embedding():
+    """Google Gemini Embedding"""
     print("\n" + "=" * 60)
-    print("第二部分：OpenAI Embedding")
+    print("第二部分：Google Gemini Embedding")
     print("=" * 60)
 
     try:
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-        embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
         # 单文本嵌入
         text = "人工智能正在改变世界"
@@ -105,9 +105,9 @@ def vector_similarity():
 
     try:
         import numpy as np
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
         # 计算相似度
         def cosine_similarity(v1, v2):
@@ -143,9 +143,9 @@ def semantic_search():
 
     try:
         import numpy as np
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-        embeddings = OpenAIEmbeddings()
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
         # 文档库
         documents = [
@@ -194,8 +194,8 @@ def other_embeddings():
     
     | 模型               | 维度   | 特点                    |
     |-------------------|-------|------------------------|
+    | Gemini embedding  | 768   | 免费，效果好             |
     | OpenAI ada-002    | 1536  | 效果好，付费             |
-    | OpenAI ada-003    | 3072  | 更新版，效果更好          |
     | HuggingFace BGE   | 1024  | 开源，中文效果好          |
     | Sentence-BERT     | 768   | 开源，通用               |
     | Cohere            | 1024  | 付费，多语言             |
@@ -247,14 +247,14 @@ def main():
     print("🚀 Embedding 模型")
     print("=" * 60)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 错误：未设置 OPENAI_API_KEY")
+        print("❌ 错误：未设置 GOOGLE_API_KEY")
         return
 
     try:
         embedding_concept()
-        openai_embedding()
+        gemini_embedding()
         vector_similarity()
         semantic_search()
         other_embeddings()
