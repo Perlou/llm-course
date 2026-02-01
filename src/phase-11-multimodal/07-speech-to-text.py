@@ -15,6 +15,17 @@
 环境要求：
     - pip install openai pydub
     - 需要 ffmpeg（音频处理）
+
+📌 Gemini 迁移说明：
+    Gemini SDK当前不提供语音识别功能。
+
+    推荐替代方案：
+    1. Google Cloud Speech-to-Text API（企业级，高准确度）
+    2. SpeechRecognition库（免费，易用）
+    3. faster-whisper（本地高性能）
+
+    本文件保留教学价值，展示语音转文字的概念和应用场景。
+    示例代码使用OpenAI Whisper API演示。
 """
 
 import os

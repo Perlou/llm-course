@@ -13,7 +13,11 @@
     - 趋势分析
 
 环境要求：
-    - pip install openai pillow
+    - pip install google-generativeai pillow matplotlib
+
+📌 Gemini 迁移说明：
+    本文件展示图表分析的核心概念。
+    示例代码使用OpenAI API演示，Gemini等价实现参考02-gpt4-vision.py顶部说明。
 """
 
 import os

@@ -14,6 +14,17 @@
 
 环境要求：
     - pip install openai
+
+📌 Gemini 迁移说明：
+    Gemini SDK当前不提供文字转语音功能。
+
+    推荐替代方案：
+    1. Google Cloud Text-to-Speech API（企业级，多语言高质量）
+    2. pyttsx3库（完全离线，跨平台）
+    3. gTTS（免费易用，需要网络）
+
+    本文件保留教学价值，展示文字转语音的概念和应用场景。
+    示例代码使用OpenAI TTS API演示。
 """
 
 import os

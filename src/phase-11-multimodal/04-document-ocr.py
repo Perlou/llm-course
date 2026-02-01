@@ -14,6 +14,10 @@
 
 环境要求：
     - pip install openai pillow pdf2image
+
+📌 Gemini 迁移说明：
+    本文件展示文档OCR的核心概念。
+    示例代码使用OpenAI API演示，Gemini等价实现参考02-gpt4-vision.py顶部说明。ge
 """
 
 import os

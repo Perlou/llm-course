@@ -54,7 +54,7 @@ print(PROJECT_STRUCTURE)
 
 INTENT_SERVICE = '''
 # app/services/intent_service.py
-from openai import OpenAI
+import google.generativeai as genai
 from typing import Dict, List, Optional
 from pydantic import BaseModel
 
@@ -93,7 +93,7 @@ class IntentService:
 {{"intent": "意图", "confidence": 0.95, "entities": {{"实体类型": "值"}}}}"""
 
     def __init__(self):
-        self.client = OpenAI()
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
 
     async def recognize(self, user_input: str, context: List[Dict] = None) -> IntentResult:
         """识别意图"""
@@ -106,14 +106,11 @@ class IntentService:
             "content": self.INTENT_PROMPT.format(user_input=user_input)
         })
 
-        response = self.client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            response_format={"type": "json_object"}
+        response = self.model.generate_content(
+            self.INTENT_PROMPT.format(user_input=user_input)
         )
 
-        import json
-        result = json.loads(response.choices[0].message.content)
+        result = json.loads(response.text)
         return IntentResult(**result)
 '''
 
@@ -460,7 +457,7 @@ print(API_CODE)
 
 SENTIMENT_CODE = '''
 # app/utils/sentiment.py
-from openai import OpenAI
+import google.generativeai as genai
 
 class SentimentAnalyzer:
     """情感分析器"""
@@ -472,7 +469,7 @@ class SentimentAnalyzer:
 {messages}"""
 
     def __init__(self):
-        self.client = OpenAI()
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
 
     async def analyze(self, messages: list) -> dict:
         """分析情感"""
@@ -480,16 +477,11 @@ class SentimentAnalyzer:
         user_msgs = [m["content"] for m in messages if m["role"] == "user"]
         text = "\\n".join(user_msgs[-5:])  # 最近5条
 
-        response = self.client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "user", "content": self.PROMPT.format(messages=text)}
-            ],
-            response_format={"type": "json_object"}
+        response = self.model.generate_content(
+            self.PROMPT.format(messages=text)
         )
 
-        import json
-        return json.loads(response.choices[0].message.content)
+        return json.loads(response.text)
 '''
 
 print("\n" + "=" * 60)

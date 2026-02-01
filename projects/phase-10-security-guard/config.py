@@ -14,7 +14,7 @@ class Config:
     """安全配置"""
 
     # API 配置
-    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
+    google_api_key: str = os.getenv("GOOGLE_API_KEY", "")
 
     # 功能开关
     enable_injection_check: bool = (

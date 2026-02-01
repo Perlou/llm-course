@@ -14,7 +14,7 @@ LLM 作为评判者
 
 环境要求：
     - pip install openai
-    - 需要 OpenAI API Key 或本地 LLM
+    - 需要 Google API Key
 """
 
 import json
@@ -69,9 +69,10 @@ def single_point_scoring():
     print("=" * 60)
 
     code = '''
-from openai import OpenAI
+import google.generativeai as genai
 
-client = OpenAI()
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 JUDGE_PROMPT = """
 你是一个专业的评估助手。请根据以下标准评估AI助手的回复质量。
@@ -239,11 +240,8 @@ class MTBenchEvaluator:
 
 输出格式：{{"score": <分数>, "reason": "<理由>"}}
 """
-        result = client.chat.completions.create(
-            model=self.judge_model,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return json.loads(result.choices[0].message.content)
+        result = model.generate_content(prompt)
+        return json.loads(result.text)
 
     def evaluate_model(self, model, questions):
         """评估模型在所有问题上的表现"""

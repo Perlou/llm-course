@@ -13,7 +13,7 @@
     - A/B Testing：对比测试
 
 环境要求：
-    - pip install openai
+    - pip install google-generativeai
 """
 
 import os
@@ -129,9 +129,10 @@ def automatic_optimization():
     print("=" * 60)
 
     code = '''
-from openai import OpenAI
+import google.generativeai as genai
 
-client = OpenAI()
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 META_PROMPT = """
 你是一个提示词优化专家。请优化以下提示词以提高效果。
@@ -160,13 +161,8 @@ def optimize_prompt(
         test_results=test_results
     )
 
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.7
-    )
-
-    return response.choices[0].message.content
+    response = model.generate_content(prompt)
+    return response.text
 
 # 使用示例
 original = "回答问题：{question}"

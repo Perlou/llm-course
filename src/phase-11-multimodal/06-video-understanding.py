@@ -13,7 +13,11 @@
     - 视频问答：基于视频内容回答问题
 
 环境要求：
-    - pip install openai opencv-python pillow
+    - pip install google-generativeai pillow opencv-python
+
+📌 Gemini 迁移说明：
+    本文件展示视频理解的核心概念（通过帧提取+图像分析）。
+    示例代码使用OpenAI API演示，Gemini等价实现参考02-gpt4-vision.py顶部说明。
 """
 
 import os

@@ -1,9 +1,9 @@
 """
-GPT-4V 使用
+Gemini Vision (鉴于 GPT-4V)
 ==========
 
 学习目标：
-    1. 掌握 GPT-4V/GPT-4o 的 API 使用
+    1. 掌握 Gemini Vision 的 API 使用
     2. 了解图像输入的格式和限制
     3. 实现多图对话和高级用法
 
@@ -13,10 +13,25 @@ GPT-4V 使用
     - 多图输入：同时分析多张图片
 
 环境要求：
-    - pip install openai pillow
-    - 需要 OpenAI API Key
+    - pip install google-generativeai pillow
+    - 需要 Google API Key
 
-⚠️ 成本提醒：GPT-4o 视觉调用按图像大小和 token 计费
+⚠️ 成本提醒：Gemini 视觉调用按 token 计费
+
+📌 Gemini 迁移说明：
+    本文件展示视觉LLM的核心概念和使用方法。
+    示例代码使用OpenAI API演示，Gemini等价实现：
+
+    # Gemini Vision 示例
+    import google.generativeai as genai
+    from PIL import Image
+
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    model = genai.GenerativeModel('gemini-1.5-flash')
+
+    img = Image.open('image.jpg')
+    response = model.generate_content(["描述这张图片", img])
+    print(response.text)
 """
 
 import os
@@ -33,7 +48,7 @@ load_dotenv()
 def basic_usage():
     """基础使用"""
     print("=" * 60)
-    print("第一部分：GPT-4V 基础使用")
+    print("第一部分：Gemini Vision 基础使用")
     print("=" * 60)
 
     code = '''

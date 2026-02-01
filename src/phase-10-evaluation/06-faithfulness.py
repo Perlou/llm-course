@@ -13,7 +13,7 @@
     - NLI：自然语言推理
 
 环境要求：
-    - pip install transformers openai
+    - pip install transformers google-generativeai
 """
 
 import os
@@ -66,9 +66,10 @@ def llm_based_evaluation():
     print("=" * 60)
 
     code = '''
-from openai import OpenAI
+import google.generativeai as genai
 
-client = OpenAI()
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 FAITHFULNESS_PROMPT = """
 请分析以下回答是否忠实于给定的上下文。
@@ -99,14 +100,10 @@ def evaluate_faithfulness(context: str, answer: str) -> dict:
     """使用 LLM 评估忠实度"""
     prompt = FAITHFULNESS_PROMPT.format(context=context, answer=answer)
 
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0
-    )
+    response = model.generate_content(prompt)
 
     import json
-    return json.loads(response.choices[0].message.content)
+    return json.loads(response.text)
 
 # 使用示例
 context = "北京是中国的首都，人口约2100万。上海是中国最大的城市。"

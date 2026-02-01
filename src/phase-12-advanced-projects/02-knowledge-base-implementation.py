@@ -10,7 +10,7 @@
 本文件包含核心实现代码参考
 
 环境要求：
-    - pip install fastapi uvicorn langchain langchain-openai
+    - pip install fastapi uvicorn langchain langchain-google-genai
     - pip install qdrant-client sqlalchemy redis celery
     - pip install python-multipart pydantic
 """
@@ -80,9 +80,9 @@ class Settings(BaseSettings):
     QDRANT_PORT: int = 6333
 
     # LLM
-    OPENAI_API_KEY: str
-    EMBEDDING_MODEL: str = "text-embedding-3-small"
-    CHAT_MODEL: str = "gpt-4o-mini"
+    GOOGLE_API_KEY: str
+    EMBEDDING_MODEL: str = "models/embedding-001"
+    CHAT_MODEL: str = "gemini-1.5-flash"
 
     # RAG 配置
     CHUNK_SIZE: int = 500
@@ -177,7 +177,7 @@ print(DOCUMENT_SERVICE)
 
 VECTOR_SERVICE = '''
 # app/services/vector_service.py
-from langchain_openai import OpenAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from app.config import get_settings
@@ -188,7 +188,7 @@ class VectorService:
     """向量检索服务"""
 
     def __init__(self):
-        self.embeddings = OpenAIEmbeddings(
+        self.embeddings = GoogleGenerativeAIEmbeddings(
             model=settings.EMBEDDING_MODEL
         )
         self.client = QdrantClient(
@@ -229,7 +229,7 @@ print(VECTOR_SERVICE)
 
 RAG_SERVICE = '''
 # app/services/rag_service.py
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
@@ -251,10 +251,9 @@ class RAGService:
 
     def __init__(self, vector_service):
         self.vector_service = vector_service
-        self.llm = ChatOpenAI(
+        self.llm = ChatGoogleGenerativeAI(
             model=settings.CHAT_MODEL,
-            temperature=0.7,
-            streaming=True
+            temperature=0.7
         )
         self.prompt = ChatPromptTemplate.from_template(self.PROMPT_TEMPLATE)
 

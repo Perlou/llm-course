@@ -298,7 +298,7 @@ print(CODE_ANALYZER)
 
 LLM_SERVICE = '''
 # app/services/llm_service.py
-from openai import AsyncOpenAI
+import google.generativeai as genai
 from typing import AsyncGenerator
 from app.config import get_settings
 
@@ -308,7 +308,8 @@ class LLMService:
     """LLM 调用服务"""
 
     def __init__(self):
-        self.client = AsyncOpenAI()
+        genai.configure(api_key=settings.GOOGLE_API_KEY)
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
 
     async def complete(
         self,
@@ -319,14 +320,8 @@ class LLMService:
         stop: list = None
     ) -> str:
         """常规补全"""
-        response = await self.client.chat.completions.create(
-            model=model or settings.COMPLETION_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=max_tokens,
-            temperature=temperature,
-            stop=stop
-        )
-        return response.choices[0].message.content
+        response = await self.model.generate_content_async(prompt)
+        return response.text
 
     async def stream_complete(
         self,
@@ -335,16 +330,14 @@ class LLMService:
         max_tokens: int = 1000
     ) -> AsyncGenerator[str, None]:
         """流式补全"""
-        response = await self.client.chat.completions.create(
-            model=model or settings.GENERATION_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=max_tokens,
+        response = self.model.generate_content(
+            prompt,
             stream=True
         )
-
-        async for chunk in response:
-            if chunk.choices[0].delta.content:
-                yield chunk.choices[0].delta.content
+        
+        for chunk in response:
+            if hasattr(chunk, 'text'):
+                yield chunk.text
 '''
 
 print("\n" + "=" * 60)
