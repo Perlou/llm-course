@@ -16,7 +16,7 @@ import yaml
 class DatabaseSettings(BaseSettings):
     """数据库配置"""
     url: str = Field(
-        default="postgresql+asyncpg://postgres:postgres@localhost:5432/medimind",
+        default="sqlite:///./data/medimind.db",
         description="数据库连接 URL"
     )
     pool_size: int = Field(default=5, description="连接池大小")
@@ -53,7 +53,8 @@ class ChunkingSettings(BaseSettings):
 class RetrievalSettings(BaseSettings):
     """检索配置"""
     top_k: int = Field(default=5, description="返回结果数量")
-    min_score: float = Field(default=0.5, description="最小相似度分数")
+    score_threshold: float = Field(default=0.5, description="最小相似度分数")
+    min_score: float = Field(default=0.5, description="最小相似度分数（别名）")
     rerank: bool = Field(default=False, description="是否重排序")
 
 
@@ -92,6 +93,31 @@ class Settings(BaseSettings):
     llm: LLMSettings = Field(default_factory=LLMSettings)
     chunking: ChunkingSettings = Field(default_factory=ChunkingSettings)
     retrieval: RetrievalSettings = Field(default_factory=RetrievalSettings)
+    
+    @property
+    def database_url(self) -> str:
+        """获取数据库 URL（便捷属性）"""
+        return self.database.url
+    
+    @property
+    def gemini(self):
+        """获取 Gemini 配置"""
+        class GeminiConfig:
+            def __init__(self, settings):
+                self.model = settings.llm.gemini_model
+                self.temperature = settings.llm.temperature
+                self.max_tokens = settings.llm.max_tokens
+        return GeminiConfig(self)
+    
+    @property
+    def ollama(self):
+        """获取 Ollama 配置"""
+        class OllamaConfig:
+            def __init__(self, settings):
+                self.model = settings.llm.ollama_model
+                self.base_url = settings.llm.ollama_host
+                self.temperature = settings.llm.temperature
+        return OllamaConfig(self)
     
     @classmethod
     def from_yaml(cls, config_path: str = "configs/config.yaml") -> "Settings":
