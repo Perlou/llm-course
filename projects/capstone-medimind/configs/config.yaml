@@ -1,0 +1,74 @@
+# MediMind - 主配置文件
+
+app:
+  name: MediMind
+  version: "0.1.0"
+  description: "智能健康助手平台"
+  env: development
+  debug: true
+
+# 数据库配置
+database:
+  url: ${DATABASE_URL:postgresql+asyncpg://postgres:postgres@localhost:5432/medimind}
+  pool_size: 5
+  max_overflow: 10
+
+# 向量存储
+vector_store:
+  type: chroma
+  persist_dir: ./data/chroma_index
+  collection_name: medical_knowledge
+  distance_fn: cosine
+
+# 嵌入模型
+embedding:
+  model: BAAI/bge-large-zh-v1.5
+  device: auto  # auto, cpu, cuda
+  batch_size: 32
+
+# LLM 配置
+llm:
+  # 默认使用 Gemini
+  provider: gemini  # gemini, ollama
+  
+  gemini:
+    model: gemini-2.0-flash
+    temperature: 0.7
+    max_tokens: 2048
+    
+  ollama:
+    model: qwen2.5:7b
+    host: http://localhost:11434
+    temperature: 0.7
+    max_tokens: 2048
+
+# 文本分块
+chunking:
+  chunk_size: 500
+  chunk_overlap: 100
+  separators:
+    - "\n\n"
+    - "\n"
+    - "。"
+    - "；"
+    - "！"
+    - "？"
+
+# 检索配置
+retrieval:
+  top_k: 5
+  min_score: 0.5
+  rerank: false
+
+# 安全护栏
+guardrails:
+  enabled: true
+  config_file: configs/guardrails.yaml
+
+# 日志配置
+logging:
+  level: INFO
+  format: "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | <cyan>{name}</cyan>:<line>{line}</line> - <level>{message}</level>"
+  file: logs/medimind.log
+  rotation: "10 MB"
+  retention: "7 days"
