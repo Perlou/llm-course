@@ -59,6 +59,10 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     
+    # 护栏中间件 - 医疗安全检查
+    from src.api.middleware import GuardrailMiddleware
+    app.add_middleware(GuardrailMiddleware)
+    
     # 注册路由
     app.include_router(system_router, prefix="/api/v1", tags=["系统"])
     app.include_router(health_qa_router, prefix="/api/v1", tags=["健康问答"])
