@@ -125,13 +125,102 @@ async def stream_chat(request: ChatRequest):
 async def get_conversation_history(conversation_id: str):
     """
     获取对话历史
+    
+    从数据库获取指定对话的所有消息记录。
     """
-    # TODO: 从数据库获取对话历史
-    return {
-        "code": 0,
-        "message": "success",
-        "data": {
-            "conversation_id": conversation_id,
-            "messages": [],
-        },
-    }
+    try:
+        from src.core.conversation_service import get_conversation_service
+        
+        service = get_conversation_service()
+        messages = service.get_messages(conversation_id)
+        
+        return {
+            "code": 0,
+            "message": "success",
+            "data": {
+                "conversation_id": conversation_id,
+                "messages": messages,
+                "total": len(messages),
+            },
+        }
+    except Exception as e:
+        log.error(f"获取对话历史失败: {e}")
+        return {
+            "code": 0,
+            "message": "success",
+            "data": {
+                "conversation_id": conversation_id,
+                "messages": [],
+                "total": 0,
+            },
+        }
+
+
+@router.get("/conversations")
+async def list_conversations(limit: int = 20):
+    """
+    获取最近对话列表
+    
+    返回用户最近的健康问答对话列表。
+    """
+    try:
+        from src.core.conversation_service import get_conversation_service
+        
+        service = get_conversation_service()
+        conversations = service.get_recent_conversations(
+            limit=limit,
+            conversation_type="health_qa",
+        )
+        
+        return {
+            "code": 0,
+            "message": "success",
+            "data": {
+                "conversations": conversations,
+                "total": len(conversations),
+            },
+        }
+    except Exception as e:
+        log.error(f"获取对话列表失败: {e}")
+        return {
+            "code": 0,
+            "message": "success",
+            "data": {
+                "conversations": [],
+                "total": 0,
+            },
+        }
+
+
+@router.delete("/conversation/{conversation_id}")
+async def delete_conversation(conversation_id: str):
+    """
+    删除对话
+    
+    删除指定对话及其所有消息记录。
+    """
+    try:
+        from src.core.conversation_service import get_conversation_service
+        
+        service = get_conversation_service()
+        success = service.delete_conversation(conversation_id)
+        
+        if success:
+            return {
+                "code": 0,
+                "message": "success",
+                "data": {"deleted": conversation_id},
+            }
+        else:
+            return {
+                "code": 404,
+                "message": "对话不存在",
+                "data": None,
+            }
+    except Exception as e:
+        log.error(f"删除对话失败: {e}")
+        return {
+            "code": 500,
+            "message": str(e),
+            "data": None,
+        }

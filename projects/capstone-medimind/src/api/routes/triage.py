@@ -1,139 +1,267 @@
 """
 MediMind - 智能导诊路由
 
-基于 LangGraph Agent 的多轮对话导诊接口。
+多轮对话导诊接口，实现症状分析和科室推荐。
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
-from src.utils import generate_id
+from src.utils import log
+from src.api.middleware.guardrail import get_emergency_status
 
 router = APIRouter(prefix="/triage")
 
 
-class StartTriageResponse(BaseModel):
-    """开始导诊响应"""
+class StartSessionResponse(BaseModel):
+    """开始会话响应"""
     session_id: str
     message: str
-    questions: Optional[List[str]] = None
+    state: str
 
 
-class TriageChatRequest(BaseModel):
-    """导诊对话请求"""
-    session_id: str = Field(..., description="会话 ID")
-    message: str = Field(..., min_length=1, max_length=1000, description="用户消息")
+class ChatRequest(BaseModel):
+    """对话请求"""
+    message: str = Field(..., min_length=1, max_length=500, description="用户消息")
 
 
-class TriageResult(BaseModel):
-    """导诊结果"""
-    symptoms: List[str]
-    duration: Optional[str] = None
-    severity: str  # mild, moderate, severe
-    recommended_department: str
-    urgency: str  # routine, soon, urgent, emergency
-    advice: str
-
-
-class TriageChatResponse(BaseModel):
-    """导诊对话响应"""
+class ChatResponse(BaseModel):
+    """对话响应"""
+    session_id: str
+    state: str
+    urgency: str
     message: str
-    is_complete: bool = False
-    result: Optional[TriageResult] = None
+    is_complete: bool
+    recommended_departments: Optional[List[str]] = None
+    symptoms: Optional[List[str]] = None
 
 
-@router.post("/start")
-async def start_triage():
+class SessionStatusResponse(BaseModel):
+    """会话状态响应"""
+    session_id: str
+    state: str
+    urgency: str
+    symptoms: List[str]
+    recommended_departments: List[str]
+    questions_asked: int
+    is_complete: bool
+
+
+@router.post("/start", response_model=dict)
+async def start_triage_session():
     """
     开始导诊会话
     
-    初始化导诊 Agent，返回欢迎语和初始问题。
+    创建新的导诊会话，返回会话 ID 和初始问候语。
     """
-    session_id = generate_id("triage_")
+    from src.core.triage_agent import get_triage_agent
     
-    # TODO: 初始化 LangGraph Agent 状态
+    agent = get_triage_agent()
+    context = agent.start_session()
     
-    return {
-        "code": 0,
-        "message": "success",
-        "data": {
-            "session_id": session_id,
-            "message": "您好！我是智能导诊助手。请描述一下您的主要不适症状，我会帮您分析并推荐合适的科室。",
-            "questions": [
-                "您目前最主要的不适是什么？",
-                "症状持续多长时间了？",
-                "疼痛程度如何？(轻微/中度/剧烈)",
-            ],
-        },
-    }
+    welcome_message = """👋 您好！我是 MediMind 智能导诊助手。
 
+我会根据您描述的症状，帮您分析可能的原因并推荐合适的科室。
 
-@router.post("/chat")
-async def triage_chat(request: TriageChatRequest):
-    """
-    导诊对话接口
+**请告诉我您现在的主要不适是什么？**
+
+例如：头痛、咳嗽、胃痛、发烧等。"""
     
-    进行多轮对话，收集症状信息，最终给出科室推荐。
-    """
-    # TODO: 实现 LangGraph Agent 对话逻辑
-    # 1. 获取会话状态
-    # 2. 分析用户输入
-    # 3. 更新状态
-    # 4. 决定下一步（继续提问 or 给出结果）
+    context.messages.append({
+        "role": "assistant",
+        "content": welcome_message,
+    })
     
     return {
         "code": 0,
         "message": "success",
         "data": {
-            "message": "智能导诊功能开发中，请稍后再试。",
-            "is_complete": False,
-            "result": None,
+            "session_id": context.session_id,
+            "state": context.state.value,
+            "message": welcome_message,
         },
-        "disclaimer": "⚕️ 智能导诊仅供参考，不代表医学诊断。如有严重症状请立即就医。",
     }
 
 
-@router.get("/session/{session_id}")
-async def get_triage_session(session_id: str):
+@router.post("/{session_id}/chat", response_model=dict)
+async def triage_chat(session_id: str, request: ChatRequest):
     """
-    获取导诊会话状态
+    导诊对话
     
-    返回当前会话的对话历史和状态。
+    发送用户消息并获取导诊回复。
     """
-    # TODO: 从存储获取会话状态
+    from src.core.triage_agent import get_triage_agent
+    
+    agent = get_triage_agent()
+    
+    # 检查会话是否存在
+    context = agent.get_session(session_id)
+    if not context:
+        raise HTTPException(
+            status_code=404,
+            detail="会话不存在或已过期，请开始新的导诊会话",
+        )
+    
+    # 处理消息
+    result = agent.process_message(session_id, request.message)
+    
+    if result.get("error"):
+        raise HTTPException(
+            status_code=400,
+            detail=result.get("message", "处理失败"),
+        )
+    
     return {
         "code": 0,
         "message": "success",
         "data": {
-            "session_id": session_id,
-            "messages": [],
-            "is_complete": False,
+            "session_id": result.get("session_id"),
+            "state": result.get("state"),
+            "urgency": result.get("urgency", "normal"),
+            "message": result.get("message"),
+            "is_complete": result.get("is_complete", False),
+            "recommended_departments": result.get("recommended_departments", []),
+            "symptoms": result.get("symptoms", []),
         },
     }
 
 
-@router.get("/departments")
+@router.get("/{session_id}/status", response_model=dict)
+async def get_session_status(session_id: str):
+    """
+    获取会话状态
+    
+    查询当前导诊会话的状态和已收集的信息。
+    """
+    from src.core.triage_agent import get_triage_agent
+    
+    agent = get_triage_agent()
+    context = agent.get_session(session_id)
+    
+    if not context:
+        raise HTTPException(
+            status_code=404,
+            detail="会话不存在",
+        )
+    
+    return {
+        "code": 0,
+        "message": "success",
+        "data": {
+            "session_id": context.session_id,
+            "state": context.state.value,
+            "urgency": context.urgency.value,
+            "symptoms": [s.name for s in context.symptoms],
+            "recommended_departments": context.recommended_departments,
+            "questions_asked": context.questions_asked,
+            "is_complete": context.state.value == "complete",
+        },
+    }
+
+
+@router.get("/{session_id}/history", response_model=dict)
+async def get_session_history(session_id: str):
+    """
+    获取对话历史
+    
+    返回会话中的所有消息记录。
+    """
+    from src.core.triage_agent import get_triage_agent
+    
+    agent = get_triage_agent()
+    context = agent.get_session(session_id)
+    
+    if not context:
+        raise HTTPException(
+            status_code=404,
+            detail="会话不存在",
+        )
+    
+    return {
+        "code": 0,
+        "message": "success",
+        "data": {
+            "session_id": context.session_id,
+            "messages": context.messages,
+            "total": len(context.messages),
+        },
+    }
+
+
+@router.post("/{session_id}/end", response_model=dict)
+async def end_session(session_id: str):
+    """
+    结束会话
+    
+    主动结束导诊会话。
+    """
+    from src.core.triage_agent import get_triage_agent, TriageState
+    
+    agent = get_triage_agent()
+    context = agent.get_session(session_id)
+    
+    if not context:
+        raise HTTPException(
+            status_code=404,
+            detail="会话不存在",
+        )
+    
+    # 如果有收集到症状，生成最终建议
+    if context.symptoms:
+        context.state = TriageState.ANALYZING
+        result = agent._handle_analyzing(context)
+        
+        return {
+            "code": 0,
+            "message": "success",
+            "data": result,
+        }
+    else:
+        context.state = TriageState.COMPLETE
+        
+        return {
+            "code": 0,
+            "message": "success",
+            "data": {
+                "session_id": session_id,
+                "state": "complete",
+                "message": "导诊会话已结束。如需帮助，请开始新的会话。",
+                "is_complete": True,
+            },
+        }
+
+
+@router.get("/departments", response_model=dict)
 async def list_departments():
     """
     获取科室列表
     
-    返回医院常见科室及其说明。
+    返回系统支持的所有科室类型。
     """
     departments = [
-        {"name": "内科", "description": "呼吸、消化、心血管等内脏疾病"},
-        {"name": "外科", "description": "需要手术治疗的疾病"},
-        {"name": "骨科", "description": "骨骼、关节、肌肉疾病"},
-        {"name": "皮肤科", "description": "皮肤相关疾病"},
-        {"name": "眼科", "description": "眼部疾病"},
-        {"name": "耳鼻喉科", "description": "耳、鼻、咽喉疾病"},
-        {"name": "妇科", "description": "女性生殖系统疾病"},
-        {"name": "儿科", "description": "儿童疾病"},
-        {"name": "急诊科", "description": "紧急情况"},
+        {"id": "emergency", "name": "急诊科", "description": "紧急情况、意外伤害"},
+        {"id": "cardiovascular", "name": "心血管内科", "description": "心脏、血管相关疾病"},
+        {"id": "respiratory", "name": "呼吸内科", "description": "呼吸系统疾病"},
+        {"id": "gastroenterology", "name": "消化内科", "description": "消化系统疾病"},
+        {"id": "neurology", "name": "神经内科", "description": "神经系统疾病"},
+        {"id": "orthopedics", "name": "骨科", "description": "骨骼、关节疾病"},
+        {"id": "dermatology", "name": "皮肤科", "description": "皮肤疾病"},
+        {"id": "ent", "name": "耳鼻喉科", "description": "耳、鼻、咽喉疾病"},
+        {"id": "ophthalmology", "name": "眼科", "description": "眼部疾病"},
+        {"id": "psychiatry", "name": "心理科", "description": "心理健康问题"},
+        {"id": "endocrinology", "name": "内分泌科", "description": "内分泌代谢疾病"},
+        {"id": "urology", "name": "泌尿外科", "description": "泌尿系统疾病"},
+        {"id": "gynecology", "name": "妇科", "description": "女性生殖系统疾病"},
+        {"id": "general", "name": "全科门诊", "description": "常见病、多发病"},
+        {"id": "fever", "name": "发热门诊", "description": "发热、感染性疾病"},
     ]
     
     return {
         "code": 0,
         "message": "success",
-        "data": departments,
+        "data": {
+            "departments": departments,
+            "total": len(departments),
+        },
     }
