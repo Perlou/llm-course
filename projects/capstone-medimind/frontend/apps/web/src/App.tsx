@@ -5,6 +5,8 @@ import HealthQAPage from "./pages/HealthQAPage";
 import DrugSearchPage from "./pages/DrugSearchPage";
 import ReportPage from "./pages/ReportPage";
 import TriagePage from "./pages/TriagePage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
         <Route path="report" element={<ReportPage />} />
         <Route path="triage" element={<TriagePage />} />
       </Route>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
     </Routes>
   );
 }

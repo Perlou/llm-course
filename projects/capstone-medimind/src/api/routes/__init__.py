@@ -7,6 +7,7 @@ from .health_qa import router as health_qa_router
 from .drug import router as drug_router
 from .report import router as report_router
 from .triage import router as triage_router
+from .auth import router as auth_router
 
 __all__ = [
     "system_router",
@@ -14,4 +15,6 @@ __all__ = [
     "drug_router",
     "report_router",
     "triage_router",
+    "auth_router",
 ]
+

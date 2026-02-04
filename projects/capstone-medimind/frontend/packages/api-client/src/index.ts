@@ -11,6 +11,7 @@ export { healthApi } from "./health";
 export { drugApi } from "./drug";
 export { reportApi } from "./report";
 export { triageApi } from "./triage";
+export * as authApi from "./auth";
 
 // 重新导出类型
 export type * from "@medimind/types";

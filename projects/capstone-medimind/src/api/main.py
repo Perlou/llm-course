@@ -17,6 +17,7 @@ from src.api.routes import (
     drug_router,
     report_router,
     triage_router,
+    auth_router,
 )
 
 
@@ -69,6 +70,7 @@ def create_app() -> FastAPI:
     app.include_router(drug_router, prefix="/api/v1", tags=["药品查询"])
     app.include_router(report_router, prefix="/api/v1", tags=["报告解读"])
     app.include_router(triage_router, prefix="/api/v1", tags=["智能导诊"])
+    app.include_router(auth_router, prefix="/api/v1", tags=["用户认证"])
     
     # 全局异常处理
     @app.exception_handler(Exception)
