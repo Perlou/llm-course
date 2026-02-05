@@ -8,6 +8,7 @@ import TriagePage from "./pages/TriagePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ProfilePage from "./pages/ProfilePage";
+import HospitalPage from "./pages/HospitalPage";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="drug" element={<DrugSearchPage />} />
         <Route path="report" element={<ReportPage />} />
         <Route path="triage" element={<TriagePage />} />
+        <Route path="hospital" element={<HospitalPage />} />
       </Route>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />

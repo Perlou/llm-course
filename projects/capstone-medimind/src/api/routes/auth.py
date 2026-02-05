@@ -13,6 +13,7 @@ from src.models.user import (
     UserRegisterRequest,
     UserLoginRequest,
     UserUpdateRequest,
+    PasswordChangeRequest,
     hash_password,
     verify_password,
 )
@@ -29,7 +30,7 @@ _users_by_email: Dict[str, str] = {}  # email -> user_id
 async def register(request: UserRegisterRequest):
     """
     用户注册
-    
+
     创建新用户账号。
     """
     # 检查邮箱是否已注册
@@ -38,11 +39,11 @@ async def register(request: UserRegisterRequest):
             status_code=400,
             detail="该邮箱已被注册",
         )
-    
+
     # 创建用户
     user_id = generate_id("user_")
     now = datetime.utcnow()
-    
+
     user_data = {
         "id": user_id,
         "email": request.email.lower(),
@@ -54,15 +55,15 @@ async def register(request: UserRegisterRequest):
         "updated_at": now,
         "last_login_at": None,
     }
-    
+
     _users_db[user_id] = user_data
     _users_by_email[request.email.lower()] = user_id
-    
+
     log.info(f"新用户注册: {request.email}")
-    
+
     # 生成 Token
     access_token = create_access_token(user_id, request.email)
-    
+
     return {
         "code": 200,
         "message": "注册成功",
@@ -86,11 +87,11 @@ async def register(request: UserRegisterRequest):
 async def login(request: UserLoginRequest):
     """
     用户登录
-    
+
     验证用户凭据并返回 Token。
     """
     email = request.email.lower()
-    
+
     # 查找用户
     user_id = _users_by_email.get(email)
     if not user_id:
@@ -98,36 +99,36 @@ async def login(request: UserLoginRequest):
             status_code=401,
             detail="邮箱或密码错误",
         )
-    
+
     user = _users_db.get(user_id)
     if not user:
         raise HTTPException(
             status_code=401,
             detail="邮箱或密码错误",
         )
-    
+
     # 验证密码
     if not verify_password(request.password, user["password_hash"]):
         raise HTTPException(
             status_code=401,
             detail="邮箱或密码错误",
         )
-    
+
     # 检查账号状态
     if not user["is_active"]:
         raise HTTPException(
             status_code=403,
             detail="账号已被禁用",
         )
-    
+
     # 更新登录时间
     user["last_login_at"] = datetime.utcnow()
-    
+
     log.info(f"用户登录: {email}")
-    
+
     # 生成 Token
     access_token = create_access_token(user_id, email)
-    
+
     return {
         "code": 200,
         "message": "登录成功",
@@ -142,7 +143,9 @@ async def login(request: UserLoginRequest):
                 "avatar_url": user["avatar_url"],
                 "is_active": user["is_active"],
                 "created_at": user["created_at"].isoformat(),
-                "last_login_at": user["last_login_at"].isoformat() if user["last_login_at"] else None,
+                "last_login_at": user["last_login_at"].isoformat()
+                if user["last_login_at"]
+                else None,
             },
         },
     }
@@ -152,11 +155,11 @@ async def login(request: UserLoginRequest):
 async def logout(current_user: Dict = Depends(get_current_user)):
     """
     用户登出
-    
+
     客户端应删除本地存储的 Token。
     """
     log.info(f"用户登出: {current_user['email']}")
-    
+
     return {
         "code": 200,
         "message": "登出成功",
@@ -170,13 +173,13 @@ async def get_me(current_user: Dict = Depends(get_current_user)):
     获取当前用户信息
     """
     user = _users_db.get(current_user["user_id"])
-    
+
     if not user:
         raise HTTPException(
             status_code=404,
             detail="用户不存在",
         )
-    
+
     return {
         "code": 200,
         "message": "success",
@@ -187,7 +190,9 @@ async def get_me(current_user: Dict = Depends(get_current_user)):
             "avatar_url": user["avatar_url"],
             "is_active": user["is_active"],
             "created_at": user["created_at"].isoformat(),
-            "last_login_at": user["last_login_at"].isoformat() if user["last_login_at"] else None,
+            "last_login_at": user["last_login_at"].isoformat()
+            if user["last_login_at"]
+            else None,
         },
     }
 
@@ -201,23 +206,23 @@ async def update_me(
     更新当前用户信息
     """
     user = _users_db.get(current_user["user_id"])
-    
+
     if not user:
         raise HTTPException(
             status_code=404,
             detail="用户不存在",
         )
-    
+
     # 更新字段
     if request.nickname is not None:
         user["nickname"] = request.nickname
     if request.avatar_url is not None:
         user["avatar_url"] = request.avatar_url
-    
+
     user["updated_at"] = datetime.utcnow()
-    
+
     log.info(f"用户信息更新: {current_user['email']}")
-    
+
     return {
         "code": 200,
         "message": "更新成功",
@@ -230,4 +235,42 @@ async def update_me(
             "created_at": user["created_at"].isoformat(),
             "updated_at": user["updated_at"].isoformat(),
         },
+    }
+
+
+@router.put("/password")
+async def change_password(
+    request: PasswordChangeRequest,
+    current_user: Dict = Depends(get_current_user),
+):
+    """
+    修改密码
+
+    验证旧密码后更新为新密码。
+    """
+    user = _users_db.get(current_user["user_id"])
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="用户不存在",
+        )
+
+    # 验证旧密码
+    if not verify_password(request.old_password, user["password_hash"]):
+        raise HTTPException(
+            status_code=400,
+            detail="当前密码错误",
+        )
+
+    # 更新密码
+    user["password_hash"] = hash_password(request.new_password)
+    user["updated_at"] = datetime.utcnow()
+
+    log.info(f"用户密码修改: {current_user['email']}")
+
+    return {
+        "code": 200,
+        "message": "密码修改成功",
+        "data": None,
     }

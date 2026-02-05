@@ -19,6 +19,7 @@ from src.api.routes import (
     triage_router,
     auth_router,
     profile_router,
+    hospital_router,
 )
 
 
@@ -26,15 +27,15 @@ from src.api.routes import (
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     settings = get_settings()
-    
+
     # 启动时
     setup_logger(level=settings.log_level)
     log.info(f"🚀 {settings.app_name} v{settings.app_version} 启动中...")
     log.info(f"📍 环境: {settings.app_env}")
     log.info(f"🔧 调试模式: {settings.debug}")
-    
+
     yield
-    
+
     # 关闭时
     log.info(f"👋 {settings.app_name} 关闭")
 
@@ -42,7 +43,7 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     """创建 FastAPI 应用"""
     settings = get_settings()
-    
+
     app = FastAPI(
         title=settings.app_name,
         description="智能健康助手平台 - 提供健康问答、药品查询、报告解读、智能导诊服务",
@@ -51,7 +52,7 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
         lifespan=lifespan,
     )
-    
+
     # CORS 中间件
     app.add_middleware(
         CORSMiddleware,
@@ -60,11 +61,12 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
+
     # 护栏中间件 - 医疗安全检查
     from src.api.middleware import GuardrailMiddleware
+
     app.add_middleware(GuardrailMiddleware)
-    
+
     # 注册路由
     app.include_router(system_router, prefix="/api/v1", tags=["系统"])
     app.include_router(health_qa_router, prefix="/api/v1", tags=["健康问答"])
@@ -73,7 +75,8 @@ def create_app() -> FastAPI:
     app.include_router(triage_router, prefix="/api/v1", tags=["智能导诊"])
     app.include_router(auth_router, prefix="/api/v1", tags=["用户认证"])
     app.include_router(profile_router, prefix="/api/v1", tags=["健康档案"])
-    
+    app.include_router(hospital_router, prefix="/api/v1", tags=["医院推荐"])
+
     # 全局异常处理
     @app.exception_handler(Exception)
     async def global_exception_handler(request, exc):
@@ -86,7 +89,7 @@ def create_app() -> FastAPI:
                 "data": None,
             },
         )
-    
+
     return app
 
 
@@ -96,6 +99,7 @@ app = create_app()
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "src.api.main:app",
         host="0.0.0.0",

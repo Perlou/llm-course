@@ -9,6 +9,7 @@ from .report import router as report_router
 from .triage import router as triage_router
 from .auth import router as auth_router
 from .profile import router as profile_router
+from .hospital import router as hospital_router
 
 __all__ = [
     "system_router",
@@ -18,5 +19,5 @@ __all__ = [
     "triage_router",
     "auth_router",
     "profile_router",
+    "hospital_router",
 ]
-

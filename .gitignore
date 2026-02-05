@@ -48,3 +48,5 @@ logs/
 build/
 dist/
 *.egg-info/
+
+ex/

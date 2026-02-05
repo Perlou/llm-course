@@ -7,6 +7,7 @@ import {
   Mic,
   Send,
   Bot,
+  MapPin,
 } from "lucide-react";
 import { SafetyBanner, FeatureCard, Input, Button } from "@medimind/ui";
 import { useState } from "react";
@@ -107,6 +108,14 @@ export default function HomePage() {
             description="基于症状智能评估，推荐就医科室。"
             color="orange"
             onClick={() => navigate("/triage")}
+          />
+          <FeatureCard
+            icon={<MapPin className="w-6 h-6" />}
+            title="附近医院"
+            titleEn="Nearby Hospitals"
+            description="基于位置搜索附近医院，导航就诊。"
+            color="blue"
+            onClick={() => navigate("/hospital")}
           />
         </div>
       </div>

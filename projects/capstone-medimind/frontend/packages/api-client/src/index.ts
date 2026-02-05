@@ -13,6 +13,15 @@ export { reportApi } from "./report";
 export { triageApi } from "./triage";
 export * as authApi from "./auth";
 export * as profileApi from "./profile";
+export { hospitalApi } from "./hospital";
+export type {
+  Hospital,
+  Location,
+  NearbySearchParams,
+  NearbySearchResult,
+  RecommendRequest,
+  RecommendResult,
+} from "./hospital";
 
 // 重新导出类型
 export type * from "@medimind/types";

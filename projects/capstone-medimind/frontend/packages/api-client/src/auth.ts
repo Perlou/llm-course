@@ -2,7 +2,7 @@
  * 认证 API 客户端
  */
 
-import { post, get } from "./client";
+import { post, get, put } from "./client";
 
 /** 用户信息 */
 export interface User {
@@ -77,6 +77,21 @@ export async function getMe(): Promise<User> {
  * 更新用户信息
  */
 export async function updateMe(data: UpdateUserRequest): Promise<User> {
-  const response = await post<User>("/auth/me", data);
+  const response = await put<User>("/auth/me", data);
   return response.data;
+}
+
+/** 修改密码请求 */
+export interface ChangePasswordRequest {
+  old_password: string;
+  new_password: string;
+}
+
+/**
+ * 修改密码
+ */
+export async function changePassword(
+  data: ChangePasswordRequest,
+): Promise<void> {
+  await put("/auth/password", data);
 }

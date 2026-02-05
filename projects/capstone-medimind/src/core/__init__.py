@@ -3,7 +3,7 @@ MediMind - 核心模块
 """
 
 from .parser import DocumentParser, ParsedDocument
-from .chunker import Chunker, TextChunk  
+from .chunker import Chunker, TextChunk
 from .embedder import Embedder, get_embedder
 from .vector_store import VectorStore, get_vector_store
 from .retriever import Retriever, RetrievalResult, get_retriever
@@ -20,6 +20,7 @@ from .report_analyzer import (
     get_report_analyzer,
 )
 from .conversation_service import ConversationService, get_conversation_service
+from .hospital_service import HospitalService, Hospital, get_hospital_service
 from .prompts import (
     HEALTH_QA_SYSTEM_PROMPT,
     HEALTH_QA_USER_PROMPT,
@@ -75,6 +76,10 @@ __all__ = [
     # 对话服务
     "ConversationService",
     "get_conversation_service",
+    # 医院服务
+    "HospitalService",
+    "Hospital",
+    "get_hospital_service",
     # Prompts
     "HEALTH_QA_SYSTEM_PROMPT",
     "HEALTH_QA_USER_PROMPT",
@@ -82,4 +87,3 @@ __all__ = [
     "MEDICAL_DISCLAIMER",
     "EMERGENCY_ALERT",
 ]
-

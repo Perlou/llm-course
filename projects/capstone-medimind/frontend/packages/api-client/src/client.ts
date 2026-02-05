@@ -76,6 +76,15 @@ export async function post<T>(
   return response.data;
 }
 
+/** PUT 请求 */
+export async function put<T>(
+  endpoint: string,
+  data?: unknown,
+): Promise<ApiResponse<T>> {
+  const response = await axiosInstance.put<ApiResponse<T>>(endpoint, data);
+  return response.data;
+}
+
 /** DELETE 请求 */
 export async function del<T>(endpoint: string): Promise<ApiResponse<T>> {
   const response = await axiosInstance.delete<ApiResponse<T>>(endpoint);
