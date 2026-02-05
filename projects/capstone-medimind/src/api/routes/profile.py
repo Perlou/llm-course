@@ -5,7 +5,7 @@ MediMind - 健康档案路由
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import Dict, Any, List, Optional
 
@@ -30,7 +30,7 @@ async def get_profile(current_user: Dict = Depends(get_current_user)):
     """
     user_id = current_user["user_id"]
     profile = _profiles_db.get(user_id)
-    
+
     if not profile:
         # 创建默认档案
         profile = {
@@ -43,11 +43,11 @@ async def get_profile(current_user: Dict = Depends(get_current_user)):
             "blood_type": None,
             "allergies": [],
             "medical_history": [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
         }
         _profiles_db[user_id] = profile
-    
+
     return {
         "code": 200,
         "message": "success",
@@ -65,15 +65,15 @@ async def update_profile(
     """
     user_id = current_user["user_id"]
     profile = _profiles_db.get(user_id)
-    
+
     if not profile:
         profile = {
             "id": generate_id("profile_"),
             "user_id": user_id,
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
         }
         _profiles_db[user_id] = profile
-    
+
     # 更新字段
     if request.gender is not None:
         profile["gender"] = request.gender
@@ -89,11 +89,11 @@ async def update_profile(
         profile["allergies"] = request.allergies
     if request.medical_history is not None:
         profile["medical_history"] = request.medical_history
-    
-    profile["updated_at"] = datetime.utcnow()
-    
+
+    profile["updated_at"] = datetime.now(timezone.utc)
+
     log.info(f"健康档案更新: {user_id}")
-    
+
     return {
         "code": 200,
         "message": "更新成功",
@@ -113,18 +113,18 @@ async def get_records(
     """
     user_id = current_user["user_id"]
     records = _records_db.get(user_id, [])
-    
+
     # 筛选类型
     if record_type:
         records = [r for r in records if r["record_type"] == record_type]
-    
+
     # 排序（时间倒序）
     records = sorted(records, key=lambda r: r["recorded_at"], reverse=True)
-    
+
     # 分页
     total = len(records)
-    records = records[offset:offset + limit]
-    
+    records = records[offset : offset + limit]
+
     return {
         "code": 200,
         "message": "success",
@@ -146,10 +146,10 @@ async def add_record(
     添加健康记录
     """
     user_id = current_user["user_id"]
-    
+
     if user_id not in _records_db:
         _records_db[user_id] = []
-    
+
     record = {
         "id": generate_id("rec_"),
         "user_id": user_id,
@@ -158,13 +158,13 @@ async def add_record(
         "unit": request.unit,
         "recorded_at": request.recorded_at,
         "notes": request.notes,
-        "created_at": datetime.utcnow(),
+        "created_at": datetime.now(timezone.utc),
     }
-    
+
     _records_db[user_id].append(record)
-    
+
     log.info(f"健康记录添加: {user_id}, type={request.record_type}")
-    
+
     return {
         "code": 200,
         "message": "添加成功",
@@ -182,7 +182,7 @@ async def delete_record(
     """
     user_id = current_user["user_id"]
     records = _records_db.get(user_id, [])
-    
+
     for i, record in enumerate(records):
         if record["id"] == record_id:
             del records[i]
@@ -192,7 +192,7 @@ async def delete_record(
                 "message": "删除成功",
                 "data": {"deleted": record_id},
             }
-    
+
     raise HTTPException(status_code=404, detail="记录不存在")
 
 
@@ -202,7 +202,9 @@ def _serialize_profile(profile: Dict) -> Dict:
         "id": profile["id"],
         "user_id": profile["user_id"],
         "gender": profile.get("gender"),
-        "birth_date": profile.get("birth_date").isoformat() if profile.get("birth_date") else None,
+        "birth_date": profile.get("birth_date").isoformat()
+        if profile.get("birth_date")
+        else None,
         "height_cm": profile.get("height_cm"),
         "weight_kg": profile.get("weight_kg"),
         "blood_type": profile.get("blood_type"),
@@ -220,7 +222,9 @@ def _serialize_record(record: Dict) -> Dict:
         "record_type": record["record_type"],
         "value": record["value"],
         "unit": record.get("unit"),
-        "recorded_at": record["recorded_at"].isoformat() if isinstance(record["recorded_at"], datetime) else record["recorded_at"],
+        "recorded_at": record["recorded_at"].isoformat()
+        if isinstance(record["recorded_at"], datetime)
+        else record["recorded_at"],
         "notes": record.get("notes"),
         "created_at": record["created_at"].isoformat(),
     }

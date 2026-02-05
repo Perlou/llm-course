@@ -20,6 +20,7 @@ from src.api.routes import (
     auth_router,
     profile_router,
     hospital_router,
+    reminder_router,
 )
 
 
@@ -76,6 +77,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router, prefix="/api/v1", tags=["用户认证"])
     app.include_router(profile_router, prefix="/api/v1", tags=["健康档案"])
     app.include_router(hospital_router, prefix="/api/v1", tags=["医院推荐"])
+    app.include_router(reminder_router, prefix="/api/v1", tags=["提醒管理"])
 
     # 全局异常处理
     @app.exception_handler(Exception)

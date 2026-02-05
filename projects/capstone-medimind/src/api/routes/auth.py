@@ -4,7 +4,7 @@ MediMind - 用户认证路由
 用户注册、登录、信息管理接口。
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any
 
@@ -42,7 +42,7 @@ async def register(request: UserRegisterRequest):
 
     # 创建用户
     user_id = generate_id("user_")
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     user_data = {
         "id": user_id,
@@ -122,7 +122,7 @@ async def login(request: UserLoginRequest):
         )
 
     # 更新登录时间
-    user["last_login_at"] = datetime.utcnow()
+    user["last_login_at"] = datetime.now(timezone.utc)
 
     log.info(f"用户登录: {email}")
 
@@ -219,7 +219,7 @@ async def update_me(
     if request.avatar_url is not None:
         user["avatar_url"] = request.avatar_url
 
-    user["updated_at"] = datetime.utcnow()
+    user["updated_at"] = datetime.now(timezone.utc)
 
     log.info(f"用户信息更新: {current_user['email']}")
 
@@ -265,7 +265,7 @@ async def change_password(
 
     # 更新密码
     user["password_hash"] = hash_password(request.new_password)
-    user["updated_at"] = datetime.utcnow()
+    user["updated_at"] = datetime.now(timezone.utc)
 
     log.info(f"用户密码修改: {current_user['email']}")
 

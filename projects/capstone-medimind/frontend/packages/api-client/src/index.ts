@@ -14,6 +14,14 @@ export { triageApi } from "./triage";
 export * as authApi from "./auth";
 export * as profileApi from "./profile";
 export { hospitalApi } from "./hospital";
+export { reminderApi } from "./reminder";
+export type {
+  Reminder,
+  ReminderType,
+  RepeatType,
+  CreateReminderRequest,
+  UpdateReminderRequest,
+} from "./reminder";
 export type {
   Hospital,
   Location,

@@ -1,0 +1,27 @@
+{
+  "name": "MediMind 健康助手",
+  "short_name": "MediMind",
+  "description": "您的智能健康信息服务平台 - 健康问答、药品查询、报告解读、智能导诊",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#667eea",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "medical", "lifestyle"],
+  "lang": "zh-CN",
+  "dir": "ltr"
+}

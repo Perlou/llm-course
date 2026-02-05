@@ -9,6 +9,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ProfilePage from "./pages/ProfilePage";
 import HospitalPage from "./pages/HospitalPage";
+import ReminderPage from "./pages/ReminderPage";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="report" element={<ReportPage />} />
         <Route path="triage" element={<TriagePage />} />
         <Route path="hospital" element={<HospitalPage />} />
+        <Route path="reminder" element={<ReminderPage />} />
       </Route>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />

@@ -8,6 +8,7 @@ import {
   Send,
   Bot,
   MapPin,
+  Bell,
 } from "lucide-react";
 import { SafetyBanner, FeatureCard, Input, Button } from "@medimind/ui";
 import { useState } from "react";
@@ -116,6 +117,14 @@ export default function HomePage() {
             description="基于位置搜索附近医院，导航就诊。"
             color="blue"
             onClick={() => navigate("/hospital")}
+          />
+          <FeatureCard
+            icon={<Bell className="w-6 h-6" />}
+            title="提醒管理"
+            titleEn="Reminders"
+            description="设置用药、测量、复查提醒，管理健康。"
+            color="orange"
+            onClick={() => navigate("/reminder")}
           />
         </div>
       </div>
