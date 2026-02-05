@@ -183,7 +183,7 @@ def openai_compatible_api():
         # 尝试获取模型列表
         try:
             response = client.chat.completions.create(
-                model="llama3.1",  # 或其他已下载的模型
+                model="qwen2.5:7b",  # 或其他已下载的模型
                 messages=[{"role": "user", "content": "你好，请用一句话介绍你自己。"}],
                 max_tokens=100,
             )
@@ -193,8 +193,8 @@ def openai_compatible_api():
             print("\n✅ 本地模型调用成功！")
 
         except Exception as e:
-            if "llama3.1" in str(e) or "model" in str(e).lower():
-                print(f"⚠️ 模型未找到，请先运行: ollama pull llama3.1")
+            if "qwen2.5:7b" in str(e) or "model" in str(e).lower():
+                print(f"⚠️ 模型未找到，请先运行: ollama pull qwen2.5:7b")
             else:
                 print(f"⚠️ 调用失败: {e}")
                 print("   请确保 Ollama 正在运行: ollama serve")

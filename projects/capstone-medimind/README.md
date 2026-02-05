@@ -51,7 +51,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # 3. 安装前端依赖
-cd frontend && npm install && cd ..
+cd frontend && pnpm install && cd ..
 
 # 4. 配置环境变量
 cp .env.example .env
