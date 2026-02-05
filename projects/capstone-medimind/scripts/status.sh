@@ -1,7 +1,8 @@
 #!/bin/bash
 # MediMind 项目状态检查脚本
 
-PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_ROOT"
 
 echo "📊 MediMind 服务状态"
@@ -31,5 +32,5 @@ if $BACKEND_RUNNING && $FRONTEND_RUNNING; then
 elif $BACKEND_RUNNING || $FRONTEND_RUNNING; then
     echo "🟡 部分服务运行中"
 else
-    echo "🔴 服务未启动，运行 ./start.sh 启动"
+    echo "🔴 服务未启动，运行 ./scripts/start.sh 启动"
 fi

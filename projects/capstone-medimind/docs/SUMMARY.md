@@ -67,8 +67,7 @@ capstone-medimind/
 ├── data/               # 数据文件
 ├── tests/              # 测试用例
 ├── docs/               # 文档
-├── start.sh            # 启动脚本
-├── stop.sh             # 停止脚本
+├── scripts/            # 运维脚本
 └── requirements.txt    # 依赖
 ```
 
@@ -88,9 +87,11 @@ capstone-medimind/
 ## 🚀 启动方式
 
 ```bash
-./start.sh   # 启动
-./stop.sh    # 停止
-./status.sh  # 状态
+./scripts/start.sh          # 启动 (后台)
+./scripts/stop.sh           # 停止
+./scripts/status.sh         # 状态
+./scripts/start_backend.sh  # 只启动后端 (前台)
+./scripts/start_frontend.sh # 只启动前端 (前台)
 ```
 
 ---

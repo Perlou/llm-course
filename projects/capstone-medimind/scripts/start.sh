@@ -4,7 +4,8 @@
 
 set -e
 
-PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_ROOT"
 
 echo "🚀 启动 MediMind..."
@@ -45,4 +46,4 @@ echo "📋 日志文件:"
 echo "   后端: logs/backend.log"
 echo "   前端: logs/frontend.log"
 echo ""
-echo "💡 停止服务: ./stop.sh"
+echo "💡 停止服务: ./scripts/stop.sh"

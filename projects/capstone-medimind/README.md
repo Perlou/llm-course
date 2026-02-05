@@ -58,7 +58,7 @@ cp .env.example .env
 # 编辑 .env 设置 GEMINI_API_KEY 等
 
 # 5. 启动项目
-./start.sh
+./scripts/start.sh
 
 # 访问: http://localhost:5173
 ```
@@ -66,9 +66,13 @@ cp .env.example .env
 ### 启动/停止脚本
 
 ```bash
-./start.sh   # 启动后端 + 前端
-./stop.sh    # 停止所有服务
-./status.sh  # 检查服务状态
+./scripts/start.sh          # 启动后端 + 前端 (后台运行)
+./scripts/stop.sh           # 停止所有服务
+./scripts/status.sh         # 检查服务状态
+
+# 独立启动 (前台运行，方便调试)
+./scripts/start_backend.sh  # 只启动后端 (Ctrl+C 停止)
+./scripts/start_frontend.sh # 只启动前端 (Ctrl+C 停止)
 ```
 
 ---
@@ -123,10 +127,16 @@ capstone-medimind/
 │   ├── medical_docs/       # 医学文档
 │   ├── drug_db/            # 药品数据
 │   └── chroma_index/       # 向量索引
+├── scripts/                # 运维脚本
+│   ├── start.sh           # 启动脚本 (后台运行)
+│   ├── start_backend.sh   # 后端启动 (前台)
+│   ├── start_frontend.sh  # 前端启动 (前台)
+│   ├── stop.sh            # 停止脚本
+│   ├── status.sh          # 状态检查
+│   ├── init_db.py         # 数据库初始化
+│   └── load_data.py       # 数据加载
 ├── tests/                  # 测试用例
 ├── docs/                   # 项目文档
-├── start.sh                # 启动脚本
-├── stop.sh                 # 停止脚本
 └── requirements.txt        # Python 依赖
 ```
 

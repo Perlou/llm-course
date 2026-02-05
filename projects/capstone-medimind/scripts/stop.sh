@@ -2,7 +2,8 @@
 # MediMind 项目停止脚本
 # 停止后端 API 和前端开发服务器
 
-PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_ROOT"
 
 echo "🛑 停止 MediMind..."
