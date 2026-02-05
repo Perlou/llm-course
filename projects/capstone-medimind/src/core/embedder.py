@@ -6,10 +6,9 @@ MediMind - 向量嵌入器
 
 from typing import List, Union, TYPE_CHECKING
 
-from src.utils import get_settings, log
+import numpy as np
 
-if TYPE_CHECKING:
-    import numpy as np
+from src.utils import get_settings, log
 
 
 class Embedder:
@@ -22,7 +21,7 @@ class Embedder:
     ):
         settings = get_settings()
         embedding = settings.embedding
-        
+
         self.model_name = model_name or embedding.model
         self.device = device or embedding.device
         self.model = None
@@ -32,23 +31,23 @@ class Embedder:
         """延迟加载模型"""
         if self.model is not None:
             return
-        
+
         try:
             from sentence_transformers import SentenceTransformer
-            
+
             log.info(f"加载嵌入模型: {self.model_name}")
-            
+
             # 确定设备
             device = self._get_device()
-            
+
             self.model = SentenceTransformer(
                 self.model_name,
                 device=device,
             )
             self._dimension = self.model.get_sentence_embedding_dimension()
-            
+
             log.info(f"嵌入模型加载完成，维度: {self._dimension}，设备: {device}")
-            
+
         except Exception as e:
             log.error(f"加载嵌入模型失败: {e}")
             raise
@@ -57,40 +56,41 @@ class Embedder:
         """获取计算设备"""
         if self.device != "auto":
             return self.device
-        
+
         try:
             import torch
+
             if torch.cuda.is_available():
                 return "cuda"
             elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
                 return "mps"
         except ImportError:
             pass
-        
+
         return "cpu"
 
-    def embed(self, texts: Union[str, List[str]]) -> "np.ndarray":
+    def embed(self, texts: Union[str, List[str]]) -> np.ndarray:
         """
         生成文本向量嵌入
-        
+
         Args:
             texts: 单个文本或文本列表
-            
+
         Returns:
             嵌入向量 (numpy array)
         """
         self._load_model()
-        
+
         if isinstance(texts, str):
             texts = [texts]
-        
+
         embeddings = self.model.encode(
             texts,
             normalize_embeddings=True,  # L2 归一化
             show_progress_bar=len(texts) > 100,
             batch_size=32,
         )
-        
+
         return embeddings
 
     def embed_query(self, query: str) -> np.ndarray:

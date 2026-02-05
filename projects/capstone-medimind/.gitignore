@@ -1,6 +1,6 @@
 # MediMind .gitignore
 
-# Python
+# ===== Python =====
 __pycache__/
 *.py[cod]
 *$py.class
@@ -22,13 +22,13 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
+# ===== Virtual Environment =====
 venv/
 ENV/
 env/
 .venv/
 
-# IDE
+# ===== IDE =====
 .idea/
 .vscode/
 *.swp
@@ -38,39 +38,36 @@ env/
 .pydevproject
 .settings/
 
-# Environment variables
+# ===== Environment Variables =====
 .env
 .env.local
 .env.*.local
+!.env.example
 
-# Logs
+# ===== Logs =====
 logs/
 *.log
 
-# Data
-data/
-!data/.gitkeep
-
-# Chroma
-chroma_index/
-
-# Database
+# ===== Database =====
 *.db
 *.sqlite
+*.sqlite3
+data/medimind.db
 
-# Testing
+# ===== Testing =====
 .pytest_cache/
 .coverage
 htmlcov/
 .tox/
 .nox/
 
-# mypy
+# ===== Type Checking =====
 .mypy_cache/
 .dmypy.json
 dmypy.json
 
-# Frontend
+# ===== Frontend =====
+node_modules/
 frontend/node_modules/
 frontend/.turbo/
 frontend/apps/*/dist/
@@ -78,13 +75,38 @@ frontend/packages/*/dist/
 .next/
 out/
 .pnpm-store/
+*.tsbuildinfo
 
-# OS
+# ===== OS =====
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Temporary
+# ===== Temporary =====
 tmp/
 temp/
 *.tmp
 *.temp
+
+# ===== PID Files =====
+.backend.pid
+.frontend.pid
+
+# ===== Agent =====
+.agent/
+
+# ===== Keep Important Directories =====
+# 保留 data 和 models 目录 (包含训练数据和模型)
+!data/
+data/*
+!data/.gitkeep
+!data/medical_docs/
+!data/drug_db/
+!data/lab_indices/
+
+# Chroma 索引可重建，不需要提交
+data/chroma_index/
+
+!models/
+models/*
+!models/.gitkeep

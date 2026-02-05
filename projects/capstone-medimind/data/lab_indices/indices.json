@@ -1,0 +1,162 @@
+[
+  {
+    "id": "lab_001",
+    "name": "血红蛋白",
+    "abbreviation": "Hb/HGB",
+    "unit": "g/L",
+    "normal_range": {
+      "male": "120-160",
+      "female": "110-150",
+      "child": "110-160"
+    },
+    "category": "血常规",
+    "description": "血红蛋白是红细胞中的含铁蛋白质，负责运输氧气。",
+    "high_meaning": "可能见于：真性红细胞增多症、脱水、高原居住者、慢性肺病等。",
+    "low_meaning": "可能见于：各种贫血（缺铁性贫血、巨幼细胞性贫血、再生障碍性贫血等）、失血、营养不良等。",
+    "advice_high": "建议进一步检查，排除血液系统疾病，注意补充水分。",
+    "advice_low": "建议查明贫血原因，适当补充铁剂、维生素B12、叶酸等，必要时就医。"
+  },
+  {
+    "id": "lab_002",
+    "name": "白细胞计数",
+    "abbreviation": "WBC",
+    "unit": "×10⁹/L",
+    "normal_range": {
+      "adult": "4.0-10.0",
+      "child": "5.0-12.0"
+    },
+    "category": "血常规",
+    "description": "白细胞是免疫系统的重要组成部分，负责抵抗感染。",
+    "high_meaning": "可能见于：细菌感染、炎症、应激状态、白血病等。",
+    "low_meaning": "可能见于：病毒感染、某些药物影响、骨髓抑制、自身免疫病等。",
+    "advice_high": "如伴有发热等感染症状，建议就医查明原因。",
+    "advice_low": "注意防护，避免感染，建议就医查明原因。"
+  },
+  {
+    "id": "lab_003",
+    "name": "血小板计数",
+    "abbreviation": "PLT",
+    "unit": "×10⁹/L",
+    "normal_range": {
+      "adult": "100-300"
+    },
+    "category": "血常规",
+    "description": "血小板参与止血过程，是凝血的重要成分。",
+    "high_meaning": "可能见于：慢性炎症、缺铁性贫血、恶性肿瘤、脾切除后等。",
+    "low_meaning": "可能见于：血小板减少性紫癜、再生障碍性贫血、病毒感染、某些药物等。",
+    "advice_high": "一般无需特殊处理，但需排除基础疾病。",
+    "advice_low": "注意避免外伤，如有出血倾向应及时就医。"
+  },
+  {
+    "id": "lab_004",
+    "name": "空腹血糖",
+    "abbreviation": "FPG/GLU",
+    "unit": "mmol/L",
+    "normal_range": {
+      "adult": "3.9-6.1"
+    },
+    "category": "血糖",
+    "description": "空腹血糖是指禁食8-12小时后检测的血浆葡萄糖水平。",
+    "high_meaning": "6.1-7.0 为空腹血糖受损（糖尿病前期）；≥7.0 可能为糖尿病。",
+    "low_meaning": "可能见于：胰岛素过量、进食不足、肝功能障碍、某些内分泌疾病等。",
+    "advice_high": "建议控制饮食，加强运动，定期复查血糖，必要时就医。",
+    "advice_low": "及时进食含糖食物，严重者需就医。"
+  },
+  {
+    "id": "lab_005",
+    "name": "糖化血红蛋白",
+    "abbreviation": "HbA1c",
+    "unit": "%",
+    "normal_range": {
+      "adult": "4.0-6.0"
+    },
+    "category": "血糖",
+    "description": "反映过去2-3个月的平均血糖水平。",
+    "high_meaning": "≥6.5% 可诊断糖尿病；6.0-6.5% 为糖尿病前期。",
+    "low_meaning": "少见，可能与贫血、溶血等有关。",
+    "advice_high": "建议综合管理血糖，控制饮食，规律运动，遵医嘱用药。",
+    "advice_low": "需结合其他指标判断，建议就医检查。"
+  },
+  {
+    "id": "lab_006",
+    "name": "总胆固醇",
+    "abbreviation": "TC/CHOL",
+    "unit": "mmol/L",
+    "normal_range": {
+      "desirable": "<5.2",
+      "borderline": "5.2-6.2",
+      "high": "≥6.2"
+    },
+    "category": "血脂",
+    "description": "总胆固醇是血液中所有脂蛋白所含胆固醇的总和。",
+    "high_meaning": "增加动脉粥样硬化和心脑血管疾病风险。",
+    "low_meaning": "少见，可能见于甲亢、肝病、营养不良等。",
+    "advice_high": "建议低脂饮食，增加运动，必要时遵医嘱使用降脂药。",
+    "advice_low": "需排除基础疾病，改善营养状况。"
+  },
+  {
+    "id": "lab_007",
+    "name": "低密度脂蛋白胆固醇",
+    "abbreviation": "LDL-C",
+    "unit": "mmol/L",
+    "normal_range": {
+      "desirable": "<3.4",
+      "borderline": "3.4-4.1",
+      "high": "≥4.1"
+    },
+    "category": "血脂",
+    "description": "LDL-C 被称为'坏胆固醇'，水平过高会增加动脉硬化风险。",
+    "high_meaning": "心血管疾病风险增加。",
+    "low_meaning": "一般无临床意义，过低可能与营养不良有关。",
+    "advice_high": "建议低脂饮食，减少饱和脂肪摄入，必要时药物治疗。",
+    "advice_low": "一般无需特殊处理。"
+  },
+  {
+    "id": "lab_008",
+    "name": "谷丙转氨酶",
+    "abbreviation": "ALT/GPT",
+    "unit": "U/L",
+    "normal_range": {
+      "male": "0-40",
+      "female": "0-35"
+    },
+    "category": "肝功能",
+    "description": "ALT 主要存在于肝细胞中，是反映肝细胞损伤的敏感指标。",
+    "high_meaning": "可能见于：病毒性肝炎、酒精性肝病、脂肪肝、药物性肝损伤等。",
+    "low_meaning": "一般无临床意义。",
+    "advice_high": "建议戒酒，避免肝毒性药物，进一步检查病因。",
+    "advice_low": "无需特殊处理。"
+  },
+  {
+    "id": "lab_009",
+    "name": "血肌酐",
+    "abbreviation": "Cr/CREA",
+    "unit": "μmol/L",
+    "normal_range": {
+      "male": "57-111",
+      "female": "44-97"
+    },
+    "category": "肾功能",
+    "description": "肌酐是肌肉代谢产物，通过肾脏排出，反映肾小球滤过功能。",
+    "high_meaning": "可能见于：急慢性肾功能不全、肾脏疾病、脱水等。",
+    "low_meaning": "可能见于：肌肉量减少、营养不良等，一般无临床意义。",
+    "advice_high": "建议进一步检查肾功能，控制血压和血糖，避免肾毒性药物。",
+    "advice_low": "一般无需特殊处理。"
+  },
+  {
+    "id": "lab_010",
+    "name": "尿酸",
+    "abbreviation": "UA/URIC",
+    "unit": "μmol/L",
+    "normal_range": {
+      "male": "208-428",
+      "female": "155-357"
+    },
+    "category": "肾功能",
+    "description": "尿酸是嘌呤代谢的终产物，水平过高可能导致痛风。",
+    "high_meaning": "可能见于：痛风、肾功能不全、高嘌呤饮食、代谢综合征等。",
+    "low_meaning": "少见，可能与某些遗传病或药物有关。",
+    "advice_high": "建议低嘌呤饮食，多饮水，控制体重，必要时药物治疗。",
+    "advice_low": "一般无需特殊处理。"
+  }
+]
