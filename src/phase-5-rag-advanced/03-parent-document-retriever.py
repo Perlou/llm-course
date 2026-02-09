@@ -262,15 +262,118 @@ def exercises():
     练习 1：参数调优
         测试不同父块/子块大小对检索效果的影响。
 
+        ✅ 参考答案：
+        ```python
+        from langchain.text_splitter import RecursiveCharacterTextSplitter
+        from langchain.retrievers import ParentDocumentRetriever
+        from langchain.storage import InMemoryStore
+
+        configs = [
+            {"parent": 2000, "child": 200},
+            {"parent": 1500, "child": 300},
+            {"parent": 1000, "child": 500},
+        ]
+
+        for config in configs:
+            parent_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=config["parent"]
+            )
+            child_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=config["child"]
+            )
+            
+            store = InMemoryStore()
+            retriever = ParentDocumentRetriever(
+                vectorstore=vectorstore,
+                docstore=store,
+                parent_splitter=parent_splitter,
+                child_splitter=child_splitter,
+            )
+            retriever.add_documents(docs)
+            
+            results = retriever.invoke("query")
+            print(f"Parent={config['parent']}, Child={config['child']}: {len(results)} 结果")
+        ```
+
     练习 2：持久化存储
         使用 Redis 或 SQLite 替代 InMemoryStore。
+
+        ✅ 参考答案：
+        ```python
+        import sqlite3
+        import json
+        from langchain.storage.in_memory import InMemoryStore
+
+        class SQLiteDocStore:
+            def __init__(self, db_path: str):
+                self.conn = sqlite3.connect(db_path)
+                self.conn.execute('''
+                    CREATE TABLE IF NOT EXISTS docstore
+                    (key TEXT PRIMARY KEY, value TEXT)
+                ''')
+
+            def mset(self, items):
+                for key, doc in items:
+                    self.conn.execute(
+                        'INSERT OR REPLACE INTO docstore VALUES (?, ?)',
+                        (key, json.dumps({"content": doc.page_content, "metadata": doc.metadata}))
+                    )
+                self.conn.commit()
+
+            def mget(self, keys):
+                results = []
+                for key in keys:
+                    row = self.conn.execute(
+                        'SELECT value FROM docstore WHERE key = ?', (key,)
+                    ).fetchone()
+                    if row:
+                        data = json.loads(row[0])
+                        results.append(Document(page_content=data["content"], metadata=data["metadata"]))
+                    else:
+                        results.append(None)
+                return results
+        ```
 
     练习 3：效果对比
         对比普通检索和父文档检索的回答质量。
 
+        ✅ 参考答案：
+        ```python
+        def compare_retrieval(query: str):
+            # 普通检索
+            normal_docs = normal_retriever.invoke(query)
+            normal_context = "\\n".join(d.page_content for d in normal_docs[:3])
+            
+            # 父文档检索
+            parent_docs = parent_retriever.invoke(query)
+            parent_context = "\\n".join(d.page_content for d in parent_docs[:3])
+            
+            print(f"普通检索上下文长度: {len(normal_context)}")
+            print(f"父文档检索上下文长度: {len(parent_context)}")
+            
+            # 生成回答对比
+            answer_normal = generate_answer(normal_context, query)
+            answer_parent = generate_answer(parent_context, query)
+            
+            return {"normal": answer_normal, "parent": answer_parent}
+        ```
+
     思考题：
         1. 子块应该多小？父块应该多大？
+           
+           ✅ 答案：
+           - 子块：100-300 字符，足够精准定位
+           - 父块：500-2000 字符，提供完整上下文
+           - 比例：父块是子块的 5-10 倍
+           - 根据文档类型调整：技术文档可大，对话可小
+
         2. 重叠率如何设置？
+           
+           ✅ 答案：
+           - 子块重叠：10-20%，避免边界问题
+           - 父块重叠：可以不重叠或少量重叠
+           - 跨段落内容需要更大重叠
+           - 代码块建议按函数/类边界分割
     """)
 
 

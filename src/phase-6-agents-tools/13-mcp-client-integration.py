@@ -296,16 +296,123 @@ def exercises():
     print("""
     练习 1：实现连接池
         管理多个 Server 连接，支持连接复用
+
+        ✅ 参考答案：
+        ```python
+        from collections import defaultdict
+        import asyncio
+
+        class MCPConnectionPool:
+            def __init__(self, max_connections: int = 5):
+                self.max_connections = max_connections
+                self.connections = {}
+                self.available = defaultdict(list)
+                self.lock = asyncio.Lock()
+
+            async def get_connection(self, server_name: str):
+                '''获取或创建连接'''
+                async with self.lock:
+                    # 检查是否有可用连接
+                    if self.available[server_name]:
+                        return self.available[server_name].pop()
+                    
+                    # 创建新连接
+                    if len(self.connections.get(server_name, [])) < self.max_connections:
+                        conn = await self.create_connection(server_name)
+                        self.connections.setdefault(server_name, []).append(conn)
+                        return conn
+                    
+                    raise RuntimeError("连接池已满")
+
+            async def release(self, server_name: str, conn):
+                '''释放连接回池'''
+                async with self.lock:
+                    self.available[server_name].append(conn)
+        ```
     
     练习 2：添加重试机制
         工具调用失败时自动重试
+
+        ✅ 参考答案：
+        ```python
+        import asyncio
+        from functools import wraps
+
+        def with_retry(max_retries: int = 3, delay: float = 1.0):
+            def decorator(func):
+                @wraps(func)
+                async def wrapper(*args, **kwargs):
+                    last_error = None
+                    
+                    for attempt in range(max_retries):
+                        try:
+                            return await func(*args, **kwargs)
+                        except Exception as e:
+                            last_error = e
+                            if attempt < max_retries - 1:
+                                wait = delay * (2 ** attempt)  # 指数退避
+                                await asyncio.sleep(wait)
+                    
+                    raise last_error
+                
+                return wrapper
+            return decorator
+
+        @with_retry(max_retries=3)
+        async def call_tool_with_retry(client, tool_name, args):
+            return await client.call_tool(tool_name, args)
+        ```
     
     练习 3：完整 Agent
         将 MCP Client 集成到完整的 ReAct Agent
+
+        ✅ 参考答案：
+        ```python
+        class MCPReActAgent:
+            def __init__(self, llm, mcp_client):
+                self.llm = llm
+                self.mcp = mcp_client
+
+            async def run(self, query: str, max_steps: int = 5):
+                tools = await self.mcp.list_tools()
+                tools_desc = "\\n".join([f"- {t.name}: {t.description}" for t in tools])
+                
+                history = []
+                for step in range(max_steps):
+                    prompt = self.build_prompt(query, tools_desc, history)
+                    response = self.llm.invoke(prompt).content
+                    
+                    if "Final Answer:" in response:
+                        return self.extract_answer(response)
+                    
+                    tool_name, args = self.parse_action(response)
+                    result = await self.mcp.call_tool(tool_name, args)
+                    history.append({"action": tool_name, "result": result})
+                
+                return "达到最大步数"
+        ```
     
     思考题：
         如何处理 Server 离线或超时？
         答：心跳检测、超时设置、自动重连
+
+        ✅ 详细答案：
+        ```python
+        class ResilientMCPClient:
+            def __init__(self, timeout: float = 30.0):
+                self.timeout = timeout
+                self.last_heartbeat = {}
+
+            async def call_with_timeout(self, tool_name, args):
+                try:
+                    return await asyncio.wait_for(
+                        self.client.call_tool(tool_name, args),
+                        timeout=self.timeout
+                    )
+                except asyncio.TimeoutError:
+                    await self.reconnect()
+                    return await self.call_tool(tool_name, args)
+        ```
     """)
 
 

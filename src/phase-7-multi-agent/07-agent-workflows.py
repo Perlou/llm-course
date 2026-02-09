@@ -273,12 +273,108 @@ def exercises():
 
     print("""
     练习 1：组合工作流 - 结合顺序和并行
+
+        ✅ 参考答案：
+        ```python
+        import asyncio
+
+        class HybridWorkflow:
+            def __init__(self):
+                self.sequential_steps = []
+                self.parallel_groups = []
+            
+            async def run(self, input_data):
+                result = input_data
+                
+                for step in self.sequential_steps:
+                    if isinstance(step, list):
+                        # 并行执行
+                        tasks = [asyncio.create_task(s(result)) for s in step]
+                        results = await asyncio.gather(*tasks)
+                        result = self.merge_results(results)
+                    else:
+                        # 顺序执行
+                        result = await step(result)
+                
+                return result
+            
+            def merge_results(self, results):
+                return {"merged": results}
+        ```
+
     练习 2：添加错误处理 - 步骤失败时的回退
+
+        ✅ 参考答案：
+        ```python
+        class ResilientWorkflow:
+            def __init__(self, steps: list, fallbacks: dict = None):
+                self.steps = steps
+                self.fallbacks = fallbacks or {}
+                self.checkpoints = []
+            
+            async def run(self, input_data):
+                result = input_data
+                
+                for i, step in enumerate(self.steps):
+                    try:
+                        self.checkpoints.append(result)  # 保存检查点
+                        result = await step(result)
+                    except Exception as e:
+                        fallback = self.fallbacks.get(step.__name__)
+                        if fallback:
+                            result = await fallback(self.checkpoints[-1])
+                        else:
+                            # 回退到上一个检查点
+                            result = self.checkpoints[-1]
+                            raise
+                
+                return result
+        ```
+
     练习 3：使用 LangGraph 重写工作流
+
+        ✅ 参考答案：
+        ```python
+        from langgraph.graph import StateGraph, END
+
+        class WorkflowState(TypedDict):
+            input: str
+            step_results: dict
+            current_step: int
+            error: str
+
+        def step_executor(state, step_name, step_func):
+            try:
+                result = step_func(state["input"])
+                state["step_results"][step_name] = result
+                return state
+            except Exception as e:
+                state["error"] = str(e)
+                return state
+
+        def build_workflow(steps):
+            graph = StateGraph(WorkflowState)
+            
+            for i, step in enumerate(steps):
+                graph.add_node(step.name, lambda s: step_executor(s, step.name, step.func))
+            
+            for i in range(len(steps) - 1):
+                graph.add_edge(steps[i].name, steps[i+1].name)
+            
+            graph.add_edge(steps[-1].name, END)
+            return graph.compile()
+        ```
     
     思考题：
     1. 如何决定任务是顺序还是并行？
+
+       ✅ 答：有依赖关系必须顺序，无依赖可并行。
+       考虑资源限制、延迟要求和错误隔离需求。
+
     2. 循环工作流如何避免无限循环？
+
+       ✅ 答：设置最大迭代次数、跟踪循环计数器、
+       定义明确的退出条件、检测状态重复。
     """)
 
 

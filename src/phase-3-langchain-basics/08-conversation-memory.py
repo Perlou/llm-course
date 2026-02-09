@@ -233,15 +233,123 @@ def exercises():
     练习 1：个性化助手
         创建能记住用户偏好的个性化助手。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+        from langchain_core.runnables.history import RunnableWithMessageHistory
+        from langchain_community.chat_message_histories import ChatMessageHistory
+
+        store = {}
+        user_preferences = {}  # 存储用户偏好
+
+        def get_session(session_id):
+            if session_id not in store:
+                store[session_id] = ChatMessageHistory()
+            return store[session_id]
+
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+        
+        # 动态构建系统提示词
+        def build_prompt(user_id):
+            prefs = user_preferences.get(user_id, {})
+            pref_str = ", ".join([f"{k}:{v}" for k,v in prefs.items()])
+            return ChatPromptTemplate.from_messages([
+                ("system", f"你是个性化助手。用户偏好: {pref_str}"),
+                MessagesPlaceholder(variable_name="history"),
+                ("human", "{input}")
+            ])
+
+        # 保存偏好
+        def save_preference(user_id, key, value):
+            if user_id not in user_preferences:
+                user_preferences[user_id] = {}
+            user_preferences[user_id][key] = value
+        ```
+
     练习 2：多角色助手
         根据用户需求切换不同角色（技术/生活/学习）。
+
+        ✅ 参考答案：
+        ```python
+        role_prompts = {
+            "技术": "你是技术专家，擅长编程和系统设计",
+            "生活": "你是生活顾问，擅长健康、烹饪和家居",
+            "学习": "你是学习导师，擅长教学和学习方法"
+        }
+
+        def detect_role(message: str) -> str:
+            tech_keywords = ["代码", "编程", "bug", "API"]
+            life_keywords = ["健康", "做饭", "运动", "睡眠"]
+            study_keywords = ["学习", "考试", "复习", "课程"]
+            
+            if any(k in message for k in tech_keywords):
+                return "技术"
+            elif any(k in message for k in life_keywords):
+                return "生活"
+            elif any(k in message for k in study_keywords):
+                return "学习"
+            return "技术"  # 默认
+
+        def get_role_prompt(role: str) -> str:
+            return role_prompts.get(role, role_prompts["技术"])
+        ```
 
     练习 3：对话导出
         实现导出对话历史为文本文件的功能。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_core.messages import HumanMessage, AIMessage
+        from datetime import datetime
+
+        def export_conversation(session_id: str, filename: str = None):
+            history = get_session(session_id)
+            
+            if filename is None:
+                filename = f"conversation_{session_id}_{datetime.now().strftime('%Y%m%d')}.txt"
+            
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(f"对话记录 - {session_id}\\n")
+                f.write(f"导出时间: {datetime.now()}\\n")
+                f.write("=" * 50 + "\\n\\n")
+                
+                for msg in history.messages:
+                    role = "用户" if isinstance(msg, HumanMessage) else "AI"
+                    f.write(f"[{role}]\\n{msg.content}\\n\\n")
+            
+            return filename
+
+        # 导出为 Markdown
+        def export_to_markdown(session_id: str):
+            history = get_session(session_id)
+            md_content = f"# 对话记录 - {session_id}\\n\\n"
+            
+            for msg in history.messages:
+                if isinstance(msg, HumanMessage):
+                    md_content += f"**用户**: {msg.content}\\n\\n"
+                else:
+                    md_content += f"**AI**: {msg.content}\\n\\n"
+            
+            return md_content
+        ```
+
     思考题：
         1. 如何处理会话超时？
+           
+           ✅ 答案：
+           - 记录最后活跃时间，定期清理过期会话
+           - 使用 TTL（Time To Live）机制
+           - Redis 自带过期功能：`RedisChatMessageHistory(..., ttl=3600)`
+           - 给用户提示"会话已过期，请重新开始"
+
         2. 如何实现会话持久化到数据库？
+           
+           ✅ 答案：
+           - 使用 SQLAlchemy 存储到 PostgreSQL/MySQL
+           - 使用 MongoDB 存储 JSON 格式消息
+           - 使用 Redis 快速读写 + MySQL 长期存储
+           - LangChain 提供 SQLChatMessageHistory 组件
     """)
 
 

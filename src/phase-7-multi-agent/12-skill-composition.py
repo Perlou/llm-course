@@ -301,12 +301,136 @@ def exercises():
 
     print("""
     练习 1：实现带重试的流水线
+
+        ✅ 参考答案：
+        ```python
+        import time
+        from functools import wraps
+
+        class RetryablePipeline:
+            def __init__(self, steps: list, max_retries: int = 3):
+                self.steps = steps
+                self.max_retries = max_retries
+            
+            def execute(self, input_data):
+                result = input_data
+                
+                for step in self.steps:
+                    for attempt in range(self.max_retries):
+                        try:
+                            result = step(result)
+                            break
+                        except Exception as e:
+                            if attempt == self.max_retries - 1:
+                                raise
+                            wait = 2 ** attempt  # 指数退避
+                            time.sleep(wait)
+                
+                return result
+
+        # 使用装饰器版本
+        def with_retry(max_retries=3, delay=1):
+            def decorator(func):
+                @wraps(func)
+                def wrapper(*args, **kwargs):
+                    for i in range(max_retries):
+                        try:
+                            return func(*args, **kwargs)
+                        except Exception:
+                            if i == max_retries - 1:
+                                raise
+                            time.sleep(delay * (2 ** i))
+                return wrapper
+            return decorator
+        ```
+
     练习 2：添加工作流可视化
+
+        ✅ 参考答案：
+        ```python
+        class VisualizableWorkflow:
+            def __init__(self):
+                self.nodes = []
+                self.edges = []
+            
+            def add_step(self, name: str, step_func):
+                self.nodes.append({"id": name, "func": step_func})
+                if len(self.nodes) > 1:
+                    self.edges.append((self.nodes[-2]["id"], name))
+            
+            def to_mermaid(self) -> str:
+                lines = ["graph LR"]
+                for edge in self.edges:
+                    lines.append(f"    {edge[0]} --> {edge[1]}")
+                return "\\n".join(lines)
+            
+            def to_ascii(self) -> str:
+                result = []
+                for i, node in enumerate(self.nodes):
+                    if i > 0:
+                        result.append("    │")
+                        result.append("    ▼")
+                    result.append(f"┌{'─' * (len(node['id']) + 2)}┐")
+                    result.append(f"│ {node['id']} │")
+                    result.append(f"└{'─' * (len(node['id']) + 2)}┘")
+                return "\\n".join(result)
+        ```
+
     练习 3：实现 A/B 测试选择器
+
+        ✅ 参考答案：
+        ```python
+        import random
+        from collections import defaultdict
+
+        class ABTestSelector:
+            def __init__(self):
+                self.variants = {}  # test_name -> {variant_name: (weight, skill)}
+                self.results = defaultdict(lambda: defaultdict(list))
+            
+            def register_test(self, test_name: str, variants: dict):
+                '''variants: {name: (weight, skill)}'''
+                self.variants[test_name] = variants
+            
+            def select(self, test_name: str) -> tuple:
+                variants = self.variants[test_name]
+                names = list(variants.keys())
+                weights = [v[0] for v in variants.values()]
+                
+                selected = random.choices(names, weights=weights)[0]
+                return selected, variants[selected][1]
+            
+            def record_result(self, test_name: str, variant: str, success: bool, metric: float):
+                self.results[test_name][variant].append({
+                    "success": success,
+                    "metric": metric
+                })
+            
+            def get_stats(self, test_name: str):
+                stats = {}
+                for variant, results in self.results[test_name].items():
+                    metrics = [r["metric"] for r in results]
+                    stats[variant] = {
+                        "count": len(results),
+                        "success_rate": sum(r["success"] for r in results) / len(results),
+                        "avg_metric": sum(metrics) / len(metrics)
+                    }
+                return stats
+        ```
     
     思考题：
     1. 如何监控 Skill 执行性能？
+
+       ✅ 答：记录执行时间、成功率、资源消耗；
+       设置告警阈值、可视化仪表盘、趋势分析。
+
     2. 工作流失败如何回滚？
+
+       ✅ 答：
+       - 实现检查点机制，记录每步状态
+       - 为每个操作定义逆操作
+       - 使用事务模式（Saga 模式）
+       - 幂等设计支持重复执行
     """)
 
 

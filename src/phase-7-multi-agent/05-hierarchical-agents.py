@@ -205,12 +205,97 @@ def exercises():
 
     print("""
     练习 1：实现动态层级 - 动态添加/删除层级
+
+        ✅ 参考答案：
+        ```python
+        class DynamicHierarchy:
+            def __init__(self):
+                self.nodes = {}  # id -> node
+                self.children = {}  # parent_id -> [child_ids]
+            
+            def add_node(self, node_id: str, parent_id: str = None):
+                self.nodes[node_id] = {"id": node_id, "parent": parent_id}
+                if parent_id:
+                    self.children.setdefault(parent_id, []).append(node_id)
+            
+            def remove_node(self, node_id: str):
+                # 将子节点提升到父节点
+                parent_id = self.nodes[node_id].get("parent")
+                children = self.children.get(node_id, [])
+                
+                for child_id in children:
+                    self.nodes[child_id]["parent"] = parent_id
+                    if parent_id:
+                        self.children[parent_id].append(child_id)
+                
+                # 删除节点
+                del self.nodes[node_id]
+                if node_id in self.children:
+                    del self.children[node_id]
+        ```
+
     练习 2：跨部门协作 - 不同 Manager 下 Worker 协作
+
+        ✅ 参考答案：
+        ```python
+        class CrossDepartmentCoordinator:
+            def __init__(self, departments: dict):
+                self.departments = departments  # dept_name -> manager
+            
+            def collaborate(self, task: str, dept_names: list):
+                '''跨部门协作执行任务'''
+                results = {}
+                shared_context = {"task": task}
+                
+                for dept in dept_names:
+                    manager = self.departments[dept]
+                    result = manager.process(task, shared_context)
+                    results[dept] = result
+                    shared_context[f"{dept}_result"] = result
+                
+                # 整合各部门结果
+                return self.synthesize(results)
+        ```
+
     练习 3：层级权限控制 - 不同层级不同权限
+
+        ✅ 参考答案：
+        ```python
+        from enum import IntEnum
+
+        class Permission(IntEnum):
+            READ = 1
+            WRITE = 2
+            EXECUTE = 4
+            ADMIN = 8
+
+        class PermissionedHierarchy:
+            def __init__(self):
+                self.permissions = {}  # level -> permissions
+            
+            def set_level_permission(self, level: int, perm: Permission):
+                self.permissions[level] = perm
+            
+            def can_execute(self, agent_level: int, required_perm: Permission):
+                agent_perms = self.permissions.get(agent_level, Permission.READ)
+                return agent_perms >= required_perm
+            
+            def execute_with_permission(self, agent, action, required_perm):
+                if not self.can_execute(agent.level, required_perm):
+                    raise PermissionError(f"Level {agent.level} 无权执行此操作")
+                return action()
+        ```
     
     思考题：
     1. 层级最佳深度？答：2-4 层
+
+       ✅ 详细：层级过深导致通信延迟，过浅无法有效分工。
+       根据组织规模和任务复杂度选择。
+
     2. 紧急跨层通信？答：设置紧急通道
+
+       ✅ 详细：实现 bypass 机制，允许紧急消息直达顶层，
+       同时通知中间层级。
     """)
 
 

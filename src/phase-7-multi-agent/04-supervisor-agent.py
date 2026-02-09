@@ -588,31 +588,141 @@ def exercises():
     练习 1：添加新 Worker
         为 Supervisor 系统添加一个 "Reviewer" Worker，
         负责在写作完成后审核内容。
+
+        ✅ 参考答案：
+        ```python
+        class ReviewerWorker(BaseWorker):
+            name = "reviewer"
+            description = "审核和校对内容，检查质量和准确性"
+            
+            def execute(self, task: str, context: dict) -> str:
+                content = context.get("writer_output", "")
+                prompt = f'''
+                作为审核员，请检查以下内容：
+                1. 准确性和事实核查
+                2. 语法和拼写错误
+                3. 内容完整性
+                
+                内容：{content}
+                
+                审核报告：
+                '''
+                return self.llm.invoke(prompt).content
+
+        # 添加到 Supervisor
+        supervisor.register_worker(ReviewerWorker(llm))
+        ```
     
     练习 2：实现优先级调度
         修改 Supervisor，使其能够：
         - 按优先级处理任务
         - 处理任务依赖关系
+
+        ✅ 参考答案：
+        ```python
+        from dataclasses import dataclass
+        import heapq
+
+        @dataclass
+        class Task:
+            priority: int
+            name: str
+            dependencies: list = None
+            
+            def __lt__(self, other):
+                return self.priority < other.priority
+
+        class PrioritySupervisor:
+            def __init__(self):
+                self.task_queue = []
+                self.completed = set()
+            
+            def add_task(self, task: Task):
+                heapq.heappush(self.task_queue, task)
+            
+            def get_next_ready_task(self):
+                temp = []
+                result = None
+                
+                while self.task_queue:
+                    task = heapq.heappop(self.task_queue)
+                    deps = task.dependencies or []
+                    
+                    if all(d in self.completed for d in deps):
+                        result = task
+                        break
+                    temp.append(task)
+                
+                for t in temp:
+                    heapq.heappush(self.task_queue, t)
+                
+                return result
+        ```
     
     练习 3：添加错误处理
         实现 Worker 失败时的处理：
         - 重试机制
         - 备选 Worker
         - 错误报告
+
+        ✅ 参考答案：
+        ```python
+        class ResilientSupervisor:
+            def __init__(self, max_retries: int = 3):
+                self.max_retries = max_retries
+                self.error_log = []
+            
+            def execute_with_retry(self, worker, task, context):
+                for attempt in range(self.max_retries):
+                    try:
+                        return worker.execute(task, context)
+                    except Exception as e:
+                        self.error_log.append({
+                            "worker": worker.name,
+                            "attempt": attempt + 1,
+                            "error": str(e)
+                        })
+                        if attempt == self.max_retries - 1:
+                            # 尝试备选 Worker
+                            backup = self.get_backup_worker(worker.name)
+                            if backup:
+                                return backup.execute(task, context)
+                            raise
+        ```
     
     练习 4：并行执行
         修改系统支持多个 Worker 并行处理独立任务。
+
+        ✅ 参考答案：
+        ```python
+        import asyncio
+
+        class ParallelSupervisor:
+            def __init__(self):
+                self.workers = {}
+            
+            async def execute_parallel(self, tasks: list):
+                # 找出可以并行的独立任务
+                independent = [t for t in tasks if not t.dependencies]
+                
+                async def run_task(task):
+                    worker = self.select_worker(task)
+                    return await asyncio.to_thread(worker.execute, task.content, {})
+                
+                results = await asyncio.gather(*[run_task(t) for t in independent])
+                return dict(zip([t.name for t in independent], results))
+        ```
     
     思考题：
     ────────
     1. Supervisor 如何决定任务分解的粒度？
        答：根据任务复杂度、Worker 能力、时间限制等因素，
        使用 LLM 智能判断或预设规则。
-    
+
     2. 如何处理 Worker 负载不均？
        答：实现负载均衡算法：轮询、最少连接、
        基于能力的加权分配等。
-    
+
     3. Supervisor 失败怎么办？
        答：实现 Supervisor 高可用：主备切换、
        状态持久化、检查点恢复。

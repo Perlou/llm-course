@@ -174,15 +174,97 @@ def exercises():
     练习 1：创建代码生成模型
         使用低温度和大 max_output_tokens 创建适合代码生成的模型。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        # 代码生成模型配置
+        code_llm = ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash",
+            temperature=0.2,          # 低温度保证一致性
+            max_output_tokens=2048,   # 足够长的代码输出
+            timeout=60,               # 较长超时
+        )
+
+        # 使用
+        response = code_llm.invoke("写一个 Python 快速排序函数")
+        print(response.content)
+        ```
+
     练习 2：多轮对话
         使用消息列表实现连续的多轮对话。
+
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+
+        # 多轮对话消息
+        messages = [
+            SystemMessage(content="你是一个友好的助手"),
+            HumanMessage(content="你好，我叫小明"),
+            AIMessage(content="你好小明！很高兴认识你！"),
+            HumanMessage(content="我之前告诉过你我的名字，你还记得吗？"),
+        ]
+
+        response = llm.invoke(messages)
+        print(response.content)  # 会回答 "小明"
+        ```
 
     练习 3：文本相似度搜索
         使用 Embeddings 找出最相似的文档。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+        import numpy as np
+
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+
+        def cosine_similarity(v1, v2):
+            v1, v2 = np.array(v1), np.array(v2)
+            return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+
+        # 文档库
+        documents = [
+            "Python 是一种编程语言",
+            "机器学习需要大量数据",
+            "今天天气晴朗",
+            "深度学习是机器学习的一个分支"
+        ]
+
+        # 查询
+        query = "什么是人工智能"
+
+        # 向量化
+        query_vec = embeddings.embed_query(query)
+        doc_vecs = embeddings.embed_documents(documents)
+
+        # 找最相似
+        similarities = [cosine_similarity(query_vec, dv) for dv in doc_vecs]
+        most_similar_idx = np.argmax(similarities)
+        print(f"最相似文档: {documents[most_similar_idx]}")
+        ```
+
     思考题：
         1. 什么时候使用低温度 vs 高温度？
+           
+           ✅ 答案：
+           - 低温度 (0-0.3)：代码生成、事实问答、数据提取
+           - 中等温度 (0.5-0.7)：通用对话、文档总结
+           - 高温度 (0.8-1.2)：创意写作、头脑风暴、故事生成
+           - 关键原则：需要确定性用低温度，需要创意用高温度
+
         2. Embeddings 有什么实际应用？
+           
+           ✅ 答案：
+           - 语义搜索：找到意思相近的文档
+           - RAG 应用：检索相关上下文
+           - 文档聚类：将相似文档分组
+           - 推荐系统：基于相似度推荐
+           - 异常检测：找出与众不同的文本
     """)
 
 

@@ -305,12 +305,103 @@ def exercises():
 
     print("""
     练习 1：实现完整的多工具 Agent
+
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        from langchain_core.tools import tool
+
+        @tool
+        def get_weather(city: str) -> str:
+            '''获取城市天气'''
+            return f"{city}: 晴天，25°C"
+
+        @tool  
+        def search(query: str) -> str:
+            '''搜索信息'''
+            return f"搜索结果: {query}"
+
+        @tool
+        def calculate(expression: str) -> str:
+            '''计算数学表达式'''
+            return str(eval(expression))
+
+        tools = [get_weather, search, calculate]
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm_with_tools = llm.bind_tools(tools)
+
+        def run_agent(query: str):
+            messages = [{"role": "user", "content": query}]
+            
+            for _ in range(5):  # 最多5轮
+                response = llm_with_tools.invoke(messages)
+                
+                if not response.tool_calls:
+                    return response.content
+                
+                for call in response.tool_calls:
+                    tool = {t.name: t for t in tools}[call["name"]]
+                    result = tool.invoke(call["args"])
+                    messages.append({"role": "tool", "content": result})
+            
+            return "达到最大步数"
+        ```
+
     练习 2：添加工具调用次数限制
+
+        ✅ 参考答案：
+        ```python
+        class RateLimitedAgent:
+            def __init__(self, max_calls: int = 10):
+                self.max_calls = max_calls
+                self.call_count = 0
+
+            def call_tool(self, tool, args):
+                if self.call_count >= self.max_calls:
+                    raise RuntimeError(f"超过调用限制: {self.max_calls}")
+                
+                self.call_count += 1
+                return tool.invoke(args)
+            
+            def reset(self):
+                self.call_count = 0
+        ```
+
     练习 3：实现工具调用日志记录
+
+        ✅ 参考答案：
+        ```python
+        from datetime import datetime
+
+        class ToolLogger:
+            def __init__(self):
+                self.logs = []
+            
+            def log(self, tool_name: str, args: dict, result: str, duration: float):
+                self.logs.append({
+                    "timestamp": datetime.now().isoformat(),
+                    "tool": tool_name,
+                    "args": args,
+                    "result": result[:100],
+                    "duration_ms": duration * 1000,
+                })
+            
+            def get_summary(self):
+                return {
+                    "total_calls": len(self.logs),
+                    "tools_used": list(set(l["tool"] for l in self.logs)),
+                }
+        ```
     
     思考题：
         tool_choice="required" 适合什么场景？
         答：需要强制使用工具的场景，如必须查询最新信息
+
+        ✅ 详细答案：
+        - 必须获取实时数据（天气、股票）
+        - 需要执行操作（发邮件、创建任务）
+        - 不允许纯对话回复的场景
+        - 确保 Agent 不跳过工具直接回答
     """)
 
 

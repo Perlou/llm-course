@@ -227,15 +227,85 @@ def exercises():
     练习 1：相似度实验
         测试同义词、反义词的向量相似度。
 
+        ✅ 参考答案：
+        ```python
+        import numpy as np
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+
+        def cosine_similarity(v1, v2):
+            return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+
+        # 同义词测试
+        synonyms = [("高兴", "开心"), ("快速", "迅速"), ("美丽", "漂亮")]
+        # 反义词测试
+        antonyms = [("高兴", "悲伤"), ("快速", "缓慢"), ("美丽", "丑陋")]
+
+        for word1, word2 in synonyms + antonyms:
+            v1 = embeddings.embed_query(word1)
+            v2 = embeddings.embed_query(word2)
+            sim = cosine_similarity(v1, v2)
+            print(f"{word1} vs {word2}: {sim:.4f}")
+        # 同义词相似度通常 > 0.8，反义词相似度较低
+        ```
+
     练习 2：多语言测试
         测试中英文相同含义文本的相似度。
+
+        ✅ 参考答案：
+        ```python
+        pairs = [
+            ("人工智能", "artificial intelligence"),
+            ("我爱编程", "I love programming"),
+            ("今天天气很好", "The weather is nice today"),
+        ]
+
+        for zh, en in pairs:
+            v_zh = embeddings.embed_query(zh)
+            v_en = embeddings.embed_query(en)
+            sim = cosine_similarity(v_zh, v_en)
+            print(f"{zh} vs {en}: {sim:.4f}")
+        # 多语言模型通常能达到 0.7+ 的相似度
+        ```
 
     练习 3：本地模型
         使用 HuggingFaceEmbeddings 运行本地模型。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_community.embeddings import HuggingFaceEmbeddings
+
+        # 使用 BGE 中文模型
+        local_embeddings = HuggingFaceEmbeddings(
+            model_name="BAAI/bge-small-zh-v1.5",
+            model_kwargs={"device": "cpu"},  # 或 "cuda"
+            encode_kwargs={"normalize_embeddings": True}
+        )
+
+        text = "人工智能改变世界"
+        vector = local_embeddings.embed_query(text)
+        print(f"向量维度: {len(vector)}")
+        ```
+
     思考题：
         1. Embedding 维度越高越好吗？
+           
+           ✅ 答案：
+           - 不一定！需要权衡：
+           - 高维度：表达能力强，但存储和计算成本高
+           - 低维度：效率高，但可能损失信息
+           - 768-1536 维是常见选择
+           - 关键是模型训练质量，而非维度
+
         2. 不同领域的文本如何选择模型？
+           
+           ✅ 答案：
+           - 通用文本：Gemini/OpenAI 通用模型
+           - 中文文本：BGE-zh、M3E 等中文模型
+           - 代码：CodeBERT、StarCoder 等
+           - 医学/法律：领域专用模型
+           - 建议：测试多个模型，选择效果最好的
     """)
 
 

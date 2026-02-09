@@ -317,15 +317,125 @@ def exercises():
     练习 1：对比实验
         对比压缩前后 RAG 的回答质量。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        from langchain.retrievers import ContextualCompressionRetriever
+        from langchain.retrievers.document_compressors import LLMChainExtractor
+
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+
+        def compare_compression(query: str):
+            # 无压缩检索
+            raw_docs = base_retriever.invoke(query)
+            raw_context = "\\n".join(d.page_content for d in raw_docs)
+            
+            # 压缩检索
+            compressor = LLMChainExtractor.from_llm(llm)
+            compression_retriever = ContextualCompressionRetriever(
+                base_compressor=compressor,
+                base_retriever=base_retriever
+            )
+            compressed_docs = compression_retriever.invoke(query)
+            compressed_context = "\\n".join(d.page_content for d in compressed_docs)
+            
+            print(f"原始上下文长度: {len(raw_context)} 字符")
+            print(f"压缩后长度: {len(compressed_context)} 字符")
+            print(f"压缩率: {len(compressed_context)/len(raw_context):.2%}")
+            
+            # 对比回答质量
+            raw_answer = generate_answer(raw_context, query)
+            compressed_answer = generate_answer(compressed_context, query)
+            
+            return {"raw": raw_answer, "compressed": compressed_answer}
+        ```
+
     练习 2：阈值调优
         测试不同相似度阈值的过滤效果。
+
+        ✅ 参考答案：
+        ```python
+        from langchain.retrievers.document_compressors import EmbeddingsFilter
+
+        thresholds = [0.5, 0.6, 0.7, 0.8, 0.9]
+        query = "Python 性能优化"
+
+        for threshold in thresholds:
+            embeddings_filter = EmbeddingsFilter(
+                embeddings=embeddings,
+                similarity_threshold=threshold
+            )
+            
+            compression_retriever = ContextualCompressionRetriever(
+                base_compressor=embeddings_filter,
+                base_retriever=base_retriever
+            )
+            
+            results = compression_retriever.invoke(query)
+            
+            print(f"阈值={threshold}: {len(results)} 个文档被保留")
+            for doc in results:
+                print(f"  {doc.page_content[:50]}...")
+        ```
 
     练习 3：自定义压缩器
         实现一个基于关键词的压缩器。
 
+        ✅ 参考答案：
+        ```python
+        from langchain.retrievers.document_compressors import BaseDocumentCompressor
+        from langchain_core.documents import Document
+        import re
+
+        class KeywordCompressor(BaseDocumentCompressor):
+            def __init__(self, top_sentences: int = 3):
+                self.top_sentences = top_sentences
+
+            def compress_documents(self, documents, query, callbacks=None):
+                # 提取查询关键词
+                keywords = set(query.lower().split())
+                
+                compressed = []
+                for doc in documents:
+                    sentences = re.split(r'[。！？.!?]', doc.page_content)
+                    
+                    # 对每个句子打分
+                    scored = []
+                    for sent in sentences:
+                        if sent.strip():
+                            score = sum(1 for kw in keywords if kw in sent.lower())
+                            scored.append((score, sent))
+                    
+                    # 取得分最高的句子
+                    scored.sort(reverse=True)
+                    top_sents = [s for _, s in scored[:self.top_sentences]]
+                    
+                    if top_sents:
+                        compressed.append(Document(
+                            page_content="。".join(top_sents),
+                            metadata=doc.metadata
+                        ))
+                
+                return compressed
+        ```
+
     思考题：
         1. 压缩可能丢失哪些重要信息？
+           
+           ✅ 答案：
+           - 上下文关联：前后文关系可能丢失
+           - 隐式信息：需要推理才能得出的信息
+           - 背景知识：理解答案所需的前置信息
+           - 例子和细节：具体案例可能被过滤
+
         2. 如何平衡压缩率和信息保留？
+           
+           ✅ 答案：
+           - 动态阈值：根据文档相似度调整压缩程度
+           - 分层压缩：先粗过滤，再精提取
+           - 保留元数据：即使压缩内容，保留来源信息
+           - A/B 测试：找到最佳压缩率
+           - 用户反馈：根据回答质量调整参数
     """)
 
 

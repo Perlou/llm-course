@@ -259,15 +259,125 @@ def exercises():
     练习 1：完整实现
         实现一个完整的多轮对话知识问答系统。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+        from langchain_chroma import Chroma
+        from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+        from langchain_core.output_parsers import StrOutputParser
+        from langchain_core.messages import HumanMessage, AIMessage
+
+        class ConversationalRAG:
+            def __init__(self, docs, embedding_model, llm_model):
+                embeddings = GoogleGenerativeAIEmbeddings(model=embedding_model)
+                self.vectorstore = Chroma.from_documents(docs, embeddings)
+                self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 3})
+                self.llm = ChatGoogleGenerativeAI(model=llm_model)
+                self.history = []
+
+            def chat(self, question: str) -> str:
+                # 改写问题（如果有历史）
+                if self.history:
+                    standalone = self._rewrite_question(question)
+                else:
+                    standalone = question
+
+                # 检索和回答
+                docs = self.retriever.invoke(standalone)
+                context = "\\n".join(d.page_content for d in docs)
+                answer = self._generate_answer(context, question)
+
+                # 更新历史
+                self.history.append(HumanMessage(content=question))
+                self.history.append(AIMessage(content=answer))
+                
+                return answer
+
+            def _rewrite_question(self, q):
+                # 使用 LLM 改写问题
+                ...
+
+            def _generate_answer(self, context, question):
+                # 生成回答
+                ...
+        ```
+
     练习 2：历史管理
         限制历史长度，避免上下文过长。
+
+        ✅ 参考答案：
+        ```python
+        class HistoryManager:
+            def __init__(self, max_turns: int = 5):
+                self.max_turns = max_turns
+                self.history = []
+
+            def add(self, user_msg: str, ai_msg: str):
+                self.history.append(HumanMessage(content=user_msg))
+                self.history.append(AIMessage(content=ai_msg))
+                # 保持最近 N 轮
+                if len(self.history) > self.max_turns * 2:
+                    self.history = self.history[-self.max_turns * 2:]
+
+            def get_history(self):
+                return self.history
+
+            def clear(self):
+                self.history = []
+
+            def summarize(self, llm):
+                # 对历史进行摘要压缩
+                if len(self.history) > 6:
+                    old_history = self.history[:-4]
+                    summary = llm.invoke(f"总结以下对话要点：{old_history}")
+                    self.history = [AIMessage(content=f"[之前的对话摘要]{summary}")] + self.history[-4:]
+        ```
 
     练习 3：交互界面
         添加命令行交互，支持持续对话。
 
+        ✅ 参考答案：
+        ```python
+        def interactive_chat(rag_system):
+            print("欢迎使用知识问答系统！输入 'quit' 退出, 'clear' 清空历史")
+            
+            while True:
+                user_input = input("\\n你: ").strip()
+                
+                if user_input.lower() == 'quit':
+                    print("再见！")
+                    break
+                elif user_input.lower() == 'clear':
+                    rag_system.clear_history()
+                    print("历史已清空")
+                    continue
+                elif not user_input:
+                    continue
+                
+                answer = rag_system.chat(user_input)
+                print(f"AI: {answer}")
+
+        # 使用
+        interactive_chat(my_rag)
+        ```
+
     思考题：
         1. 历史太长时如何处理？
+           
+           ✅ 答案：
+           - 滑动窗口：只保留最近 N 轮
+           - 摘要压缩：用 LLM 压缩旧历史
+           - Token 限制：按 token 数截断
+           - 分层存储：重要信息持久化
+
         2. 如何评估对话式 RAG 的效果？
+           
+           ✅ 答案：
+           - 回答准确性：人工标注评分
+           - 上下文理解：代词解析正确率
+           - 检索相关性：Recall@K
+           - 对话连贯性：人工评估流畅度
+           - 用户满意度：A/B 测试
     """)
 
 

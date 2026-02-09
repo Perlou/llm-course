@@ -309,13 +309,79 @@ def exercises():
     print("""
     练习 1：定义一个翻译工具
         参数：text（文本），target_lang（目标语言）
+
+        ✅ 参考答案：
+        ```python
+        from langchain_core.tools import tool
+        from pydantic import BaseModel, Field
+
+        class TranslateInput(BaseModel):
+            text: str = Field(description="要翻译的文本")
+            target_lang: str = Field(default="en", description="目标语言代码，如 en, zh, ja")
+
+        @tool(args_schema=TranslateInput)
+        def translate(text: str, target_lang: str = "en") -> str:
+            '''将文本翻译为目标语言'''
+            # 模拟翻译（实际可调用翻译 API）
+            translations = {
+                "en": {"你好": "Hello", "世界": "World"},
+                "ja": {"你好": "こんにちは", "世界": "世界"},
+            }
+            return translations.get(target_lang, {}).get(text, f"[{target_lang}]{text}")
+        ```
     
     练习 2：实现工具验证
         在执行前验证参数类型和必需参数
+
+        ✅ 参考答案：
+        ```python
+        class ValidatedTool:
+            def __init__(self, func, schema: dict):
+                self.func = func
+                self.schema = schema
+            
+            def validate(self, **kwargs):
+                '''验证参数'''
+                required = self.schema.get("required", [])
+                properties = self.schema.get("properties", {})
+                
+                # 检查必需参数
+                for param in required:
+                    if param not in kwargs:
+                        raise ValueError(f"缺少必需参数: {param}")
+                
+                # 检查类型
+                for param, value in kwargs.items():
+                    if param in properties:
+                        expected_type = properties[param].get("type")
+                        if expected_type == "string" and not isinstance(value, str):
+                            raise TypeError(f"{param} 必须是字符串")
+                        if expected_type == "number" and not isinstance(value, (int, float)):
+                            raise TypeError(f"{param} 必须是数字")
+            
+            def __call__(self, **kwargs):
+                self.validate(**kwargs)
+                return self.func(**kwargs)
+        ```
     
     思考题：
         如何处理工具执行超时？
         答：设置超时时间，超时返回错误信息
+
+        ✅ 详细答案：
+        ```python
+        import asyncio
+        from concurrent.futures import TimeoutError, ThreadPoolExecutor
+
+        def run_with_timeout(func, timeout: float, **kwargs):
+            '''带超时的工具执行'''
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(func, **kwargs)
+                try:
+                    return future.result(timeout=timeout)
+                except TimeoutError:
+                    return f"工具执行超时（{timeout}秒）"
+        ```
     """)
 
 

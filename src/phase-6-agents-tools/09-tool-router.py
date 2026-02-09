@@ -295,13 +295,102 @@ def exercises():
     print("""
     练习 1：实现加权规则路由
         不同关键词有不同权重
+
+        ✅ 参考答案：
+        ```python
+        class WeightedRouter:
+            def __init__(self):
+                self.rules = {
+                    "weather": {
+                        "keywords": ["天气", "温度", "下雨", "预报"],
+                        "weights": [1.0, 0.8, 0.7, 0.6],
+                        "tool": "weather_tool"
+                    },
+                    "search": {
+                        "keywords": ["搜索", "查找", "是什么"],
+                        "weights": [1.0, 0.9, 0.5],
+                        "tool": "search_tool"
+                    },
+                }
+
+            def route(self, query: str) -> str:
+                scores = {}
+                
+                for name, rule in self.rules.items():
+                    score = 0
+                    for kw, weight in zip(rule["keywords"], rule["weights"]):
+                        if kw in query:
+                            score += weight
+                    if score > 0:
+                        scores[name] = score
+                
+                if scores:
+                    best = max(scores, key=scores.get)
+                    return self.rules[best]["tool"]
+                
+                return "default_tool"
+        ```
     
     练习 2：实现回退机制
         首选工具失败时自动切换备选工具
+
+        ✅ 参考答案：
+        ```python
+        class FallbackRouter:
+            def __init__(self, tools: dict, fallback_chain: dict):
+                self.tools = tools
+                self.fallback_chain = fallback_chain  # {"weather": ["search", "default"]}
+
+            def execute_with_fallback(self, tool_name: str, query: str):
+                '''带回退的执行'''
+                chain = [tool_name] + self.fallback_chain.get(tool_name, [])
+                
+                for name in chain:
+                    try:
+                        tool = self.tools.get(name)
+                        if tool:
+                            result = tool.invoke(query)
+                            if result and result != "失败":
+                                return {"tool": name, "result": result}
+                    except Exception as e:
+                        print(f"{name} 失败: {e}")
+                        continue
+                
+                return {"tool": None, "result": "所有工具均失败"}
+        ```
     
     思考题：
         如何评估路由器的准确性？
         答：构建测试集，计算路由准确率
+
+        ✅ 详细答案：
+        ```python
+        def evaluate_router(router, test_cases):
+            '''评估路由器准确性'''
+            correct = 0
+            results = []
+            
+            for query, expected_tool in test_cases:
+                predicted = router.route(query)
+                is_correct = predicted == expected_tool
+                correct += is_correct
+                results.append({
+                    "query": query,
+                    "expected": expected_tool,
+                    "predicted": predicted,
+                    "correct": is_correct,
+                })
+            
+            accuracy = correct / len(test_cases)
+            return {"accuracy": accuracy, "details": results}
+        
+        # 测试集示例
+        test_cases = [
+            ("北京天气怎么样", "weather_tool"),
+            ("Python是什么", "search_tool"),
+            ("计算 2+3", "calculator_tool"),
+        ]
+        ```
     """)
 
 

@@ -225,15 +225,116 @@ def exercises():
     练习 1：翻译润色链
         创建：翻译成英文 -> 语法检查 -> 润色
 
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.output_parsers import StrOutputParser
+        from langchain_core.runnables import RunnablePassthrough
+
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+
+        # 步骤1：翻译
+        translate_chain = (
+            ChatPromptTemplate.from_template("将以下中文翻译成英文：{text}")
+            | llm | StrOutputParser()
+        )
+
+        # 步骤2：语法检查
+        grammar_chain = (
+            ChatPromptTemplate.from_template("检查并修正语法错误：{translation}")
+            | llm | StrOutputParser()
+        )
+
+        # 步骤3：润色
+        polish_chain = (
+            ChatPromptTemplate.from_template("使以下英文更加自然流畅：{checked}")
+            | llm | StrOutputParser()
+        )
+
+        # 组合
+        full_chain = (
+            {"text": RunnablePassthrough()}
+            | {"translation": translate_chain}
+            | {"checked": lambda x: grammar_chain.invoke(x)}
+            | {"polished": lambda x: polish_chain.invoke(x)}
+        )
+        ```
+
     练习 2：代码审查链
         创建：分析代码 -> 找出问题 -> 给出建议
+
+        ✅ 参考答案：
+        ```python
+        code = "你的代码片段"
+
+        # 步骤1：代码理解
+        understand = (
+            ChatPromptTemplate.from_template("分析这段代码的功能：\\n{code}")
+            | llm | StrOutputParser()
+        ).invoke({"code": code})
+
+        # 步骤2：找问题
+        issues = (
+            ChatPromptTemplate.from_template(
+                "基于分析，找出潜在问题：\\n分析:{analysis}\\n代码:{code}"
+            ) | llm | StrOutputParser()
+        ).invoke({"analysis": understand, "code": code})
+
+        # 步骤3：给建议
+        suggestions = (
+            ChatPromptTemplate.from_template(
+                "针对以下问题给出改进建议：\\n{issues}"
+            ) | llm | StrOutputParser()
+        ).invoke({"issues": issues})
+        ```
 
     练习 3：摘要生成链
         创建：理解文本 -> 提取要点 -> 生成摘要
 
+        ✅ 参考答案：
+        ```python
+        def summarize_pipeline(text: str):
+            # 理解
+            understanding = (
+                ChatPromptTemplate.from_template("理解以下文本的主旨：{text}")
+                | llm | StrOutputParser()
+            ).invoke({"text": text})
+
+            # 提取要点
+            key_points = (
+                ChatPromptTemplate.from_template(
+                    "从理解中提取3-5个关键要点：{understanding}"
+                ) | llm | StrOutputParser()
+            ).invoke({"understanding": understanding})
+
+            # 生成摘要
+            summary = (
+                ChatPromptTemplate.from_template(
+                    "基于要点生成简洁摘要：{points}"
+                ) | llm | StrOutputParser()
+            ).invoke({"points": key_points})
+
+            return {"understanding": understanding, "points": key_points, "summary": summary}
+        ```
+
     思考题：
         1. 何时需要保留中间结果？
+           
+           ✅ 答案：
+           - 调试和问题排查时
+           - 需要向用户展示过程时
+           - 后续步骤可能需要引用前面结果时
+           - 实现可解释 AI 时
+
         2. 步骤过多会有什么问题？
+           
+           ✅ 答案：
+           - 延迟累积：每步都有 API 调用延迟
+           - 成本增加：每步消耗 token
+           - 错误传递：前面的错误会影响后续
+           - 复杂度增加：调试和维护困难
+           - 建议：控制在 3-5 步，必要时合并步骤
     """)
 
 

@@ -290,10 +290,104 @@ def exercises():
 
     print("""
     练习 1：实现一个文件读取工具
+
+        ✅ 参考答案：
+        ```python
+        from langchain_core.tools import tool
+        from pathlib import Path
+
+        @tool
+        def read_file(file_path: str, max_chars: int = 5000) -> str:
+            '''读取文件内容
+            
+            Args:
+                file_path: 文件路径
+                max_chars: 最大读取字符数
+            '''
+            path = Path(file_path)
+            if not path.exists():
+                return f"文件不存在: {file_path}"
+            if not path.is_file():
+                return f"不是文件: {file_path}"
+            
+            try:
+                content = path.read_text(encoding="utf-8")
+                if len(content) > max_chars:
+                    return content[:max_chars] + f"\\n...（截断，共 {len(content)} 字符）"
+                return content
+            except Exception as e:
+                return f"读取失败: {e}"
+        ```
+
     练习 2：实现异步工具支持
+
+        ✅ 参考答案：
+        ```python
+        import asyncio
+        from langchain_core.tools import StructuredTool
+
+        async def async_search(query: str) -> str:
+            '''异步搜索工具'''
+            await asyncio.sleep(1)  # 模拟网络请求
+            return f"搜索结果: {query}"
+
+        # 创建支持异步的工具
+        search_tool = StructuredTool.from_function(
+            coroutine=async_search,
+            name="async_search",
+            description="异步搜索工具"
+        )
+
+        # 使用
+        async def main():
+            result = await search_tool.ainvoke({"query": "Python"})
+            print(result)
+        ```
+
     练习 3：添加工具执行日志
+
+        ✅ 参考答案：
+        ```python
+        import logging
+        from datetime import datetime
+        from functools import wraps
+
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger("tools")
+
+        def log_tool_execution(func):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                start = datetime.now()
+                logger.info(f"[{func.__name__}] 开始执行, 参数: {kwargs}")
+                
+                try:
+                    result = func(*args, **kwargs)
+                    duration = (datetime.now() - start).total_seconds()
+                    logger.info(f"[{func.__name__}] 执行成功, 耗时: {duration:.2f}s")
+                    return result
+                except Exception as e:
+                    logger.error(f"[{func.__name__}] 执行失败: {e}")
+                    raise
+            
+            return wrapper
+        ```
     
     思考题：如何限制工具的权限（如只读文件）？
+
+        ✅ 答案：
+        - 白名单路径：只允许访问指定目录
+        - 沙箱执行：在隔离环境运行
+        - 参数验证：过滤危险字符和路径
+        
+        ```python
+        ALLOWED_PATHS = ["/data/docs", "/data/public"]
+        
+        def validate_path(path: str) -> bool:
+            from pathlib import Path
+            resolved = Path(path).resolve()
+            return any(str(resolved).startswith(p) for p in ALLOWED_PATHS)
+        ```
     """)
 
 

@@ -235,15 +235,87 @@ def exercises():
     练习 1：加载本地文件
         创建几个 txt 文件，使用 DirectoryLoader 批量加载。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_community.document_loaders import DirectoryLoader, TextLoader
+        import os
+        import tempfile
+
+        # 创建测试目录和文件
+        temp_dir = tempfile.mkdtemp()
+        for i in range(3):
+            with open(f"{temp_dir}/note{i}.txt", "w") as f:
+                f.write(f"这是笔记文件 {i} 的内容。\\n包含多行文本。")
+
+        # 批量加载
+        loader = DirectoryLoader(
+            temp_dir,
+            glob="*.txt",
+            loader_cls=TextLoader,
+            loader_kwargs={"encoding": "utf-8"}
+        )
+        docs = loader.load()
+
+        print(f"加载了 {len(docs)} 个文档")
+        for doc in docs:
+            print(f"- {doc.metadata['source']}: {len(doc.page_content)} 字符")
+        ```
+
     练习 2：处理 PDF
         下载一个 PDF 文档，用 PyPDFLoader 加载并统计页数。
+
+        ✅ 参考答案：
+        ```python
+        from langchain_community.document_loaders import PyPDFLoader
+
+        # 加载 PDF
+        loader = PyPDFLoader("document.pdf")
+        pages = loader.load()
+
+        print(f"总页数: {len(pages)}")
+        for i, page in enumerate(pages):
+            print(f"第 {i+1} 页: {len(page.page_content)} 字符")
+            print(f"  元数据: {page.metadata}")
+        ```
 
     练习 3：网页抓取
         使用 WebBaseLoader 抓取一个新闻页面的内容。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_community.document_loaders import WebBaseLoader
+
+        # 单个网页
+        loader = WebBaseLoader("https://example.com/news")
+        docs = loader.load()
+
+        print(f"内容长度: {len(docs[0].page_content)} 字符")
+        print(f"元数据: {docs[0].metadata}")
+
+        # 多个网页
+        loader = WebBaseLoader([
+            "https://example.com/page1",
+            "https://example.com/page2"
+        ])
+        docs = loader.load()
+        ```
+
     思考题：
         1. 加载器如何处理编码问题？
+           
+           ✅ 答案：
+           - TextLoader 支持 encoding 参数：`TextLoader(file, encoding="utf-8")`
+           - 可以使用 autodetect_encoding=True 自动检测
+           - PDF 加载器通常内置编码处理
+           - 网页加载器从 HTTP 头或 meta 标签获取编码
+
         2. 大文件加载时的内存问题如何解决？
+           
+           ✅ 答案：
+           - 使用 lazy_load() 延迟加载
+           - 分块处理：结合 TextSplitter 边加载边分块
+           - 流式处理：使用生成器模式
+           - 对于 PDF：使用 load_and_split() 直接分块
     """)
 
 

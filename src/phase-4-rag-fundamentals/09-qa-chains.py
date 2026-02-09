@@ -290,15 +290,117 @@ def exercises():
     练习 1：构建知识问答
         用自己的文档构建 QA 系统。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+        from langchain_chroma import Chroma
+        from langchain_core.documents import Document
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.output_parsers import StrOutputParser
+        from langchain_core.runnables import RunnablePassthrough
+
+        # 加载文档
+        docs = [
+            Document(page_content="公司产品A支持...", metadata={"source": "product.txt"}),
+            Document(page_content="退款政策：7天内...", metadata={"source": "policy.txt"}),
+        ]
+
+        # 构建向量库
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        vectorstore = Chroma.from_documents(docs, embeddings)
+        retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+
+        # 构建 QA 链
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        prompt = ChatPromptTemplate.from_template('''
+        基于以下信息回答问题：
+        {context}
+        问题：{question}
+        ''')
+
+        def format_docs(docs):
+            return "\\n".join(d.page_content for d in docs)
+
+        chain = (
+            {"context": retriever | format_docs, "question": RunnablePassthrough()}
+            | prompt | llm | StrOutputParser()
+        )
+
+        answer = chain.invoke("退款政策是什么？")
+        ```
+
     练习 2：优化提示词
         测试不同提示词对回答质量的影响。
+
+        ✅ 参考答案：
+        ```python
+        prompts = {
+            "简洁": "基于信息回答：{context}\\n问题：{question}",
+            "严格": "仅基于以下信息回答，无关信息回复'无法回答'：\\n{context}\\n问题：{question}",
+            "专业": "作为专业客服，友好专业地回答：\\n参考资料：{context}\\n问题：{question}",
+        }
+
+        for name, template in prompts.items():
+            prompt = ChatPromptTemplate.from_template(template)
+            chain = (
+                {"context": retriever | format_docs, "question": RunnablePassthrough()}
+                | prompt | llm | StrOutputParser()
+            )
+            answer = chain.invoke("退款政策？")
+            print(f"{name}: {answer[:100]}...")
+        ```
 
     练习 3：添加来源追溯
         在回答中显示引用的文档来源。
 
+        ✅ 参考答案：
+        ```python
+        def qa_with_sources(question: str):
+            # 检索
+            docs = retriever.invoke(question)
+            
+            # 格式化（带来源）
+            context = "\\n".join([
+                f"[{d.metadata.get('source', 'unknown')}] {d.page_content}"
+                for d in docs
+            ])
+            
+            prompt = ChatPromptTemplate.from_template('''
+            基于以下资料回答问题，并在回答末尾标注引用来源。
+            
+            资料：
+            {context}
+            
+            问题：{question}
+            ''')
+            
+            answer = (prompt | llm | StrOutputParser()).invoke({
+                "context": context, "question": question
+            })
+            
+            return {
+                "answer": answer,
+                "sources": [d.metadata.get("source") for d in docs]
+            }
+        ```
+
     思考题：
         1. 如何处理检索到无关文档的情况？
+           
+           ✅ 答案：
+           - 提示词中明确说明"如无相关信息则回复无法回答"
+           - 使用相似度阈值过滤低分文档
+           - 检索后用 LLM 判断文档是否相关
+           - 结合多种检索策略（关键词+向量）
+
         2. 如何提高回答的准确性？
+           
+           ✅ 答案：
+           - 改进文档分块策略
+           - 优化 Embedding 模型选择
+           - 使用 MMR 增加多样性
+           - 提示词中强调"基于证据回答"
+           - 实现答案验证/自我修正机制
     """)
 
 

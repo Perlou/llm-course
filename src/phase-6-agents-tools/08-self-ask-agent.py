@@ -261,17 +261,106 @@ def exercises():
     print("""
     练习 1：扩展知识库
         添加更多实体信息，支持更多问题类型
+
+        ✅ 参考答案：
+        ```python
+        KNOWLEDGE_BASE = {
+            "人物": {
+                "爱因斯坦": {"出生": "1879年", "国籍": "德国/美国", "成就": "相对论"},
+                "牛顿": {"出生": "1643年", "国籍": "英国", "成就": "万有引力"},
+            },
+            "概念": {
+                "机器学习": {"类型": "AI子领域", "应用": "图像识别、NLP"},
+                "深度学习": {"类型": "机器学习子领域", "基础": "神经网络"},
+            },
+            "时间": {
+                "Python发布": "1991年",
+                "互联网诞生": "1969年",
+            }
+        }
+
+        def search_knowledge(query: str) -> str:
+            for category, items in KNOWLEDGE_BASE.items():
+                for entity, info in items.items():
+                    if entity in query:
+                        return f"{entity}: {info}"
+            return "未找到相关信息"
+        ```
     
     练习 2：集成真实搜索
         将 search 方法改为调用真实搜索 API
+
+        ✅ 参考答案：
+        ```python
+        import requests
+        import os
+
+        def real_search(query: str) -> str:
+            '''调用 DuckDuckGo Instant Answer API'''
+            response = requests.get(
+                "https://api.duckduckgo.com/",
+                params={"q": query, "format": "json"}
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                abstract = data.get("AbstractText", "")
+                if abstract:
+                    return abstract[:500]
+                
+                # 尝试获取相关主题
+                topics = data.get("RelatedTopics", [])
+                if topics:
+                    return topics[0].get("Text", "未找到信息")
+            
+            return "搜索失败"
+        ```
     
     练习 3：改进子问题生成
         使用 LLM 动态生成子问题
+
+        ✅ 参考答案：
+        ```python
+        class LLMSelfAskAgent:
+            def __init__(self, llm, search_tool):
+                self.llm = llm
+                self.search = search_tool
+
+            def generate_sub_questions(self, question: str, context: str) -> list:
+                '''用 LLM 生成子问题'''
+                prompt = f'''
+                主问题：{question}
+                已知信息：{context}
+                
+                如果需要更多信息才能回答主问题，列出 1-2 个子问题。
+                如果可以回答，返回"无需子问题"。
+                
+                格式：
+                - 子问题1
+                - 子问题2
+                '''
+                response = self.llm.invoke(prompt).content
+                
+                if "无需子问题" in response:
+                    return []
+                
+                # 解析子问题
+                questions = []
+                for line in response.split("\\n"):
+                    if line.strip().startswith("-"):
+                        questions.append(line.strip()[1:].strip())
+                return questions
+        ```
     
     思考题：
         Self-Ask 有什么局限性？
-        答：主要依赖搜索工具，不适合需要复杂操作
-        的任务；子问题分解可能不够智能
+        答：主要依赖搜索工具，不适合需要复杂操作的任务；子问题分解可能不够智能
+
+        ✅ 详细答案：
+        - 单一工具依赖：只用搜索，无法执行计算、操作
+        - 分解质量依赖 LLM：可能生成无关子问题
+        - 深度限制：多层嵌套子问题难以处理
+        - 适用场景：知识检索类问题
     """)
 
 

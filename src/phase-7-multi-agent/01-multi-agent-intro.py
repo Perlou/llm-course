@@ -490,25 +490,111 @@ def exercises():
     练习 1：扩展写作系统
         为上面的多 Agent 系统添加一个 Editor Agent，
         负责在 Writer 和 Reviewer 之间进行内容优化。
+
+        ✅ 参考答案：
+        ```python
+        class EditorAgent(BaseAgent):
+            def process(self, content: str) -> str:
+                prompt = f'''
+                作为编辑，请优化以下内容：
+                1. 改善表达流畅度
+                2. 修正语法错误
+                3. 增强逻辑连贯性
+                
+                内容：{content}
+                
+                优化后的内容：
+                '''
+                return self.llm.invoke(prompt).content
+
+        # 修改工作流
+        class WritingSystem:
+            def __init__(self):
+                self.writer = WriterAgent()
+                self.editor = EditorAgent()  # 新增
+                self.reviewer = ReviewerAgent()
+            
+            def run(self, topic: str) -> dict:
+                draft = self.writer.process(topic)
+                edited = self.editor.process(draft)  # 编辑优化
+                feedback = self.reviewer.process(edited)
+                return {"draft": draft, "edited": edited, "feedback": feedback}
+        ```
     
     练习 2：设计一个辩论系统
         创建两个 Agent（正方和反方）就某个话题进行辩论，
         由第三个 Agent 作为裁判总结双方观点。
+
+        ✅ 参考答案：
+        ```python
+        class DebateSystem:
+            def __init__(self, llm):
+                self.llm = llm
+
+            def debate(self, topic: str, rounds: int = 3):
+                history = []
+                
+                for i in range(rounds):
+                    # 正方发言
+                    pro_prompt = f"话题：{topic}\\n历史：{history}\\n你是正方，请阐述支持观点："
+                    pro_arg = self.llm.invoke(pro_prompt).content
+                    history.append(f"正方：{pro_arg}")
+                    
+                    # 反方发言
+                    con_prompt = f"话题：{topic}\\n历史：{history}\\n你是反方，请反驳并阐述反对观点："
+                    con_arg = self.llm.invoke(con_prompt).content
+                    history.append(f"反方：{con_arg}")
+                
+                # 裁判总结
+                judge_prompt = f"作为裁判，请总结并评判以下辩论：\\n{history}"
+                verdict = self.llm.invoke(judge_prompt).content
+                
+                return {"debate_history": history, "verdict": verdict}
+        ```
     
     练习 3：实现消息传递
         为 BaseAgent 实现一个简单的消息队列，
         让 Agent 之间可以异步通信。
+
+        ✅ 参考答案：
+        ```python
+        from queue import Queue
+        from threading import Thread
+
+        class AsyncAgent(BaseAgent):
+            def __init__(self, name: str):
+                super().__init__(name)
+                self.inbox = Queue()
+                self.running = False
+                
+            def send(self, target: 'AsyncAgent', message: dict):
+                target.inbox.put({"from": self.name, **message})
+            
+            def start(self):
+                self.running = True
+                self.thread = Thread(target=self._process_loop)
+                self.thread.start()
+            
+            def _process_loop(self):
+                while self.running:
+                    if not self.inbox.empty():
+                        message = self.inbox.get()
+                        self.handle_message(message)
+            
+            def handle_message(self, message: dict):
+                print(f"{self.name} 收到消息: {message}")
+        ```
     
     思考题：
     ────────
     1. 多 Agent 系统中如何避免死锁？
        答：设置超时机制、定义明确的通信协议、
        使用异步通信、避免循环依赖。
-    
+
     2. 如何确保 Agent 之间的信息一致性？
        答：使用共享状态管理、设置版本控制、
        实现事务机制、定期同步状态。
-    
+
     3. 何时应该增加 Agent 数量？何时应该减少？
        答：任务可以明确分解时增加，Agent 间通信开销
        大于收益时减少。需要权衡复杂度和效率。

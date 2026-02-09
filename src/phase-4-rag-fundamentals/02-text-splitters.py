@@ -254,15 +254,83 @@ def exercises():
     练习 1：对比分割效果
         用不同 chunk_size 分割同一文档，对比结果。
 
+        ✅ 参考答案：
+        ```python
+        from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+        text = "你的长文本内容..."
+
+        for chunk_size in [100, 300, 500, 1000]:
+            splitter = RecursiveCharacterTextSplitter(
+                chunk_size=chunk_size,
+                chunk_overlap=int(chunk_size * 0.1)
+            )
+            chunks = splitter.split_text(text)
+            print(f"chunk_size={chunk_size}: {len(chunks)} 块")
+            print(f"  平均长度: {sum(len(c) for c in chunks) / len(chunks):.0f}")
+        ```
+
     练习 2：代码分割
         用 PythonCodeTextSplitter 分割一个 Python 文件。
+
+        ✅ 参考答案：
+        ```python
+        from langchain.text_splitter import PythonCodeTextSplitter
+
+        with open("example.py", "r") as f:
+            code = f.read()
+
+        splitter = PythonCodeTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=100
+        )
+        chunks = splitter.split_text(code)
+
+        for i, chunk in enumerate(chunks):
+            print(f"块 {i+1}:")
+            print(chunk[:100] + "..." if len(chunk) > 100 else chunk)
+        ```
 
     练习 3：Token 计算
         计算分割后各块的 token 数量。
 
+        ✅ 参考答案：
+        ```python
+        import tiktoken
+        from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+        # 获取编码器
+        encoding = tiktoken.get_encoding("cl100k_base")
+
+        def count_tokens(text):
+            return len(encoding.encode(text))
+
+        splitter = RecursiveCharacterTextSplitter(chunk_size=500)
+        chunks = splitter.split_text(long_text)
+
+        for i, chunk in enumerate(chunks):
+            tokens = count_tokens(chunk)
+            print(f"块 {i+1}: {len(chunk)} 字符, {tokens} tokens")
+        ```
+
     思考题：
         1. chunk_size 如何影响 RAG 效果？
+           
+           ✅ 答案：
+           | chunk_size | 优点 | 缺点 |
+           |------------|------|------|
+           | 小 (100-300) | 检索精确 | 上下文不完整 |
+           | 中 (500-1000) | 平衡 | 通用推荐 |
+           | 大 (1500+) | 上下文完整 | 检索不精确，成本高 |
+
         2. 什么情况下需要更大的 overlap？
+           
+           ✅ 答案：
+           - 句子跨块边界时
+           - 技术文档有跨段落引用
+           - 问答对分布在多行
+           - 代码中函数调用跨块时
+           - 一般设为 chunk_size 的 10-20%
     """)
 
 

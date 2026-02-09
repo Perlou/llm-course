@@ -303,15 +303,103 @@ def exercises():
     练习 1：实现 RRF 融合
         完成 RRF 融合算法并对比效果。
 
+        ✅ 参考答案：
+        ```python
+        def rrf_fusion(query_results: list, k: int = 60):
+            '''融合多个查询的结果'''
+            doc_scores = {}
+            
+            for results in query_results:
+                for rank, doc in enumerate(results):
+                    content = doc.page_content
+                    if content not in doc_scores:
+                        doc_scores[content] = {"doc": doc, "score": 0}
+                    doc_scores[content]["score"] += 1 / (k + rank + 1)
+            
+            sorted_docs = sorted(doc_scores.values(), key=lambda x: x["score"], reverse=True)
+            return [item["doc"] for item in sorted_docs]
+
+        # 使用
+        queries = generate_multi_queries("AI 的应用")
+        all_results = [retriever.invoke(q) for q in queries]
+        fused = rrf_fusion(all_results)
+        ```
+
     练习 2：调整查询数量
         测试不同查询数量对结果的影响。
+
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        def test_query_count(original_query: str, counts: list = [2, 3, 5, 7]):
+            llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+            
+            for n in counts:
+                prompt = f"为以下问题生成 {n} 个不同的搜索查询：{original_query}"
+                queries = llm.invoke(prompt).content.split("\\n")[:n]
+                
+                all_results = []
+                for q in queries:
+                    all_results.extend(retriever.invoke(q))
+                
+                # 去重统计
+                unique_docs = set(d.page_content for d in all_results)
+                
+                print(f"查询数={n}: 总结果={len(all_results)}, 去重后={len(unique_docs)}")
+        ```
 
     练习 3：领域定制
         为特定领域定制查询生成提示。
 
+        ✅ 参考答案：
+        ```python
+        DOMAIN_PROMPTS = {
+            "medical": '''
+            作为医学专家，为以下患者问题生成 3 个不同角度的搜索查询：
+            - 从症状角度
+            - 从治疗方案角度
+            - 从预防措施角度
+            问题：{query}
+            ''',
+            "legal": '''
+            作为法律顾问，为以下法律问题生成 3 个搜索查询：
+            - 从法条规定角度
+            - 从判例角度
+            - 从实务操作角度
+            问题：{query}
+            ''',
+            "tech": '''
+            作为技术专家，为以下技术问题生成 3 个搜索查询：
+            - 从概念原理角度
+            - 从实现方法角度
+            - 从最佳实践角度
+            问题：{query}
+            ''',
+        }
+
+        def domain_multi_query(query: str, domain: str = "tech"):
+            prompt = DOMAIN_PROMPTS.get(domain, DOMAIN_PROMPTS["tech"])
+            return llm.invoke(prompt.format(query=query))
+        ```
+
     思考题：
         1. 生成多少个查询比较合适？
+           
+           ✅ 答案：
+           - 通常 3-5 个是最佳平衡点
+           - 太少：覆盖面不够
+           - 太多：增加延迟，引入噪声
+           - 建议：根据领域和查询复杂度动态调整
+
         2. 如何评估多查询的效果？
+           
+           ✅ 答案：
+           - 召回率提升：对比单查询 vs 多查询
+           - 多样性指标：计算结果的覆盖面
+           - 用户满意度：A/B 测试
+           - 成本效益：召回提升 vs 延迟增加
+           - 查询质量：评估生成查询的相关性
     """)
 
 

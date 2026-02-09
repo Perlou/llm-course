@@ -240,15 +240,139 @@ def exercises():
     练习 1：提取实体
         使用 PydanticOutputParser 从新闻中提取人名、地点、时间。
 
+        ✅ 参考答案：
+        ```python
+        from pydantic import BaseModel, Field
+        from typing import List, Optional
+        from langchain_core.output_parsers import PydanticOutputParser
+
+        class NewsEntities(BaseModel):
+            people: List[str] = Field(description="提到的人名")
+            locations: List[str] = Field(description="提到的地点")
+            times: List[str] = Field(description="提到的时间")
+            organizations: Optional[List[str]] = Field(description="提到的组织机构", default=[])
+
+        parser = PydanticOutputParser(pydantic_object=NewsEntities)
+
+        prompt = ChatPromptTemplate.from_template('''
+        从以下新闻中提取实体信息：
+        {format_instructions}
+
+        新闻：{news}
+        ''')
+
+        chain = prompt | llm | parser
+
+        result = chain.invoke({
+            "news": "2024年1月15日，马云在杭州阿里巴巴总部发表演讲",
+            "format_instructions": parser.get_format_instructions()
+        })
+        # result.people = ["马云"]
+        # result.locations = ["杭州"]
+        # result.times = ["2024年1月15日"]
+        ```
+
     练习 2：情感分析
         创建解析器将文本分类为正面/负面/中性。
+
+        ✅ 参考答案：
+        ```python
+        from pydantic import BaseModel, Field
+        from enum import Enum
+
+        class Sentiment(str, Enum):
+            POSITIVE = "正面"
+            NEGATIVE = "负面"
+            NEUTRAL = "中性"
+
+        class SentimentResult(BaseModel):
+            sentiment: Sentiment = Field(description="情感倾向")
+            confidence: float = Field(description="置信度 0-1")
+            reason: str = Field(description="判断理由")
+
+        sentiment_parser = PydanticOutputParser(pydantic_object=SentimentResult)
+
+        sentiment_prompt = ChatPromptTemplate.from_template('''
+        分析以下文本的情感：
+        {format_instructions}
+
+        文本：{text}
+        ''')
+
+        sentiment_chain = sentiment_prompt | llm | sentiment_parser
+
+        result = sentiment_chain.invoke({
+            "text": "这个产品太棒了，超出预期！",
+            "format_instructions": sentiment_parser.get_format_instructions()
+        })
+        ```
 
     练习 3：多格式解析
         支持解析 JSON、YAML、列表等多种格式。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_core.output_parsers import BaseOutputParser
+        import json
+        import yaml
+
+        class MultiFormatParser(BaseOutputParser):
+            def parse(self, text: str):
+                text = text.strip()
+                
+                # 尝试 JSON
+                try:
+                    if text.startswith('{') or text.startswith('['):
+                        return {"format": "json", "data": json.loads(text)}
+                except json.JSONDecodeError:
+                    pass
+                
+                # 尝试 YAML
+                try:
+                    data = yaml.safe_load(text)
+                    if isinstance(data, (dict, list)):
+                        return {"format": "yaml", "data": data}
+                except yaml.YAMLError:
+                    pass
+                
+                # 尝试列表格式
+                if any(text.startswith(p) for p in ['- ', '• ', '* ', '1.']):
+                    items = []
+                    for line in text.split('\\n'):
+                        line = line.strip()
+                        for prefix in ['- ', '• ', '* ']:
+                            if line.startswith(prefix):
+                                items.append(line[len(prefix):])
+                                break
+                        else:
+                            if line and line[0].isdigit() and '. ' in line:
+                                items.append(line.split('. ', 1)[1])
+                    return {"format": "list", "data": items}
+                
+                # 默认纯文本
+                return {"format": "text", "data": text}
+        ```
+
     思考题：
         1. 解析失败时如何处理？
+           
+           ✅ 答案：
+           - 重试机制：让 LLM 重新生成
+           - 回退解析：尝试宽松的解析规则
+           - 错误修复：使用 LLM 修复格式问题
+           - 默认值：返回预定义的默认结构
+           - 记录日志：保存失败案例用于改进
+           - 使用 `OutputFixingParser` 自动修复
+
         2. 如何提高 LLM 输出格式的一致性？
+           
+           ✅ 答案：
+           - 降低温度：temperature=0 更确定
+           - 提供示例：Few-Shot 展示期望格式
+           - 格式说明：明确指定 JSON Schema
+           - 结构化输出：使用 Gemini 的结构化输出功能
+           - 后处理：正则表达式提取有效部分
+           - 多次尝试：失败时重试几次
     """)
 
 

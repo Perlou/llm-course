@@ -300,15 +300,106 @@ def exercises():
     练习 1：构建同义词库
         为你的领域构建一个同义词库。
 
+        ✅ 参考答案：
+        ```python
+        # 技术领域同义词库
+        SYNONYM_DICT = {
+            "AI": ["人工智能", "机器智能", "artificial intelligence"],
+            "ML": ["机器学习", "machine learning"],
+            "DL": ["深度学习", "deep learning"],
+            "Python": ["py", "python语言"],
+            "API": ["接口", "应用程序接口"],
+            "数据库": ["DB", "database", "存储"],
+        }
+
+        def expand_with_synonyms(query: str) -> list:
+            expanded = [query]
+            for term, synonyms in SYNONYM_DICT.items():
+                if term.lower() in query.lower():
+                    for syn in synonyms:
+                        expanded.append(query.replace(term, syn))
+            return list(set(expanded))
+
+        # 使用
+        query = "如何学习 AI"
+        expanded = expand_with_synonyms(query)
+        # ["如何学习 AI", "如何学习人工智能", ...]
+        ```
+
     练习 2：对比扩展效果
         对比扩展前后检索召回率的变化。
+
+        ✅ 参考答案：
+        ```python
+        def evaluate_expansion(queries, relevant_docs):
+            results = {"original": 0, "expanded": 0}
+            
+            for query, expected in zip(queries, relevant_docs):
+                # 原始检索
+                original_results = retriever.invoke(query)
+                if expected in [d.page_content for d in original_results]:
+                    results["original"] += 1
+                
+                # 扩展检索
+                expanded_queries = expand_query(query)
+                all_expanded_results = []
+                for eq in expanded_queries:
+                    all_expanded_results.extend(retriever.invoke(eq))
+                if expected in [d.page_content for d in all_expanded_results]:
+                    results["expanded"] += 1
+            
+            print(f"原始召回率: {results['original']/len(queries):.2%}")
+            print(f"扩展召回率: {results['expanded']/len(queries):.2%}")
+        ```
 
     练习 3：动态扩展
         根据初次检索结果动态决定是否扩展。
 
+        ✅ 参考答案：
+        ```python
+        def adaptive_retrieval(query: str, threshold: float = 0.5):
+            # 第一次检索
+            results = vectorstore.similarity_search_with_score(query, k=5)
+            
+            # 检查最高分
+            if results and results[0][1] > threshold:
+                # 分数足够高，不需要扩展
+                return [doc for doc, _ in results]
+            
+            # 分数低，进行扩展
+            expanded = expand_query(query)
+            all_results = []
+            for eq in expanded:
+                all_results.extend(vectorstore.similarity_search(eq, k=3))
+            
+            # 去重
+            seen = set()
+            unique = []
+            for doc in all_results:
+                if doc.page_content not in seen:
+                    seen.add(doc.page_content)
+                    unique.append(doc)
+            
+            return unique[:5]
+        ```
+
     思考题：
         1. 扩展太多会有什么问题？
+           
+           ✅ 答案：
+           - 引入噪声：不相关的同义词检索到错误文档
+           - 性能下降：多次检索增加延迟
+           - 主题漂移：扩展偏离原始意图
+           - Token 成本：更多上下文消耗更多 API 费用
+
         2. 如何控制扩展的质量？
+           
+           ✅ 答案：
+           - 限制扩展数量（最多 3-5 个变体）
+           - 使用领域专用同义词库
+           - 让 LLM 判断扩展是否合理
+           - 使用向量相似度验证扩展词
+           - 基于用户反馈优化同义词映射
     """)
 
 

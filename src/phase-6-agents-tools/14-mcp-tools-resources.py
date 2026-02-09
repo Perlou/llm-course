@@ -331,13 +331,117 @@ def exercises():
     print("""
     练习 1：构建 GitHub MCP Server
         实现 list_repos、get_file、search_code 工具
+
+        ✅ 参考答案：
+        ```python
+        from mcp.server import Server
+        import aiohttp
+        import os
+
+        server = Server("github-tools")
+        GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+        HEADERS = {"Authorization": f"token {GITHUB_TOKEN}"}
+
+        @server.tool()
+        async def list_repos(username: str) -> str:
+            async with aiohttp.ClientSession() as session:
+                url = f"https://api.github.com/users/{username}/repos"
+                async with session.get(url, headers=HEADERS) as resp:
+                    repos = await resp.json()
+                    return "\\n".join([r["full_name"] for r in repos[:10]])
+
+        @server.tool()
+        async def get_file(repo: str, path: str) -> str:
+            async with aiohttp.ClientSession() as session:
+                url = f"https://api.github.com/repos/{repo}/contents/{path}"
+                async with session.get(url, headers=HEADERS) as resp:
+                    data = await resp.json()
+                    import base64
+                    return base64.b64decode(data["content"]).decode()
+
+        @server.tool()
+        async def search_code(query: str, repo: str = None) -> str:
+            q = f"{query} repo:{repo}" if repo else query
+            async with aiohttp.ClientSession() as session:
+                url = f"https://api.github.com/search/code?q={q}"
+                async with session.get(url, headers=HEADERS) as resp:
+                    data = await resp.json()
+                    items = data.get("items", [])[:5]
+                    return "\\n".join([f"{i['path']} in {i['repository']['full_name']}" for i in items])
+        ```
     
     练习 2：构建天气 MCP Server
         调用真实天气 API
+
+        ✅ 参考答案：
+        ```python
+        from mcp.server import Server
+        import aiohttp
+        import os
+
+        server = Server("weather-tools")
+        API_KEY = os.getenv("OPENWEATHER_API_KEY")
+
+        @server.tool()
+        async def get_weather(city: str) -> str:
+            '''获取城市天气'''
+            async with aiohttp.ClientSession() as session:
+                url = f"https://api.openweathermap.org/data/2.5/weather"
+                params = {"q": city, "appid": API_KEY, "units": "metric", "lang": "zh_cn"}
+                
+                async with session.get(url, params=params) as resp:
+                    data = await resp.json()
+                    
+                    if resp.status == 200:
+                        return f"{city}: {data['weather'][0]['description']}, 温度 {data['main']['temp']}°C"
+                    return f"获取失败: {data.get('message', '未知错误')}"
+
+        @server.tool()
+        async def get_forecast(city: str, days: int = 3) -> str:
+            '''获取天气预报'''
+            async with aiohttp.ClientSession() as session:
+                url = f"https://api.openweathermap.org/data/2.5/forecast"
+                params = {"q": city, "appid": API_KEY, "units": "metric", "cnt": days * 8}
+                
+                async with session.get(url, params=params) as resp:
+                    data = await resp.json()
+                    forecasts = []
+                    for item in data["list"][::8]:  # 每天一条
+                        forecasts.append(f"{item['dt_txt']}: {item['main']['temp']}°C")
+                    return "\\n".join(forecasts)
+        ```
     
     练习 3：完整研究助手
         结合文件、搜索、数据库构建研究助手 Agent
-    
+
+        ✅ 参考答案：
+        ```python
+        class ResearchAssistant:
+            def __init__(self, llm, servers: dict):
+                self.llm = llm
+                self.servers = servers  # {"file": file_client, "search": search_client, "db": db_client}
+
+            async def research(self, topic: str):
+                '''执行研究流程'''
+                # 1. 搜索相关资料
+                search_results = await self.servers["search"].call_tool(
+                    "search", {"query": topic}
+                )
+                
+                # 2. 保存笔记
+                notes = self.llm.invoke(f"总结：{search_results}").content
+                await self.servers["file"].call_tool(
+                    "write_file", {"path": f"/notes/{topic}.md", "content": notes}
+                )
+                
+                # 3. 存储引用
+                await self.servers["db"].call_tool(
+                    "insert", {"table": "references", "data": {"topic": topic, "notes": notes}}
+                )
+                
+                return notes
+        ```
+
     实战项目：自动化研究助手
     ──────────────────────
     构建能够自动搜索、阅读、总结文献的研究助手：
@@ -346,6 +450,23 @@ def exercises():
     2. 文件 Server：保存笔记
     3. 数据库 Server：管理引用
     4. Agent：协调所有工具完成研究任务
+
+        ✅ 架构设计：
+        ```
+        ┌─────────────────────────────────────────────┐
+        │              Research Agent                  │
+        │  (协调 LLM + MCP Clients)                   │
+        └─────────────┬───────────────────────────────┘
+                      │
+        ┌─────────────┴───────────────────────────────┐
+        │           MCP Client Hub                     │
+        └──────┬──────────┬──────────────┬────────────┘
+               │          │              │
+        ┌──────▼──┐ ┌─────▼────┐ ┌───────▼──────┐
+        │ Search  │ │  File    │ │   Database   │
+        │ Server  │ │  Server  │ │   Server     │
+        └─────────┘ └──────────┘ └──────────────┘
+        ```
     """)
 
 

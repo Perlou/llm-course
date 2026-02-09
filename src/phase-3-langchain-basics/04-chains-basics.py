@@ -215,15 +215,92 @@ def exercises():
     练习 1：构建翻译链
         创建一个中英互译的链。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.output_parsers import StrOutputParser
+
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+
+        # 中译英
+        cn_to_en = (
+            ChatPromptTemplate.from_template("将以下中文翻译成英文：{text}")
+            | llm
+            | StrOutputParser()
+        )
+
+        # 英译中
+        en_to_cn = (
+            ChatPromptTemplate.from_template("Translate to Chinese: {text}")
+            | llm
+            | StrOutputParser()
+        )
+
+        # 使用
+        print(cn_to_en.invoke({"text": "你好世界"}))
+        print(en_to_cn.invoke({"text": "Hello World"}))
+        ```
+
     练习 2：带预处理的链
         使用 RunnableLambda 清理输入后再处理。
+
+        ✅ 参考答案：
+        ```python
+        from langchain_core.runnables import RunnableLambda
+
+        def clean_input(text: str) -> str:
+            # 去除多余空格和特殊字符
+            text = text.strip()
+            text = ' '.join(text.split())  # 合并连续空格
+            return text
+
+        def format_output(text: str) -> str:
+            return f"【回复】\\n{text}"
+
+        chain = (
+            RunnableLambda(clean_input)
+            | {"text": lambda x: x}
+            | ChatPromptTemplate.from_template("回答: {text}")
+            | llm
+            | StrOutputParser()
+            | RunnableLambda(format_output)
+        )
+        ```
 
     练习 3：批量处理
         使用 batch() 同时翻译多段文本。
 
+        ✅ 参考答案：
+        ```python
+        texts = [
+            {"text": "早上好"},
+            {"text": "下午好"},
+            {"text": "晚上好"}
+        ]
+
+        results = cn_to_en.batch(texts)
+        for original, translated in zip(texts, results):
+            print(f"{original['text']} -> {translated}")
+        ```
+
     思考题：
         1. LCEL 相比传统链有什么优势？
+           
+           ✅ 答案：
+           - 语法简洁：| 管道符直观易读
+           - 统一接口：invoke/stream/batch 一致
+           - 流式支持：开箱即用的流式输出
+           - 类型安全：IDE 自动补全支持更好
+           - 可组合性：灵活组合各种组件
+
         2. 何时使用 stream() 而不是 invoke()？
+           
+           ✅ 答案：
+           - 响应长文本时，减少用户等待感
+           - 实时聊天应用，逐字显示回复
+           - 需要展示"思考中"效果的场景
+           - 生成大量内容时，边生成边显示
     """)
 
 

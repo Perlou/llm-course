@@ -292,16 +292,123 @@ def exercises():
     print("""
     练习 1：创建文件工具 Server
         实现 read_file 和 list_dir 工具
+
+        ✅ 参考答案：
+        ```python
+        from mcp.server import Server
+        from mcp.types import Tool, TextContent
+        from pathlib import Path
+        import json
+
+        server = Server("file-tools")
+
+        @server.tool()
+        async def read_file(path: str) -> str:
+            '''读取文件内容'''
+            try:
+                content = Path(path).read_text(encoding="utf-8")
+                return content[:5000]  # 限制长度
+            except Exception as e:
+                return f"错误: {e}"
+
+        @server.tool()
+        async def list_dir(path: str) -> str:
+            '''列出目录内容'''
+            try:
+                p = Path(path)
+                if not p.is_dir():
+                    return "不是目录"
+                
+                items = []
+                for item in p.iterdir():
+                    items.append({
+                        "name": item.name,
+                        "type": "dir" if item.is_dir() else "file",
+                        "size": item.stat().st_size if item.is_file() else None,
+                    })
+                return json.dumps(items, ensure_ascii=False)
+            except Exception as e:
+                return f"错误: {e}"
+        ```
     
     练习 2：添加错误处理
         为工具添加完善的错误处理和日志
+
+        ✅ 参考答案：
+        ```python
+        import logging
+        from functools import wraps
+
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger("mcp-server")
+
+        def with_error_handling(func):
+            @wraps(func)
+            async def wrapper(*args, **kwargs):
+                try:
+                    logger.info(f"调用 {func.__name__}, 参数: {kwargs}")
+                    result = await func(*args, **kwargs)
+                    logger.info(f"{func.__name__} 成功")
+                    return result
+                except FileNotFoundError:
+                    logger.error(f"文件不存在: {kwargs}")
+                    return "错误: 文件不存在"
+                except PermissionError:
+                    logger.error(f"权限不足: {kwargs}")
+                    return "错误: 没有访问权限"
+                except Exception as e:
+                    logger.exception(f"{func.__name__} 失败")
+                    return f"错误: {e}"
+            return wrapper
+        ```
     
     练习 3：测试 Server
         使用 MCP Inspector 或编写测试用例
+
+        ✅ 参考答案：
+        ```python
+        # 使用 MCP Inspector 测试
+        # npx @anthropic-ai/inspector npx -y python -m your_server
+
+        # 或编写单元测试
+        import pytest
+
+        @pytest.mark.asyncio
+        async def test_read_file():
+            # 创建临时文件
+            import tempfile
+            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
+                f.write("测试内容")
+                path = f.name
+            
+            result = await read_file(path)
+            assert result == "测试内容"
+
+        @pytest.mark.asyncio
+        async def test_list_dir():
+            result = await list_dir("/tmp")
+            data = json.loads(result)
+            assert isinstance(data, list)
+        ```
     
     思考题：
         如何确保 MCP Server 的安全性？
         答：限制文件路径、验证输入、添加权限控制
+
+        ✅ 详细答案：
+        ```python
+        ALLOWED_PATHS = ["/data/public", "/app/docs"]
+        
+        def validate_path(path: str) -> bool:
+            resolved = Path(path).resolve()
+            return any(str(resolved).startswith(p) for p in ALLOWED_PATHS)
+        
+        @server.tool()
+        async def safe_read_file(path: str) -> str:
+            if not validate_path(path):
+                return "错误: 路径不允许访问"
+            return Path(path).read_text()
+        ```
     """)
 
 

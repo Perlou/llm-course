@@ -248,15 +248,113 @@ def exercises():
     练习 1：对比检索策略
         对比 similarity、mmr、threshold 的结果差异。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+        from langchain_chroma import Chroma
+        from langchain_core.documents import Document
+
+        docs = [
+            Document(page_content="Python 编程基础"),
+            Document(page_content="Python 高级技巧"),
+            Document(page_content="Python 数据分析"),
+            Document(page_content="机器学习入门"),
+        ]
+
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        vectorstore = Chroma.from_documents(docs, embeddings)
+
+        query = "Python"
+
+        # 普通相似搜索
+        print("Similarity:")
+        r1 = vectorstore.similarity_search(query, k=3)
+        for d in r1: print(f"  {d.page_content}")
+
+        # MMR 搜索（更多样化）
+        print("MMR:")
+        retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 3})
+        r2 = retriever.invoke(query)
+        for d in r2: print(f"  {d.page_content}")
+
+        # 阈值搜索
+        print("Threshold:")
+        retriever = vectorstore.as_retriever(
+            search_type="similarity_score_threshold",
+            search_kwargs={"score_threshold": 0.8}
+        )
+        r3 = retriever.invoke(query)
+        for d in r3: print(f"  {d.page_content}")
+        ```
+
     练习 2：调优参数
         测试不同 k、lambda_mult 值的效果。
+
+        ✅ 参考答案：
+        ```python
+        # 测试不同 k 值
+        for k in [1, 2, 3, 5]:
+            results = vectorstore.similarity_search(query, k=k)
+            print(f"k={k}: {len(results)} 结果")
+
+        # 测试不同 lambda_mult（MMR 多样性参数）
+        for lm in [0.0, 0.3, 0.5, 0.7, 1.0]:
+            retriever = vectorstore.as_retriever(
+                search_type="mmr",
+                search_kwargs={"k": 3, "lambda_mult": lm}
+            )
+            results = retriever.invoke(query)
+            print(f"lambda={lm}: {[d.page_content[:10] for d in results]}")
+        # lambda=0 最多样，lambda=1 最相关
+        ```
 
     练习 3：实现重排序
         检索后使用 LLM 对结果重新排序。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        from langchain_core.prompts import ChatPromptTemplate
+
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+
+        def rerank(query: str, docs: list, top_k: int = 3):
+            prompt = ChatPromptTemplate.from_template('''
+            查询: {query}
+            
+            文档列表:
+            {docs}
+            
+            按与查询的相关性排序，返回最相关的 {top_k} 个文档编号（用逗号分隔）。
+            ''')
+            
+            docs_text = "\\n".join([f"{i+1}. {d.page_content}" for i, d in enumerate(docs)])
+            
+            response = (prompt | llm).invoke({
+                "query": query, "docs": docs_text, "top_k": top_k
+            })
+            
+            # 解析并返回重排序结果
+            indices = [int(x.strip())-1 for x in response.content.split(",")]
+            return [docs[i] for i in indices if i < len(docs)]
+        ```
+
     思考题：
         1. 何时使用 MMR？
+           
+           ✅ 答案：
+           - 需要多样化结果时（避免重复信息）
+           - 文档库有大量相似内容时
+           - 用户希望看到不同角度的信息
+           - 推荐系统中防止信息茧房
+
         2. 阈值设置过高或过低有什么问题？
+           
+           ✅ 答案：
+           - 过高：可能没有结果返回，用户体验差
+           - 过低：返回不相关内容，增加噪声
+           - 建议：0.6-0.8 起步，根据实际效果调整
+           - 可以结合 k 值：先设阈值，再限制最大返回数
     """)
 
 

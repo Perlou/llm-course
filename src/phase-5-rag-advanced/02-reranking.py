@@ -278,15 +278,110 @@ def exercises():
     练习 1：对比效果
         比较有无重排序的 RAG 回答质量。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        from langchain_core.prompts import ChatPromptTemplate
+
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        
+        def qa_without_rerank(query):
+            docs = retriever.invoke(query)[:3]
+            context = "\\n".join(d.page_content for d in docs)
+            return generate_answer(context, query)
+
+        def qa_with_rerank(query):
+            docs = retriever.invoke(query)[:10]
+            reranked = reranker.rerank(query, docs)[:3]
+            context = "\\n".join(d.page_content for d in reranked)
+            return generate_answer(context, query)
+
+        # 对比测试
+        test_queries = ["Python 的优点", "如何学习机器学习"]
+        for q in test_queries:
+            print(f"无重排序: {qa_without_rerank(q)[:100]}")
+            print(f"有重排序: {qa_with_rerank(q)[:100]}")
+        ```
+
     练习 2：不同模型
         测试不同 Cross-Encoder 模型的效果。
+
+        ✅ 参考答案：
+        ```python
+        from sentence_transformers import CrossEncoder
+        import time
+
+        models = [
+            "cross-encoder/ms-marco-MiniLM-L-6-v2",  # 快速
+            "cross-encoder/ms-marco-MiniLM-L-12-v2",  # 中等
+            # "cross-encoder/ms-marco-TinyBERT-L-6-v2",  # 更快
+        ]
+
+        query = "Python programming"
+        docs = ["Python is a language", "Java is popular", "Machine learning uses Python"]
+
+        for model_name in models:
+            model = CrossEncoder(model_name)
+            
+            start = time.time()
+            scores = model.predict([(query, doc) for doc in docs])
+            latency = time.time() - start
+            
+            print(f"{model_name}")
+            print(f"  延迟: {latency*1000:.2f}ms")
+            print(f"  分数: {scores}")
+        ```
 
     练习 3：中文重排序
         尝试中文 Cross-Encoder 模型。
 
+        ✅ 参考答案：
+        ```python
+        from sentence_transformers import CrossEncoder
+
+        # 中文重排序模型
+        chinese_models = [
+            "BAAI/bge-reranker-base",
+            "BAAI/bge-reranker-large",
+        ]
+
+        query = "Python 编程语言的优点"
+        docs = [
+            "Python 语法简洁易读",
+            "Java 是企业级语言",
+            "Python 拥有丰富的库",
+        ]
+
+        for model_name in chinese_models:
+            model = CrossEncoder(model_name)
+            pairs = [(query, doc) for doc in docs]
+            scores = model.predict(pairs)
+            
+            # 排序
+            sorted_pairs = sorted(zip(scores, docs), reverse=True)
+            print(f"{model_name}:")
+            for score, doc in sorted_pairs:
+                print(f"  [{score:.4f}] {doc}")
+        ```
+
     思考题：
         1. 重排序会增加多少延迟？
+           
+           ✅ 答案：
+           - MiniLM 模型：~10-50ms (CPU)
+           - Large 模型：~50-200ms (CPU)
+           - GPU 加速可降低 5-10 倍
+           - 批处理比逐条处理更高效
+           - 延迟与候选文档数量线性相关
+
         2. 如何权衡精度和速度？
+           
+           ✅ 答案：
+           - 两阶段检索：先粗检索多，再重排序少量
+           - 模型选择：小模型速度快，大模型精度高
+           - 缓存热门查询的重排序结果
+           - 异步重排序：先返回初始结果，后台重排
+           - 设置超时机制：超时时返回未重排结果
     """)
 
 

@@ -275,12 +275,120 @@ def exercises():
 
     print("""
     练习 1：实现超时装饰器
+
+        ✅ 参考答案：
+        ```python
+        import signal
+        from functools import wraps
+
+        def with_timeout(seconds: int):
+            def decorator(func):
+                def handler(signum, frame):
+                    raise TimeoutError(f"执行超时 ({seconds}s)")
+                
+                @wraps(func)
+                def wrapper(*args, **kwargs):
+                    signal.signal(signal.SIGALRM, handler)
+                    signal.alarm(seconds)
+                    try:
+                        return func(*args, **kwargs)
+                    finally:
+                        signal.alarm(0)
+                return wrapper
+            return decorator
+
+        # 使用
+        @with_timeout(30)
+        def slow_skill(data):
+            # 耗时操作
+            return process(data)
+        ```
+
     练习 2：创建条件执行的组合技能
+
+        ✅ 参考答案：
+        ```python
+        class ConditionalSkill:
+            def __init__(self, conditions: list):
+                # conditions: [(condition_func, skill), ...]
+                self.conditions = conditions
+                self.default_skill = None
+            
+            def set_default(self, skill):
+                self.default_skill = skill
+                return self
+            
+            def execute(self, context: dict):
+                for condition, skill in self.conditions:
+                    if condition(context):
+                        return skill.execute(context)
+                
+                if self.default_skill:
+                    return self.default_skill.execute(context)
+                
+                raise ValueError("没有匹配的条件")
+
+        # 使用
+        skill = ConditionalSkill([
+            (lambda c: c.get("type") == "text", TextProcessor()),
+            (lambda c: c.get("type") == "image", ImageProcessor()),
+        ]).set_default(DefaultProcessor())
+        ```
+
     练习 3：实现技能版本管理
+
+        ✅ 参考答案：
+        ```python
+        from dataclasses import dataclass
+        from typing import Dict
+
+        @dataclass
+        class SkillVersion:
+            major: int
+            minor: int
+            patch: int
+            
+            def __str__(self):
+                return f"{self.major}.{self.minor}.{self.patch}"
+            
+            def is_compatible(self, other: 'SkillVersion'):
+                return self.major == other.major
+
+        class VersionedSkillRegistry:
+            def __init__(self):
+                self.skills: Dict[str, Dict[str, BaseSkill]] = {}
+            
+            def register(self, skill: BaseSkill, version: str):
+                name = skill.name
+                self.skills.setdefault(name, {})[version] = skill
+            
+            def get(self, name: str, version: str = None):
+                if name not in self.skills:
+                    raise KeyError(f"Skill not found: {name}")
+                
+                versions = self.skills[name]
+                if version:
+                    return versions.get(version)
+                
+                # 返回最新版本
+                latest = sorted(versions.keys())[-1]
+                return versions[latest]
+        ```
     
     思考题：
     1. 装饰器模式的优缺点？
+
+       ✅ 答：
+       优点：灵活组合、不修改原代码、可复用
+       缺点：调试困难、嵌套过深难以理解
+
     2. 如何选择合适的设计模式？
+
+       ✅ 答：根据需求选择：
+       - 需要增强功能 → 装饰器
+       - 需要条件处理 → 策略模式
+       - 需要组合多步 → 管道模式
+       - 需要统一接口 → 适配器模式
     """)
 
 

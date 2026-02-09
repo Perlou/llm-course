@@ -246,15 +246,108 @@ def exercises():
     练习 1：创建知识库
         加载几篇文章，创建 Chroma 向量库。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+        from langchain_chroma import Chroma
+        from langchain_core.documents import Document
+
+        # 准备文档
+        articles = [
+            Document(page_content="Python 是最流行的编程语言之一...", 
+                    metadata={"title": "Python 入门", "author": "张三"}),
+            Document(page_content="机器学习改变了许多行业...", 
+                    metadata={"title": "ML 概述", "author": "李四"}),
+        ]
+
+        # 创建持久化知识库
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        vectorstore = Chroma.from_documents(
+            articles,
+            embeddings,
+            persist_directory="./my_knowledge_base"
+        )
+        print(f"知识库创建完成，共 {len(articles)} 篇文章")
+        ```
+
     练习 2：复杂过滤
         使用 $and、$or 构建复杂过滤条件。
+
+        ✅ 参考答案：
+        ```python
+        # $and 过滤：同时满足多个条件
+        results = vectorstore.similarity_search(
+            "编程",
+            k=5,
+            filter={"$and": [
+                {"category": "tech"},
+                {"year": {"$gte": 2023}}
+            ]}
+        )
+
+        # $or 过滤：满足任一条件
+        results = vectorstore.similarity_search(
+            "学习",
+            k=5,
+            filter={"$or": [
+                {"level": "beginner"},
+                {"level": "intermediate"}
+            ]}
+        )
+
+        # 组合过滤
+        results = vectorstore.similarity_search(
+            "AI",
+            filter={"$and": [
+                {"$or": [{"type": "article"}, {"type": "tutorial"}]},
+                {"year": 2024}
+            ]}
+        )
+        ```
 
     练习 3：增量更新
         向已有集合添加新文档。
 
+        ✅ 参考答案：
+        ```python
+        # 连接已有数据库
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        vectorstore = Chroma(
+            persist_directory="./my_knowledge_base",
+            embedding_function=embeddings
+        )
+
+        # 添加新文档
+        new_docs = [
+            Document(page_content="新文章内容...", metadata={"title": "新文章"}),
+        ]
+        vectorstore.add_documents(new_docs)
+
+        # 添加纯文本
+        vectorstore.add_texts(
+            texts=["另一段文本"],
+            metadatas=[{"source": "manual"}]
+        )
+        ```
+
     思考题：
         1. 持久化目录结构是怎样的？
+           
+           ✅ 答案：
+           ```
+           persist_directory/
+           ├── chroma.sqlite3      # 元数据和索引
+           └── data_level0/        # 向量数据
+               └── *.bin           # 二进制向量文件
+           ```
+
         2. 如何备份和迁移 Chroma 数据？
+           
+           ✅ 答案：
+           - 备份：直接复制 persist_directory 目录
+           - 迁移：复制目录到新位置，修改连接路径
+           - 导出：遍历 collection 导出为 JSON
+           - 跨版本：注意 Chroma 版本兼容性
     """)
 
 

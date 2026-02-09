@@ -664,32 +664,144 @@ def exercises():
     练习 1：实现优先级队列
         修改 MessageBus，使消息按优先级处理。
         提示：使用 heapq 或 PriorityQueue。
+
+        ✅ 参考答案：
+        ```python
+        import heapq
+        from dataclasses import dataclass, field
+
+        @dataclass(order=True)
+        class PriorityMessage:
+            priority: int
+            message: dict = field(compare=False)
+
+        class PriorityMessageBus:
+            def __init__(self):
+                self.queues = {}  # topic -> priority queue
+            
+            def subscribe(self, topic: str):
+                if topic not in self.queues:
+                    self.queues[topic] = []
+            
+            def publish(self, topic: str, message: dict, priority: int = 5):
+                if topic in self.queues:
+                    heapq.heappush(
+                        self.queues[topic], 
+                        PriorityMessage(priority, message)
+                    )
+            
+            def get_next(self, topic: str):
+                if topic in self.queues and self.queues[topic]:
+                    return heapq.heappop(self.queues[topic]).message
+                return None
+        ```
     
     练习 2：添加消息过滤
         为黑板添加过滤功能，Agent 只接收感兴趣的消息。
         例如：只接收置信度 > 0.8 的假设。
+
+        ✅ 参考答案：
+        ```python
+        class FilteredBlackboard:
+            def __init__(self):
+                self.data = []
+                self.filters = {}  # agent_id -> filter_func
+            
+            def register_filter(self, agent_id: str, filter_func):
+                self.filters[agent_id] = filter_func
+            
+            def post(self, entry: dict):
+                self.data.append(entry)
+            
+            def get_for_agent(self, agent_id: str):
+                filter_func = self.filters.get(agent_id, lambda x: True)
+                return [d for d in self.data if filter_func(d)]
+
+        # 使用
+        bb = FilteredBlackboard()
+        bb.register_filter("analyst", lambda x: x.get("confidence", 0) > 0.8)
+        bb.post({"hypothesis": "...", "confidence": 0.9})  # 会被 analyst 接收
+        bb.post({"hypothesis": "...", "confidence": 0.5})  # 不会被 analyst 接收
+        ```
     
     练习 3：实现请求-响应模式
         扩展消息系统，支持同步的请求-响应：
         - Agent A 发送请求
         - 等待 Agent B 的响应
         - 设置超时机制
+
+        ✅ 参考答案：
+        ```python
+        import asyncio
+        from uuid import uuid4
+
+        class RequestResponseBus:
+            def __init__(self):
+                self.pending = {}  # request_id -> Future
+            
+            async def request(self, target: str, message: dict, timeout: float = 5.0):
+                request_id = str(uuid4())
+                future = asyncio.Future()
+                self.pending[request_id] = future
+                
+                # 发送请求
+                await self.send(target, {"request_id": request_id, **message})
+                
+                try:
+                    return await asyncio.wait_for(future, timeout=timeout)
+                except asyncio.TimeoutError:
+                    del self.pending[request_id]
+                    raise TimeoutError(f"请求 {request_id} 超时")
+            
+            def respond(self, request_id: str, response: dict):
+                if request_id in self.pending:
+                    self.pending[request_id].set_result(response)
+                    del self.pending[request_id]
+        ```
     
     练习 4：消息持久化
         实现消息历史的持久化存储：
         - 保存到文件
         - 支持历史回放
+
+        ✅ 参考答案：
+        ```python
+        import json
+        from datetime import datetime
+
+        class PersistentMessageLog:
+            def __init__(self, filepath: str):
+                self.filepath = filepath
+                self.messages = []
+            
+            def log(self, message: dict):
+                entry = {"timestamp": datetime.now().isoformat(), **message}
+                self.messages.append(entry)
+                self._save()
+            
+            def _save(self):
+                with open(self.filepath, 'w') as f:
+                    json.dump(self.messages, f, ensure_ascii=False, indent=2)
+            
+            def load(self):
+                with open(self.filepath, 'r') as f:
+                    self.messages = json.load(f)
+            
+            def replay(self, handler):
+                for msg in self.messages:
+                    handler(msg)
+        ```
     
     思考题：
     ────────
     1. 直接消息传递和发布订阅各适合什么场景？
        答：直接传递适合明确的点对点通信，
        发布订阅适合一对多或解耦的场景。
-    
+
     2. 如何处理消息丢失问题？
        答：实现消息确认机制、消息持久化、
        重试逻辑、死信队列。
-    
+
     3. 黑板模式的并发访问如何处理？
        答：使用锁机制、原子操作、
        乐观锁或版本控制。

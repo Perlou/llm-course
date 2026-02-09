@@ -321,22 +321,99 @@ def exercises():
         为上面的 SimpleAgent 添加一个新工具，比如：
         - 翻译工具（模拟）
         - 日期时间工具
+
+        ✅ 参考答案：
+        ```python
+        from datetime import datetime
+
+        class EnhancedAgent(SimpleAgent):
+            def __init__(self, name: str):
+                super().__init__(name)
+                # 注册新工具
+                self.register_tool("translate", self.translate)
+                self.register_tool("datetime", self.get_datetime)
+
+            def translate(self, text: str, target_lang: str = "en"):
+                '''模拟翻译工具'''
+                translations = {
+                    "你好": "Hello",
+                    "世界": "World",
+                }
+                return translations.get(text, f"[{target_lang}] {text}")
+
+            def get_datetime(self, format: str = "%Y-%m-%d %H:%M:%S"):
+                '''获取当前日期时间'''
+                return datetime.now().strftime(format)
+        ```
     
     练习 2：改进决策逻辑
         使用关键词匹配之外的方式来决定使用哪个工具。
+
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        class SmartAgent(SimpleAgent):
+            def __init__(self, name: str):
+                super().__init__(name)
+                self.llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+
+            def think(self, query: str) -> str:
+                '''使用 LLM 决定工具'''
+                tools_desc = "\\n".join([
+                    f"- {name}: {func.__doc__}"
+                    for name, func in self.tools.items()
+                ])
+                
+                prompt = f'''
+                可用工具：
+                {tools_desc}
+                
+                用户请求：{query}
+                
+                返回最合适的工具名称（只返回工具名）：
+                '''
+                return self.llm.invoke(prompt).content.strip()
+        ```
     
     练习 3：集成真实 LLM
         将 think() 方法改为调用 OpenAI API 来决策。
+
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        def think_with_llm(self, query: str) -> tuple:
+            '''使用 LLM 进行推理和决策'''
+            llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+            
+            prompt = f'''
+            你是一个智能助手，可以使用以下工具：
+            - calculator: 数学计算
+            - search: 搜索信息
+            - translate: 翻译文本
+            
+            用户请求：{query}
+            
+            请分析请求，返回格式：
+            工具：[工具名]
+            参数：[参数]
+            '''
+            
+            response = llm.invoke(prompt).content
+            # 解析响应提取工具和参数
+            return parse_tool_call(response)
+        ```
     
     思考题：
     ────────
     1. Agent 的记忆系统应该如何设计才能高效？
        答：短期记忆保存最近对话，长期记忆做向量化存储和检索，
        工作记忆跟踪当前任务状态。
-    
+
     2. 如果工具执行失败，Agent 应该如何处理？
        答：可以重试、尝试其他工具、或向用户报告错误并请求澄清。
-    
+
     3. Agent 最多应该执行多少步？为什么需要限制？
        答：通常限制 5-10 步，防止无限循环和过度消耗资源。
     """)

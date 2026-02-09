@@ -308,15 +308,149 @@ def exercises():
     练习 1：SQLite 持久化
         使用 SQLite 实现会话存储。
 
+        ✅ 参考答案：
+        ```python
+        import sqlite3
+        from langchain_community.chat_message_histories import ChatMessageHistory
+        from langchain_core.messages import HumanMessage, AIMessage
+
+        class SQLiteChatHistory:
+            def __init__(self, db_path: str, session_id: str):
+                self.db_path = db_path
+                self.session_id = session_id
+                self.history = ChatMessageHistory()
+                self._init_db()
+                self._load()
+
+            def _init_db(self):
+                conn = sqlite3.connect(self.db_path)
+                conn.execute('''
+                    CREATE TABLE IF NOT EXISTS messages (
+                        id INTEGER PRIMARY KEY,
+                        session_id TEXT,
+                        role TEXT,
+                        content TEXT,
+                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                conn.commit()
+                conn.close()
+
+            def _load(self):
+                conn = sqlite3.connect(self.db_path)
+                rows = conn.execute(
+                    'SELECT role, content FROM messages WHERE session_id=? ORDER BY id',
+                    (self.session_id,)
+                ).fetchall()
+                for role, content in rows:
+                    if role == 'human':
+                        self.history.add_user_message(content)
+                    else:
+                        self.history.add_ai_message(content)
+                conn.close()
+
+            def add(self, user_msg: str, ai_msg: str):
+                self.history.add_user_message(user_msg)
+                self.history.add_ai_message(ai_msg)
+                conn = sqlite3.connect(self.db_path)
+                conn.execute('INSERT INTO messages (session_id, role, content) VALUES (?,?,?)',
+                           (self.session_id, 'human', user_msg))
+                conn.execute('INSERT INTO messages (session_id, role, content) VALUES (?,?,?)',
+                           (self.session_id, 'ai', ai_msg))
+                conn.commit()
+                conn.close()
+        ```
+
     练习 2：会话过期
         实现会话超时自动清理功能。
+
+        ✅ 参考答案：
+        ```python
+        import time
+        from threading import Thread
+
+        class ExpiringSessionStore:
+            def __init__(self, ttl_seconds: int = 3600):
+                self.ttl = ttl_seconds
+                self.sessions = {}  # session_id -> (history, last_access)
+                self._start_cleanup_thread()
+
+            def get(self, session_id: str):
+                if session_id in self.sessions:
+                    history, _ = self.sessions[session_id]
+                    self.sessions[session_id] = (history, time.time())
+                    return history
+                else:
+                    history = ChatMessageHistory()
+                    self.sessions[session_id] = (history, time.time())
+                    return history
+
+            def _cleanup(self):
+                while True:
+                    time.sleep(60)  # 每分钟检查
+                    now = time.time()
+                    expired = [sid for sid, (_, ts) in self.sessions.items()
+                              if now - ts > self.ttl]
+                    for sid in expired:
+                        del self.sessions[sid]
+                        print(f"会话 {sid} 已过期清理")
+
+            def _start_cleanup_thread(self):
+                t = Thread(target=self._cleanup, daemon=True)
+                t.start()
+        ```
 
     练习 3：会话导出
         实现将会话导出为 Markdown 格式。
 
+        ✅ 参考答案：
+        ```python
+        from datetime import datetime
+        from langchain_core.messages import HumanMessage
+
+        def export_to_markdown(history, session_id: str) -> str:
+            md = f"# 对话记录\\n"
+            md += f"会话ID: {session_id}\\n"
+            md += f"导出时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\\n\\n"
+            md += "---\\n\\n"
+
+            for msg in history.messages:
+                timestamp = getattr(msg, 'timestamp', '')
+                if isinstance(msg, HumanMessage):
+                    md += f"### 🧑 用户\\n{msg.content}\\n\\n"
+                else:
+                    md += f"### 🤖 AI\\n{msg.content}\\n\\n"
+
+            return md
+
+        def save_markdown(history, session_id: str, filepath: str = None):
+            if filepath is None:
+                filepath = f"chat_{session_id}.md"
+            md_content = export_to_markdown(history, session_id)
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(md_content)
+            return filepath
+        ```
+
     思考题：
         1. 如何设计会话数据的备份策略？
+           
+           ✅ 答案：
+           - 定期全量备份：每日凌晨备份整个数据库
+           - 增量备份：只备份新增的消息
+           - 多地备份：主从复制 + 异地备份
+           - 版本保留：保留最近 N 个版本
+           - 使用云存储：S3/OSS 自动备份
+
         2. 如何处理敏感对话数据的安全存储？
+           
+           ✅ 答案：
+           - 加密存储：AES 加密敏感字段
+           - 脱敏处理：存储前去除个人信息
+           - 访问控制：限制数据库访问权限
+           - 审计日志：记录所有数据访问
+           - 定期清理：删除过期敏感数据
+           - 合规要求：遵循 GDPR/隐私法规
     """)
 
 

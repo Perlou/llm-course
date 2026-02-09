@@ -296,15 +296,96 @@ def exercises():
     练习 1：自定义清洗器
         实现一个移除 URL 和 Email 的清洗函数。
 
+        ✅ 参考答案：
+        ```python
+        import re
+        from langchain_core.documents import Document
+
+        def clean_urls_emails(doc: Document) -> Document:
+            content = doc.page_content
+            
+            # 移除 URL
+            content = re.sub(r'https?://\\S+', '[链接]', content)
+            
+            # 移除 Email
+            content = re.sub(r'\\S+@\\S+\\.\\S+', '[邮箱]', content)
+            
+            return Document(
+                page_content=content,
+                metadata={**doc.metadata, "cleaned": True}
+            )
+
+        # 批量处理
+        def clean_documents(docs):
+            return [clean_urls_emails(doc) for doc in docs]
+        ```
+
     练习 2：语言检测过滤
         过滤掉非中文的文档。
+
+        ✅ 参考答案：
+        ```python
+        import re
+
+        def is_chinese(text: str) -> bool:
+            # 中文字符占比超过 30% 认为是中文
+            chinese_chars = re.findall(r'[\\u4e00-\\u9fff]', text)
+            return len(chinese_chars) / max(len(text), 1) > 0.3
+
+        def filter_chinese_docs(docs):
+            return [doc for doc in docs if is_chinese(doc.page_content)]
+
+        # 或使用 langdetect 库
+        # from langdetect import detect
+        # def filter_chinese(docs):
+        #     return [doc for doc in docs if detect(doc.page_content) == 'zh-cn']
+        ```
 
     练习 3：相似度去重
         使用编辑距离或向量相似度进行模糊去重。
 
+        ✅ 参考答案：
+        ```python
+        from difflib import SequenceMatcher
+
+        def similarity(a: str, b: str) -> float:
+            return SequenceMatcher(None, a, b).ratio()
+
+        def deduplicate_fuzzy(docs, threshold=0.85):
+            unique = []
+            for doc in docs:
+                is_dup = False
+                for existing in unique:
+                    if similarity(doc.page_content, existing.page_content) > threshold:
+                        is_dup = True
+                        break
+                if not is_dup:
+                    unique.append(doc)
+            return unique
+
+        # 使用向量相似度（更快）
+        # embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        # vectors = embeddings.embed_documents([d.page_content for d in docs])
+        # 然后计算余弦相似度去重
+        ```
+
     思考题：
         1. 过度清洗会有什么问题？
+           
+           ✅ 答案：
+           - 丢失重要信息（如数字、专业术语）
+           - 破坏语义完整性
+           - 影响检索准确性
+           - 建议：保守清洗，只去除明确的噪声
+
         2. 如何保留重要的格式信息？
+           
+           ✅ 答案：
+           - 保留标题层级（# ## ###）
+           - 保留列表结构
+           - 保留代码块标记
+           - 使用 metadata 记录格式信息
+           - 分割时考虑格式边界
     """)
 
 

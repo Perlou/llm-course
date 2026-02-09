@@ -590,6 +590,44 @@ def exercises():
         - 检测语言节点
         - 翻译节点
         - 校对节点
+
+        ✅ 参考答案：
+        ```python
+        from langgraph.graph import StateGraph, END
+        from typing import TypedDict
+
+        class TranslateState(TypedDict):
+            text: str
+            source_lang: str
+            target_lang: str
+            translated: str
+            proofread: str
+
+        def detect_language(state):
+            # 模拟语言检测
+            text = state["text"]
+            lang = "zh" if any('\\u4e00' <= c <= '\\u9fff' for c in text) else "en"
+            return {"source_lang": lang}
+
+        def translate(state):
+            prompt = f"将以下{state['source_lang']}翻译为{state['target_lang']}：{state['text']}"
+            translated = llm.invoke(prompt).content
+            return {"translated": translated}
+
+        def proofread(state):
+            prompt = f"校对并优化以下翻译：{state['translated']}"
+            proofread = llm.invoke(prompt).content
+            return {"proofread": proofread}
+
+        graph = StateGraph(TranslateState)
+        graph.add_node("detect", detect_language)
+        graph.add_node("translate", translate)
+        graph.add_node("proofread", proofread)
+        graph.add_edge("detect", "translate")
+        graph.add_edge("translate", "proofread")
+        graph.add_edge("proofread", END)
+        graph.set_entry_point("detect")
+        ```
     
     练习 2：实现条件分支
         创建一个客服工作流：
@@ -597,23 +635,83 @@ def exercises():
         - 技术问题 → 技术支持
         - 账单问题 → 财务支持
         - 一般咨询 → 客服
+
+        ✅ 参考答案：
+        ```python
+        def classify_question(state):
+            prompt = f"分类问题类型（tech/billing/general）：{state['question']}"
+            category = llm.invoke(prompt).content.strip().lower()
+            return {"category": category}
+
+        def route_question(state):
+            category = state["category"]
+            if "tech" in category:
+                return "tech_support"
+            elif "billing" in category:
+                return "billing_support"
+            else:
+                return "general_support"
+
+        graph = StateGraph(CustomerState)
+        graph.add_node("classify", classify_question)
+        graph.add_node("tech_support", handle_tech)
+        graph.add_node("billing_support", handle_billing)
+        graph.add_node("general_support", handle_general)
+
+        graph.add_conditional_edges("classify", route_question)
+        graph.add_edge("tech_support", END)
+        graph.add_edge("billing_support", END)
+        graph.add_edge("general_support", END)
+        ```
     
     练习 3：实现循环改进
         创建一个代码审查 Graph：
         - 代码检查节点
         - 如果发现问题，返回修改节点
         - 最多循环 3 次
+
+        ✅ 参考答案：
+        ```python
+        class CodeReviewState(TypedDict):
+            code: str
+            issues: list
+            iteration: int
+            max_iterations: int
+
+        def check_code(state):
+            prompt = f"检查代码问题：{state['code']}"
+            issues = llm.invoke(prompt).content
+            return {"issues": issues.split("\\n") if issues else []}
+
+        def fix_code(state):
+            prompt = f"修复以下问题：{state['issues']}\\n代码：{state['code']}"
+            fixed = llm.invoke(prompt).content
+            return {"code": fixed, "iteration": state["iteration"] + 1}
+
+        def should_continue(state):
+            if not state["issues"]:
+                return "end"
+            if state["iteration"] >= state["max_iterations"]:
+                return "end"
+            return "fix"
+
+        graph = StateGraph(CodeReviewState)
+        graph.add_node("check", check_code)
+        graph.add_node("fix", fix_code)
+        graph.add_conditional_edges("check", should_continue, {"fix": "fix", "end": END})
+        graph.add_edge("fix", "check")  # 循环回检查
+        ```
     
     思考题：
     ────────
     1. LangGraph 的状态管理与普通变量有什么区别？
        答：LangGraph 状态是持久化的、可追踪的，支持 reducer 
        来定义合并策略，适合复杂工作流。
-    
+
     2. 什么时候应该使用条件边？
        答：当下一步操作依赖于当前状态或执行结果时，
        如任务分类、错误处理、循环控制等。
-    
+
     3. 如何防止 Graph 中的无限循环？
        答：设置最大迭代次数、在状态中跟踪迭代计数、
        设计明确的终止条件。

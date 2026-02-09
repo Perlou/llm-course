@@ -349,15 +349,131 @@ def exercises():
     练习 1：设计元数据
         为你的文档设计合适的元数据结构。
 
+        ✅ 参考答案：
+        ```python
+        # 技术文档元数据设计
+        tech_doc_metadata = {
+            "title": str,      # 文档标题
+            "author": str,     # 作者
+            "date": str,       # 发布日期 (YYYY-MM-DD)
+            "category": str,   # 分类：tutorial, reference, guide
+            "difficulty": str, # 难度：beginner, intermediate, advanced
+            "language": str,   # 编程语言
+            "version": str,    # 版本号
+            "tags": list,      # 标签列表
+        }
+
+        # 商品元数据设计
+        product_metadata = {
+            "name": str,
+            "price": float,
+            "category": str,
+            "brand": str,
+            "rating": float,
+            "in_stock": bool,
+        }
+
+        # LangChain AttributeInfo 定义
+        from langchain.chains.query_constructor.base import AttributeInfo
+
+        metadata_field_info = [
+            AttributeInfo(name="category", description="文档类别", type="string"),
+            AttributeInfo(name="difficulty", description="难度级别", type="string"),
+            AttributeInfo(name="date", description="发布日期", type="string"),
+        ]
+        ```
+
     练习 2：复杂过滤
         实现多条件组合过滤（AND/OR）。
+
+        ✅ 参考答案：
+        ```python
+        # 自定义查询解析
+        def parse_complex_query(query: str):
+            '''解析包含条件的自然语言查询'''
+            prompt = f'''
+            分析以下查询，提取搜索词和过滤条件：
+            查询：{query}
+            
+            返回 JSON 格式：
+            {{"search": "搜索词", "filters": {{"field": "value"}}}}
+            '''
+            return llm.invoke(prompt)
+
+        # 使用 Chroma 的过滤语法
+        # AND 条件
+        results = vectorstore.similarity_search(
+            "Python",
+            filter={
+                "$and": [
+                    {"category": "tutorial"},
+                    {"difficulty": "beginner"}
+                ]
+            }
+        )
+
+        # OR 条件
+        results = vectorstore.similarity_search(
+            "Python",
+            filter={
+                "$or": [
+                    {"language": "python"},
+                    {"language": "javascript"}
+                ]
+            }
+        )
+        ```
 
     练习 3：对比效果
         对比自查询与普通检索的准确率。
 
+        ✅ 参考答案：
+        ```python
+        test_cases = [
+            {
+                "query": "2024年发布的Python初级教程",
+                "expected_filter": {"date": {"$gte": "2024-01-01"}, "difficulty": "beginner"}
+            },
+            {
+                "query": "价格低于100的电子产品",
+                "expected_filter": {"price": {"$lt": 100}, "category": "electronics"}
+            },
+        ]
+
+        def evaluate_self_query():
+            correct = 0
+            for case in test_cases:
+                # 普通检索
+                normal_results = retriever.invoke(case["query"])
+                
+                # 自查询
+                self_query_results = self_query_retriever.invoke(case["query"])
+                
+                # 检查过滤是否正确应用
+                for doc in self_query_results:
+                    if matches_filter(doc.metadata, case["expected_filter"]):
+                        correct += 1
+            
+            print(f"自查询准确率: {correct/len(test_cases):.2%}")
+        ```
+
     思考题：
         1. 元数据过滤的性能影响？
+           
+           ✅ 答案：
+           - 向量数据库通常先过滤后搜索，性能影响较小
+           - 索引设计很重要：常用过滤字段建立索引
+           - 复杂过滤（多条件 OR）可能较慢
+           - 建议：测试不同过滤条件的响应时间
+
         2. 如何处理 LLM 解析错误？
+           
+           ✅ 答案：
+           - 设置默认值：解析失败时使用纯语义检索
+           - 验证过滤条件：检查字段名和值是否有效
+           - 重试机制：解析失败时重新尝试
+           - Fallback：降级到普通检索
+           - 日志记录：记录失败案例用于改进
     """)
 
 

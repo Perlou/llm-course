@@ -302,15 +302,127 @@ def exercises():
     练习 1：对比实验
         对比 HyDE 和传统检索的效果差异。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+        from langchain_chroma import Chroma
+        import time
+
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+
+        def traditional_retrieval(query: str):
+            return vectorstore.similarity_search(query, k=3)
+
+        def hyde_retrieval(query: str):
+            # 生成假设文档
+            prompt = f"请回答以下问题（详细完整）：{query}"
+            hypothetical_doc = llm.invoke(prompt).content
+            
+            # 用假设文档检索
+            return vectorstore.similarity_search(hypothetical_doc, k=3)
+
+        # 对比测试
+        test_queries = ["什么是机器学习？", "如何优化 Python 性能？"]
+        for query in test_queries:
+            print(f"\\n查询: {query}")
+            
+            start = time.time()
+            trad_results = traditional_retrieval(query)
+            trad_time = time.time() - start
+            
+            start = time.time()
+            hyde_results = hyde_retrieval(query)
+            hyde_time = time.time() - start
+            
+            print(f"传统检索 ({trad_time:.2f}s): {[d.page_content[:30] for d in trad_results]}")
+            print(f"HyDE ({hyde_time:.2f}s): {[d.page_content[:30] for d in hyde_results]}")
+        ```
+
     练习 2：领域定制
         为特定领域（如法律、医疗）定制 HyDE 提示。
+
+        ✅ 参考答案：
+        ```python
+        HYDE_PROMPTS = {
+            "medical": '''
+            作为专业医生，请详细回答以下医学问题。
+            包括：病因、症状、诊断方法、治疗方案。
+            问题：{query}
+            ''',
+            "legal": '''
+            作为资深律师，请回答以下法律问题。
+            包括：相关法条、判例、实务建议。
+            问题：{query}
+            ''',
+            "tech": '''
+            作为技术专家，请详细解答以下技术问题。
+            包括：概念解释、实现方法、代码示例、最佳实践。
+            问题：{query}
+            ''',
+        }
+
+        def domain_hyde(query: str, domain: str = "tech"):
+            prompt = HYDE_PROMPTS.get(domain, HYDE_PROMPTS["tech"])
+            hypothetical = llm.invoke(prompt.format(query=query)).content
+            return vectorstore.similarity_search(hypothetical, k=3)
+        ```
 
     练习 3：成本优化
         实现假设文档缓存机制。
 
+        ✅ 参考答案：
+        ```python
+        import hashlib
+        from functools import lru_cache
+
+        class HyDECache:
+            def __init__(self, max_size: int = 100):
+                self.cache = {}
+                self.max_size = max_size
+
+            def _hash_query(self, query: str) -> str:
+                return hashlib.md5(query.encode()).hexdigest()
+
+            def get_hypothetical(self, query: str, llm):
+                key = self._hash_query(query)
+                
+                if key in self.cache:
+                    return self.cache[key]
+                
+                # 生成新的假设文档
+                hypothetical = llm.invoke(f"回答：{query}").content
+                
+                # 缓存（LRU 策略）
+                if len(self.cache) >= self.max_size:
+                    oldest = next(iter(self.cache))
+                    del self.cache[oldest]
+                
+                self.cache[key] = hypothetical
+                return hypothetical
+
+        # 或使用 LRU 装饰器
+        @lru_cache(maxsize=100)
+        def cached_hyde(query: str) -> str:
+            return llm.invoke(f"回答：{query}").content
+        ```
+
     思考题：
         1. HyDE 会增加多少延迟？
+           
+           ✅ 答案：
+           - LLM 调用：~500ms-2s（取决于模型和输出长度）
+           - 额外的 Embedding 计算：~100ms
+           - 总延迟增加：约 1-3 倍
+           - 优化：缓存、异步预生成、使用更快的模型
+
         2. 假设文档错误会导致什么问题？
+           
+           ✅ 答案：
+           - 检索偏移：错误信息导向错误的文档
+           - 幻觉传播：LLM 幻觉影响检索质量
+           - 上下文污染：最终回答可能被误导
+           - 解决方案：用传统检索作为兜底、结果验证
     """)
 
 

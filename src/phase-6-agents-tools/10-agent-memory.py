@@ -314,13 +314,89 @@ def exercises():
     print("""
     练习 1：实现 LLM 摘要压缩
         用 LLM 总结旧消息而非简单截断
+
+        ✅ 参考答案：
+        ```python
+        class SummarizingMemory:
+            def __init__(self, llm, max_messages: int = 10):
+                self.llm = llm
+                self.max_messages = max_messages
+                self.messages = []
+                self.summary = ""
+
+            def add_message(self, role: str, content: str):
+                self.messages.append({"role": role, "content": content})
+                
+                if len(self.messages) > self.max_messages:
+                    self.compress()
+
+            def compress(self):
+                '''压缩旧消息为摘要'''
+                old_messages = self.messages[:5]
+                text = "\\n".join([f"{m['role']}: {m['content']}" for m in old_messages])
+                
+                prompt = f'''
+                总结以下对话的关键信息（一句话）：
+                {text}
+                '''
+                new_summary = self.llm.invoke(prompt).content
+                
+                # 合并摘要
+                self.summary = f"{self.summary}\\n{new_summary}".strip()
+                self.messages = self.messages[5:]
+
+            def get_context(self):
+                return f"历史摘要：{self.summary}\\n\\n最近对话：{self.messages}"
+        ```
     
     练习 2：集成向量数据库
         使用 ChromaDB 实现语义搜索
+
+        ✅ 参考答案：
+        ```python
+        from langchain_chroma import Chroma
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+        class SemanticMemory:
+            def __init__(self):
+                self.embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+                self.vectorstore = Chroma(embedding_function=self.embeddings)
+                self.memory_id = 0
+
+            def add_memory(self, content: str, metadata: dict = None):
+                '''添加记忆到向量库'''
+                self.vectorstore.add_texts(
+                    texts=[content],
+                    metadatas=[{"id": self.memory_id, **(metadata or {})}]
+                )
+                self.memory_id += 1
+
+            def search(self, query: str, k: int = 3):
+                '''语义搜索相关记忆'''
+                results = self.vectorstore.similarity_search(query, k=k)
+                return [doc.page_content for doc in results]
+
+            def get_relevant_context(self, query: str):
+                '''获取与当前查询相关的上下文'''
+                memories = self.search(query)
+                return "\\n".join(memories)
+        ```
     
     思考题：
         如何平衡记忆容量和检索效率？
         答：分层存储，热数据在内存，冷数据在向量库
+
+        ✅ 详细答案：
+        - 分层架构：
+          * L1（内存）：最近 5-10 条消息
+          * L2（向量库）：语义索引的历史记忆
+          * L3（数据库）：完整历史存档
+        
+        - 优化策略：
+          * 定期压缩和摘要
+          * 基于重要性过滤
+          * 惰性加载长期记忆
+          * 设置合理的 TTL
     """)
 
 

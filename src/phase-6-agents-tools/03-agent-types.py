@@ -179,9 +179,77 @@ def exercises():
 
     print("""
     练习 1：实现 Self-Ask Agent
+
+        ✅ 参考答案：
+        ```python
+        class SelfAskAgent:
+            def __init__(self, llm, search_tool):
+                self.llm = llm
+                self.search = search_tool
+            
+            def run(self, question: str) -> str:
+                '''Self-Ask 主循环'''
+                context = f"问题：{question}\\n"
+                
+                for _ in range(5):  # 最多5轮
+                    prompt = f'''
+                    {context}
+                    是否需要分解为子问题？如果是，写出子问题；
+                    如果可以回答，直接给出答案。
+                    '''
+                    response = self.llm.invoke(prompt).content
+                    
+                    if "子问题" in response:
+                        sub_q = self.extract_sub_question(response)
+                        answer = self.search(sub_q)
+                        context += f"子问题：{sub_q}\\n答案：{answer}\\n"
+                    else:
+                        return response
+                
+                return "无法回答"
+        ```
+
     练习 2：为 Plan-Execute 添加重规划能力
+
+        ✅ 参考答案：
+        ```python
+        class AdaptivePlanExecuteAgent:
+            def replan(self, original_plan, failed_step, error):
+                '''根据失败情况重新规划'''
+                prompt = f'''
+                原计划：{original_plan}
+                失败步骤：{failed_step}
+                错误信息：{error}
+                
+                请生成新的执行计划：
+                '''
+                new_plan = self.llm.invoke(prompt).content
+                return self.parse_plan(new_plan)
+            
+            def execute_with_retry(self, plan):
+                for i, step in enumerate(plan):
+                    try:
+                        result = self.execute_step(step)
+                    except Exception as e:
+                        # 重规划
+                        remaining = plan[i:]
+                        new_plan = self.replan(plan, step, str(e))
+                        return self.execute_with_retry(new_plan)
+                return result
+        ```
     
     思考题：何时需要混合多种 Agent 类型？
+
+        ✅ 答案：
+        - 复杂任务需要先规划再执行（Plan-Execute + ReAct）
+        - 多步骤任务需要分解子问题（Self-Ask + ReAct）
+        - 不同子任务适合不同策略时
+        - 需要兼顾效率和灵活性时
+        
+        示例：研究助手
+        1. Plan-Execute：制定研究大纲
+        2. Self-Ask：分解复杂问题
+        3. ReAct：执行具体搜索和分析
     """)
 
 

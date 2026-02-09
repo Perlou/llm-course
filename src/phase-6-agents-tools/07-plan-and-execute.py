@@ -301,14 +301,100 @@ def exercises():
     print("""
     练习 1：实现智能重规划
         当步骤失败时，分析原因并生成替代方案
+
+        ✅ 参考答案：
+        ```python
+        class SmartPlanExecuteAgent:
+            def __init__(self, llm):
+                self.llm = llm
+
+            def analyze_failure(self, step, error):
+                '''分析失败原因'''
+                prompt = f'''
+                步骤：{step}
+                错误：{error}
+                
+                分析失败原因，并给出2个替代方案：
+                '''
+                return self.llm.invoke(prompt).content
+
+            def replan(self, original_plan, failed_step, error, remaining_steps):
+                '''智能重规划'''
+                analysis = self.analyze_failure(failed_step, error)
+                
+                prompt = f'''
+                原计划剩余步骤：{remaining_steps}
+                失败分析：{analysis}
+                
+                请生成新的执行计划（避免重复失败的方法）：
+                '''
+                return self.llm.invoke(prompt).content
+        ```
     
     练习 2：添加进度追踪
         记录每个步骤的执行时间和状态
+
+        ✅ 参考答案：
+        ```python
+        from datetime import datetime
+        from dataclasses import dataclass
+        from enum import Enum
+
+        class StepStatus(Enum):
+            PENDING = "pending"
+            RUNNING = "running"
+            SUCCESS = "success"
+            FAILED = "failed"
+
+        @dataclass
+        class StepProgress:
+            step: str
+            status: StepStatus
+            start_time: datetime = None
+            end_time: datetime = None
+            result: str = None
+            error: str = None
+
+        class ProgressTracker:
+            def __init__(self):
+                self.steps = []
+            
+            def start_step(self, step: str):
+                progress = StepProgress(step=step, status=StepStatus.RUNNING, start_time=datetime.now())
+                self.steps.append(progress)
+                return progress
+            
+            def complete_step(self, progress, result):
+                progress.end_time = datetime.now()
+                progress.status = StepStatus.SUCCESS
+                progress.result = result
+            
+            def get_summary(self):
+                return {
+                    "total": len(self.steps),
+                    "completed": sum(1 for s in self.steps if s.status == StepStatus.SUCCESS),
+                    "failed": sum(1 for s in self.steps if s.status == StepStatus.FAILED),
+                }
+        ```
     
     思考题：
         Plan-Execute vs ReAct 如何选择？
         答：长期复杂任务用 Plan-Execute，
         需要实时交互和调整的用 ReAct
+
+        ✅ 详细答案：
+        
+        Plan-Execute 适合：
+        - 任务有明确目标和步骤
+        - 需要全局规划
+        - 步骤间有依赖关系
+        - 例如：报告生成、数据分析流程
+        
+        ReAct 适合：
+        - 探索性任务
+        - 需要实时反馈调整
+        - 不确定需要多少步
+        - 例如：信息搜索、问答
     """)
 
 

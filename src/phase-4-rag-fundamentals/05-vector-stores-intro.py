@@ -228,15 +228,89 @@ def exercises():
     练习 1：对比搜索结果
         使用不同 k 值，观察搜索结果变化。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+        from langchain_community.vectorstores import DocArrayInMemorySearch
+        from langchain_core.documents import Document
+
+        docs = [
+            Document(page_content="Python 编程基础"),
+            Document(page_content="机器学习入门"),
+            Document(page_content="深度学习实战"),
+            Document(page_content="数据科学指南"),
+            Document(page_content="Web 开发教程"),
+        ]
+
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        vectorstore = DocArrayInMemorySearch.from_documents(docs, embeddings)
+
+        query = "AI 学习"
+        for k in [1, 2, 3, 5]:
+            results = vectorstore.similarity_search(query, k=k)
+            print(f"k={k}: {[d.page_content for d in results]}")
+        ```
+
     练习 2：元数据过滤
         添加元数据，测试过滤搜索。
+
+        ✅ 参考答案：
+        ```python
+        docs = [
+            Document(page_content="Python 基础", metadata={"level": "beginner", "year": 2023}),
+            Document(page_content="高级 Python", metadata={"level": "advanced", "year": 2024}),
+            Document(page_content="ML 入门", metadata={"level": "beginner", "year": 2024}),
+        ]
+
+        vectorstore = DocArrayInMemorySearch.from_documents(docs, embeddings)
+
+        # 过滤初学者内容
+        results = vectorstore.similarity_search(
+            "编程", k=5, filter={"level": "beginner"}
+        )
+        print(f"初学者内容: {[d.page_content for d in results]}")
+        ```
 
     练习 3：评估召回
         构建测试集，评估检索准确率。
 
+        ✅ 参考答案：
+        ```python
+        # 构建测试集
+        test_cases = [
+            {"query": "Python 语言", "expected": "Python 编程基础"},
+            {"query": "神经网络", "expected": "深度学习实战"},
+            {"query": "数据分析", "expected": "数据科学指南"},
+        ]
+
+        # 评估
+        correct = 0
+        for case in test_cases:
+            results = vectorstore.similarity_search(case["query"], k=1)
+            if results[0].page_content == case["expected"]:
+                correct += 1
+        
+        accuracy = correct / len(test_cases)
+        print(f"准确率: {accuracy:.2%}")
+        ```
+
     思考题：
         1. 如何选择合适的 k 值？
+           
+           ✅ 答案：
+           - 太小 (k=1)：可能错过相关文档
+           - 太大 (k=10+)：增加噪声，增加成本
+           - 推荐：k=3-5 起步，根据效果调整
+           - 考虑 LLM 上下文长度限制
+
         2. 索引构建后可以更新吗？
+           
+           ✅ 答案：
+           - 大多数向量数据库支持增量更新
+           - add_documents() 添加新文档
+           - delete() 删除文档
+           - 部分数据库需要重建索引才能反映更新
+           - Chroma/Pinecone 支持实时更新
     """)
 
 

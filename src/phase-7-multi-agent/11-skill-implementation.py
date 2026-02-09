@@ -321,12 +321,126 @@ def exercises():
 
     print("""
     练习 1：实现 Skill 热重载
+
+        ✅ 参考答案：
+        ```python
+        import importlib
+        import sys
+        from pathlib import Path
+
+        class HotReloadableSkillManager:
+            def __init__(self, skills_dir: str):
+                self.skills_dir = Path(skills_dir)
+                self.skills = {}
+                self.file_timestamps = {}
+            
+            def load_skill(self, name: str):
+                module_path = self.skills_dir / f"{name}.py"
+                
+                if name in sys.modules:
+                    # 重新加载
+                    module = importlib.reload(sys.modules[name])
+                else:
+                    # 首次加载
+                    spec = importlib.util.spec_from_file_location(name, module_path)
+                    module = importlib.util.module_from_spec(spec)
+                    sys.modules[name] = module
+                    spec.loader.exec_module(module)
+                
+                self.skills[name] = module.Skill()
+                self.file_timestamps[name] = module_path.stat().st_mtime
+            
+            def check_and_reload(self):
+                for name, ts in list(self.file_timestamps.items()):
+                    path = self.skills_dir / f"{name}.py"
+                    if path.stat().st_mtime > ts:
+                        print(f"检测到变更，重新加载 {name}")
+                        self.load_skill(name)
+        ```
+
     练习 2：添加 Skill 使用统计
+
+        ✅ 参考答案：
+        ```python
+        from collections import defaultdict
+        from datetime import datetime
+        import json
+
+        class SkillMetrics:
+            def __init__(self):
+                self.call_counts = defaultdict(int)
+                self.execution_times = defaultdict(list)
+                self.errors = defaultdict(list)
+            
+            def record_call(self, skill_name: str, duration: float, error: str = None):
+                self.call_counts[skill_name] += 1
+                self.execution_times[skill_name].append(duration)
+                if error:
+                    self.errors[skill_name].append({
+                        "time": datetime.now().isoformat(),
+                        "error": error
+                    })
+            
+            def get_stats(self, skill_name: str):
+                times = self.execution_times[skill_name]
+                return {
+                    "total_calls": self.call_counts[skill_name],
+                    "avg_time": sum(times) / len(times) if times else 0,
+                    "max_time": max(times) if times else 0,
+                    "error_count": len(self.errors[skill_name])
+                }
+        ```
+
     练习 3：实现 Skill 依赖管理
+
+        ✅ 参考答案：
+        ```python
+        from collections import deque
+
+        class SkillDependencyManager:
+            def __init__(self):
+                self.dependencies = {}  # skill -> [required_skills]
+            
+            def register(self, skill_name: str, depends_on: list = None):
+                self.dependencies[skill_name] = depends_on or []
+            
+            def get_load_order(self) -> list:
+                '''拓扑排序获取加载顺序'''
+                in_degree = {s: 0 for s in self.dependencies}
+                
+                for deps in self.dependencies.values():
+                    for dep in deps:
+                        in_degree[dep] = in_degree.get(dep, 0) + 1
+                
+                queue = deque([s for s, d in in_degree.items() if d == 0])
+                order = []
+                
+                while queue:
+                    skill = queue.popleft()
+                    order.append(skill)
+                    
+                    for s, deps in self.dependencies.items():
+                        if skill in deps:
+                            in_degree[s] -= 1
+                            if in_degree[s] == 0:
+                                queue.append(s)
+                
+                if len(order) != len(self.dependencies):
+                    raise ValueError("检测到循环依赖")
+                
+                return order
+        ```
     
     思考题：
     1. 如何处理 Skill 版本冲突？
+
+       ✅ 答：隔离执行环境、使用版本锁定、
+       提供兼容层、允许多版本共存。
+
     2. 如何实现 Skill 的权限控制？
+
+       ✅ 答：基于角色的访问控制（RBAC）、
+       Skill 级别的权限声明、运行时权限检查。
     """)
 
 

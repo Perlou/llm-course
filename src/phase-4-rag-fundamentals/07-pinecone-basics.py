@@ -230,15 +230,99 @@ def exercises():
     练习 1：注册 Pinecone
         注册免费账号，创建一个测试索引。
 
+        ✅ 参考答案：
+        ```python
+        from pinecone import Pinecone, ServerlessSpec
+
+        # 初始化
+        pc = Pinecone(api_key="your-api-key")
+
+        # 创建 Serverless 索引（免费层）
+        pc.create_index(
+            name="my-test-index",
+            dimension=768,  # Gemini embedding 维度
+            metric="cosine",
+            spec=ServerlessSpec(
+                cloud="aws",
+                region="us-east-1"
+            )
+        )
+
+        # 连接索引
+        index = pc.Index("my-test-index")
+        print(index.describe_index_stats())
+        ```
+
     练习 2：数据迁移
         将 Chroma 中的数据迁移到 Pinecone。
+
+        ✅ 参考答案：
+        ```python
+        from langchain_chroma import Chroma
+        from langchain_pinecone import PineconeVectorStore
+
+        # 从 Chroma 读取
+        chroma_store = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
+        
+        # 获取所有文档
+        all_docs = chroma_store.get()
+        
+        # 如果需要完整 Document 对象
+        from langchain_core.documents import Document
+        docs = [
+            Document(page_content=content, metadata=meta)
+            for content, meta in zip(all_docs['documents'], all_docs['metadatas'])
+        ]
+
+        # 写入 Pinecone
+        pinecone_store = PineconeVectorStore.from_documents(
+            docs,
+            embeddings,
+            index_name="my-index"
+        )
+        ```
 
     练习 3：性能对比
         对比 Chroma 和 Pinecone 的查询延迟。
 
+        ✅ 参考答案：
+        ```python
+        import time
+
+        def benchmark(vectorstore, query, iterations=10):
+            times = []
+            for _ in range(iterations):
+                start = time.time()
+                vectorstore.similarity_search(query, k=5)
+                times.append(time.time() - start)
+            return sum(times) / len(times)
+
+        chroma_latency = benchmark(chroma_store, "AI 技术")
+        pinecone_latency = benchmark(pinecone_store, "AI 技术")
+
+        print(f"Chroma 平均延迟: {chroma_latency*1000:.2f}ms")
+        print(f"Pinecone 平均延迟: {pinecone_latency*1000:.2f}ms")
+        # Chroma 本地通常更快，Pinecone 有网络延迟
+        ```
+
     思考题：
         1. 什么情况下选择 Pinecone？
+           
+           ✅ 答案：
+           - 生产环境需要高可用
+           - 数据量大需要自动扩展
+           - 团队没有运维向量数据库的能力
+           - 需要全球分布式部署
+           - 预算允许付费服务
+
         2. 如何处理 Pinecone 服务中断？
+           
+           ✅ 答案：
+           - 实现重试机制和指数退避
+           - 本地缓存热门查询结果
+           - 准备 Fallback 方案（如本地 Chroma）
+           - 监控报警及时发现问题
+           - 使用多区域部署提高可用性
     """)
 
 

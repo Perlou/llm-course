@@ -222,15 +222,93 @@ def exercises():
     练习 1：创建翻译模板
         创建一个支持多语言翻译的模板。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_core.prompts import ChatPromptTemplate
+
+        translation_template = ChatPromptTemplate.from_messages([
+            ("system", "你是一个专业翻译，擅长 {source_lang} 和 {target_lang} 互译"),
+            ("human", "请将以下{source_lang}翻译成{target_lang}：\\n{text}")
+        ])
+
+        # 使用
+        messages = translation_template.format_messages(
+            source_lang="中文",
+            target_lang="英文",
+            text="人工智能正在改变世界"
+        )
+        ```
+
     练习 2：带历史的对话
         使用 MessagesPlaceholder 实现多轮对话。
+
+        ✅ 参考答案：
+        ```python
+        from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+        from langchain_core.messages import HumanMessage, AIMessage
+
+        chat_template = ChatPromptTemplate.from_messages([
+            ("system", "你是一个友好的助手，记住用户告诉你的所有信息"),
+            MessagesPlaceholder(variable_name="history"),
+            ("human", "{input}")
+        ])
+
+        # 模拟历史
+        history = [
+            HumanMessage(content="我叫张三，喜欢编程"),
+            AIMessage(content="你好张三！编程是个很棒的爱好！")
+        ]
+
+        messages = chat_template.format_messages(
+            history=history,
+            input="你还记得我的信息吗？"
+        )
+        ```
 
     练习 3：Few-Shot 分类
         创建一个 Few-Shot 模板用于文本分类。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_core.prompts import PromptTemplate, FewShotPromptTemplate
+
+        examples = [
+            {"text": "这个产品太棒了！", "label": "正面"},
+            {"text": "服务态度很差", "label": "负面"},
+            {"text": "东西收到了", "label": "中性"},
+        ]
+
+        example_template = PromptTemplate.from_template(
+            "文本: {text}\\n分类: {label}"
+        )
+
+        classifier = FewShotPromptTemplate(
+            examples=examples,
+            example_prompt=example_template,
+            prefix="请对以下文本进行情感分类（正面/负面/中性）：",
+            suffix="文本: {input}\\n分类:",
+            input_variables=["input"]
+        )
+        ```
+
     思考题：
         1. PromptTemplate 和 ChatPromptTemplate 的区别？
+           
+           ✅ 答案：
+           | 特性 | PromptTemplate | ChatPromptTemplate |
+           |------|---------------|-------------------|
+           | 输出 | 纯字符串 | 消息列表 |
+           | 角色 | 无角色概念 | 支持 system/human/ai |
+           | 适用 | 简单任务 | 对话场景 |
+           | 格式 | 单个模板 | 多消息组合 |
+
         2. MessagesPlaceholder 有什么应用场景？
+           
+           ✅ 答案：
+           - 注入对话历史，实现多轮记忆
+           - 动态添加 Few-Shot 示例
+           - 插入检索到的上下文（RAG）
+           - 条件性添加系统指令
     """)
 
 

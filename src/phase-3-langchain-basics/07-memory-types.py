@@ -198,15 +198,101 @@ def exercises():
     练习 1：创建客服机器人
         使用 BufferMemory 创建能记住用户信息的客服。
 
+        ✅ 参考答案：
+        ```python
+        from langchain.memory import ConversationBufferMemory
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+        from langchain_core.runnables.history import RunnableWithMessageHistory
+        from langchain_community.chat_message_histories import ChatMessageHistory
+
+        store = {}
+        def get_session(session_id):
+            if session_id not in store:
+                store[session_id] = ChatMessageHistory()
+            return store[session_id]
+
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", "你是客服助手。记住用户的姓名、订单号等信息。"),
+            MessagesPlaceholder(variable_name="history"),
+            ("human", "{input}")
+        ])
+
+        customer_service = RunnableWithMessageHistory(
+            prompt | llm,
+            get_session,
+            input_messages_key="input",
+            history_messages_key="history"
+        )
+        ```
+
     练习 2：测试 WindowMemory
         设置不同的 k 值，观察记忆保留情况。
+
+        ✅ 参考答案：
+        ```python
+        from langchain.memory import ConversationBufferWindowMemory
+
+        # 测试 k=1（只记住最后1轮）
+        memory_k1 = ConversationBufferWindowMemory(k=1, return_messages=True)
+
+        # 测试 k=3（记住最后3轮）
+        memory_k3 = ConversationBufferWindowMemory(k=3, return_messages=True)
+
+        # 添加5轮对话
+        for i in range(5):
+            memory_k1.save_context({"input": f"问题{i}"}, {"output": f"回答{i}"})
+            memory_k3.save_context({"input": f"问题{i}"}, {"output": f"回答{i}"})
+
+        # 对比
+        print(f"k=1 保留: {len(memory_k1.load_memory_variables({})['history'])} 条")
+        print(f"k=3 保留: {len(memory_k3.load_memory_variables({})['history'])} 条")
+        ```
 
     练习 3：多会话管理
         使用 session_id 管理多个独立会话。
 
+        ✅ 参考答案：
+        ```python
+        sessions = {}
+
+        def get_or_create_session(user_id: str) -> ChatMessageHistory:
+            if user_id not in sessions:
+                sessions[user_id] = ChatMessageHistory()
+            return sessions[user_id]
+
+        # 用户 A 的会话
+        session_a = get_or_create_session("user_a")
+        session_a.add_user_message("我是A用户")
+
+        # 用户 B 的会话
+        session_b = get_or_create_session("user_b")
+        session_b.add_user_message("我是B用户")
+
+        # 会话完全隔离
+        print(f"用户A消息数: {len(session_a.messages)}")
+        print(f"用户B消息数: {len(session_b.messages)}")
+        ```
+
     思考题：
         1. Buffer vs Window 何时选哪个？
+           
+           ✅ 答案：
+           | 场景 | 选择 | 原因 |
+           |------|------|------|
+           | 短对话 (<10轮) | Buffer | 保留完整上下文 |
+           | 长对话 | Window | 控制 token 消耗 |
+           | 需要回顾历史 | Buffer | 信息完整 |
+           | 成本敏感 | Window | 限制 token |
+
         2. 如何处理超长对话的 token 限制？
+           
+           ✅ 答案：
+           - 使用 WindowMemory 限制轮数
+           - 使用 SummaryMemory 压缩历史
+           - 使用 TokenBufferMemory 按 token 数限制
+           - 混合策略：最近几轮完整 + 之前的摘要
     """)
 
 

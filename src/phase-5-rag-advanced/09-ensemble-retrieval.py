@@ -356,15 +356,128 @@ def exercises():
     练习 1：权重调优
         测试不同检索器权重对效果的影响。
 
+        ✅ 参考答案：
+        ```python
+        from langchain.retrievers import EnsembleRetriever
+
+        # 假设有三个检索器
+        retrievers = [bm25_retriever, vector_retriever, keyword_retriever]
+
+        # 测试不同权重组合
+        weight_configs = [
+            [0.5, 0.3, 0.2],   # 偏向 BM25
+            [0.2, 0.6, 0.2],   # 偏向向量
+            [0.33, 0.33, 0.34], # 均衡
+        ]
+
+        query = "Python 性能优化"
+        for weights in weight_configs:
+            ensemble = EnsembleRetriever(
+                retrievers=retrievers,
+                weights=weights
+            )
+            results = ensemble.invoke(query)
+            
+            print(f"权重 {weights}:")
+            for doc in results[:3]:
+                print(f"  {doc.page_content[:50]}...")
+        ```
+
     练习 2：实现路由器
         实现一个基于规则的查询路由器。
+
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        import re
+
+        class QueryRouter:
+            def __init__(self, retrievers: dict):
+                self.retrievers = retrievers
+                self.llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+
+            def classify_query(self, query: str) -> str:
+                # 规则优先
+                if re.search(r'\\b(代码|函数|类|方法)\\b', query):
+                    return "code"
+                if re.search(r'\\b(原理|概念|什么是)\\b', query):
+                    return "concept"
+                if re.search(r'\\b(步骤|如何|怎么)\\b', query):
+                    return "howto"
+                
+                # LLM 兜底
+                prompt = f'''
+                分类查询类型（code/concept/howto/general）：
+                查询：{query}
+                只返回类型：
+                '''
+                return self.llm.invoke(prompt).content.strip().lower()
+
+            def route(self, query: str):
+                query_type = self.classify_query(query)
+                retriever = self.retrievers.get(query_type, self.retrievers["general"])
+                return retriever.invoke(query)
+        ```
 
     练习 3：级联优化
         构建一个三阶段级联检索系统。
 
+        ✅ 参考答案：
+        ```python
+        class CascadeRetriever:
+            def __init__(self, retrievers: list, thresholds: list):
+                '''
+                retrievers: [快速检索器, 精确检索器, 深度检索器]
+                thresholds: [阈值1, 阈值2] 决定何时进入下一阶段
+                '''
+                self.retrievers = retrievers
+                self.thresholds = thresholds
+
+            def retrieve(self, query: str, k: int = 5):
+                # 第一阶段：快速检索
+                results = self.retrievers[0].invoke(query)
+                if self._best_score(results) > self.thresholds[0]:
+                    return results[:k]
+                
+                # 第二阶段：精确检索
+                results = self.retrievers[1].invoke(query)
+                if self._best_score(results) > self.thresholds[1]:
+                    return results[:k]
+                
+                # 第三阶段：深度检索（重排序）
+                candidates = self.retrievers[2].invoke(query)
+                reranked = self._rerank(query, candidates)
+                return reranked[:k]
+
+            def _best_score(self, results):
+                # 返回最佳结果的分数
+                return results[0].metadata.get("score", 0) if results else 0
+
+            def _rerank(self, query, docs):
+                # 使用 Cross-Encoder 重排序
+                ...
+        ```
+
     思考题：
         1. 如何确定最佳的检索器组合？
+           
+           ✅ 答案：
+           - 构建评测集：准备查询-相关文档对
+           - 单独评估：测试每个检索器的 Recall@K
+           - 组合测试：测试不同组合的效果
+           - 消融实验：移除某个检索器看效果变化
+           - 根据领域特点选择：技术文档用 BM25+向量
+
         2. 集成会增加多少延迟？
+           
+           ✅ 答案：
+           - 并行集成：延迟约等于最慢的检索器
+           - 串行集成：延迟是各检索器之和
+           - RRF 融合：额外 ~10ms
+           - 优化建议：
+             * 使用并行检索
+             * 缓存热门查询
+             * 异步处理非关键检索器
     """)
 
 

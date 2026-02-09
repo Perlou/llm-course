@@ -266,13 +266,64 @@ def exercises():
     练习 1：了解 MCP 生态
         访问 https://modelcontextprotocol.io 
         了解现有的 MCP Server
+
+        ✅ 参考答案：
+        常见的 MCP Server 类型：
+        - 文件系统 Server：读写文件、目录操作
+        - 数据库 Server：SQL 查询、数据操作
+        - Web 搜索 Server：Brave、Serper 等
+        - GitHub Server：仓库管理、代码搜索
+        - Slack Server：消息发送、频道管理
+        - 浏览器 Server：网页抓取、自动化
+        
+        安装示例：
+        ```bash
+        # 使用 npx 运行官方 Server
+        npx -y @modelcontextprotocol/server-filesystem /path/to/dir
+        
+        # 或使用 uvx 运行 Python Server
+        uvx mcp-server-sqlite --db-path /path/to/db.sqlite
+        ```
     
     练习 2：对比分析
         列出你的项目适合用 MCP 还是 Function Calling
+
+        ✅ 参考答案：
+        
+        选择 MCP 的场景：
+        - 需要多个 AI 应用共享工具
+        - 工具逻辑复杂，需要独立维护
+        - 需要跨语言支持
+        - 需要与 Claude Desktop 等集成
+        
+        选择 Function Calling 的场景：
+        - 工具简单，直接嵌入应用
+        - 单一 LLM 提供商
+        - 对延迟敏感
+        - 快速原型开发
+        
+        混合使用示例：
+        ```python
+        # 简单工具用 Function Calling
+        @tool
+        def calculate(expr: str) -> str:
+            return str(eval(expr))
+        
+        # 复杂工具用 MCP
+        mcp_client.connect("file-server")
+        mcp_client.call_tool("read_file", {"path": "/data/file.txt"})
+        ```
     
     思考题：
         MCP 如何确保工具调用的安全性？
         答：通过权限控制、沙箱执行、输入验证等机制
+
+        ✅ 详细答案：
+        - 传输层安全：使用 stdio 或安全 SSE
+        - 权限隔离：每个 Server 独立进程
+        - 输入验证：Schema 定义强类型参数
+        - 能力协商：Client 和 Server 协商权限
+        - 审计日志：记录所有工具调用
     """)
 
 

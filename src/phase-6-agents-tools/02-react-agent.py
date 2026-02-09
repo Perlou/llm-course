@@ -426,12 +426,93 @@ def exercises():
     print("""
     练习 1：添加新工具
         为 ReAct Agent 添加一个 lookup 工具，用于查询术语定义。
+
+        ✅ 参考答案：
+        ```python
+        DEFINITIONS = {
+            "ReAct": "Reasoning + Acting，结合推理和行动的Agent框架",
+            "LLM": "Large Language Model，大型语言模型",
+            "RAG": "Retrieval-Augmented Generation，检索增强生成",
+            "Agent": "能够自主决策和执行的智能代理",
+        }
+
+        def lookup(term: str) -> str:
+            '''查询术语定义'''
+            term = term.strip().upper()
+            if term in DEFINITIONS:
+                return f"{term}: {DEFINITIONS[term]}"
+            return f"未找到 '{term}' 的定义"
+
+        # 注册到工具列表
+        tools = {
+            "search": search,
+            "calculator": calculator,
+            "lookup": lookup,  # 新增
+        }
+        ```
     
     练习 2：改进解析
         改进 parse_response 函数，使其能处理更多边界情况。
+
+        ✅ 参考答案：
+        ```python
+        import re
+
+        def parse_response_improved(response: str) -> dict:
+            '''改进的响应解析，处理更多边界情况'''
+            result = {
+                "thought": None,
+                "action": None,
+                "action_input": None,
+                "final_answer": None,
+            }
+            
+            # 使用正则表达式更鲁棒地提取
+            thought_match = re.search(r'Thought:\\s*(.+?)(?=Action:|Final Answer:|$)', response, re.DOTALL)
+            action_match = re.search(r'Action:\\s*(.+?)(?=Action Input:|$)', response, re.DOTALL)
+            input_match = re.search(r'Action Input:\\s*(.+?)(?=Thought:|Observation:|$)', response, re.DOTALL)
+            answer_match = re.search(r'Final Answer:\\s*(.+?)$', response, re.DOTALL)
+            
+            if thought_match:
+                result["thought"] = thought_match.group(1).strip()
+            if action_match:
+                result["action"] = action_match.group(1).strip()
+            if input_match:
+                result["action_input"] = input_match.group(1).strip()
+            if answer_match:
+                result["final_answer"] = answer_match.group(1).strip()
+            
+            return result
+        ```
     
     练习 3：集成真实 API
         将模拟的 search 工具替换为真实的搜索 API（如 Serper）。
+
+        ✅ 参考答案：
+        ```python
+        import os
+        import requests
+
+        def search_with_serper(query: str) -> str:
+            '''使用 Serper API 进行真实搜索'''
+            api_key = os.getenv("SERPER_API_KEY")
+            
+            response = requests.post(
+                "https://google.serper.dev/search",
+                headers={"X-API-KEY": api_key},
+                json={"q": query}
+            )
+            
+            if response.status_code == 200:
+                results = response.json()
+                # 提取前3个结果
+                snippets = []
+                for item in results.get("organic", [])[:3]:
+                    snippets.append(f"- {item.get('snippet', '')}")
+                return "\\n".join(snippets)
+            
+            return f"搜索失败: {response.status_code}"
+        ```
     
     思考题：
     ────────

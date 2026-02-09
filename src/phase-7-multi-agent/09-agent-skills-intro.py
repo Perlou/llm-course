@@ -252,12 +252,104 @@ def exercises():
 
     print("""
     练习 1：创建翻译 Skill
+
+        ✅ 参考答案：
+        ```python
+        class TranslationSkill(BaseSkill):
+            name = "translation"
+            description = "将文本翻译为目标语言"
+            
+            def __init__(self, llm):
+                self.llm = llm
+            
+            def execute(self, text: str, target_lang: str = "英语") -> str:
+                prompt = f"将以下文本翻译为{target_lang}：\\n{text}"
+                return self.llm.invoke(prompt).content
+            
+            def get_parameters(self):
+                return {
+                    "text": {"type": "string", "required": True},
+                    "target_lang": {"type": "string", "default": "英语"}
+                }
+        ```
+
     练习 2：创建邮件发送 Skill
+
+        ✅ 参考答案：
+        ```python
+        import smtplib
+        from email.mime.text import MIMEText
+
+        class EmailSkill(BaseSkill):
+            name = "email"
+            description = "发送电子邮件"
+            
+            def __init__(self, smtp_config: dict):
+                self.config = smtp_config
+            
+            def execute(self, to: str, subject: str, body: str) -> dict:
+                msg = MIMEText(body)
+                msg["Subject"] = subject
+                msg["To"] = to
+                msg["From"] = self.config["sender"]
+                
+                try:
+                    with smtplib.SMTP(self.config["host"]) as server:
+                        server.starttls()
+                        server.login(self.config["user"], self.config["password"])
+                        server.send_message(msg)
+                    return {"success": True, "message": "邮件已发送"}
+                except Exception as e:
+                    return {"success": False, "error": str(e)}
+        ```
+
     练习 3：为 Skill 添加权限控制
+
+        ✅ 参考答案：
+        ```python
+        from functools import wraps
+
+        class PermissionedSkill:
+            required_permissions = []
+            
+            @classmethod
+            def require_permission(cls, *perms):
+                def decorator(func):
+                    @wraps(func)
+                    def wrapper(self, *args, user=None, **kwargs):
+                        if user is None:
+                            raise PermissionError("需要用户身份")
+                        
+                        for perm in perms:
+                            if perm not in user.permissions:
+                                raise PermissionError(f"缺少权限: {perm}")
+                        
+                        return func(self, *args, **kwargs)
+                    return wrapper
+                return decorator
+
+        class SecureEmailSkill(EmailSkill, PermissionedSkill):
+            @PermissionedSkill.require_permission("email:send")
+            def execute(self, **kwargs):
+                return super().execute(**kwargs)
+        ```
     
     思考题：
     1. Skill 与 Tool 的边界在哪里？
+
+       ✅ 答：Tool 是单一操作，Skill 是高级能力组合。
+       Skill 可以包含多个 Tools，有更复杂的逻辑和状态。
+
     2. 如何版本化管理 Skills？
+
+       ✅ 答：使用语义版本号、维护变更日志、
+       支持多版本共存、提供迁移指南。
+       
+       ```python
+       class VersionedSkill:
+           version = "1.0.0"
+           compatible_versions = ["1.0.x"]
+       ```
     """)
 
 

@@ -272,15 +272,104 @@ def exercises():
     练习 1：实现 RRF
         实现一个完整的 RRF 融合函数并测试。
 
+        ✅ 参考答案：
+        ```python
+        def reciprocal_rank_fusion(results_list: list, k: int = 60):
+            '''
+            RRF 融合算法
+            results_list: 多个检索器的结果列表 [[doc1, doc2], [doc3, doc1], ...]
+            k: 平滑参数
+            '''
+            doc_scores = {}
+            
+            for results in results_list:
+                for rank, doc in enumerate(results):
+                    doc_id = doc.page_content  # 或使用 doc.metadata["id"]
+                    if doc_id not in doc_scores:
+                        doc_scores[doc_id] = {"doc": doc, "score": 0}
+                    # RRF 公式: 1 / (k + rank)
+                    doc_scores[doc_id]["score"] += 1 / (k + rank + 1)
+            
+            # 按分数排序
+            sorted_docs = sorted(doc_scores.values(), key=lambda x: x["score"], reverse=True)
+            return [item["doc"] for item in sorted_docs]
+
+        # 使用
+        bm25_results = bm25_retriever.invoke("query")
+        vector_results = vector_retriever.invoke("query")
+        fused = reciprocal_rank_fusion([bm25_results, vector_results])
+        ```
+
     练习 2：调整权重
         测试不同 alpha 值对混合检索效果的影响。
+
+        ✅ 参考答案：
+        ```python
+        from langchain.retrievers import EnsembleRetriever
+
+        # 测试不同权重组合
+        alphas = [0.0, 0.3, 0.5, 0.7, 1.0]
+        query = "Python 编程"
+        
+        for alpha in alphas:
+            retriever = EnsembleRetriever(
+                retrievers=[bm25_retriever, vector_retriever],
+                weights=[1 - alpha, alpha]  # BM25 权重, Vector 权重
+            )
+            results = retriever.invoke(query)
+            print(f"alpha={alpha}: {[d.page_content[:20] for d in results[:3]]}")
+        
+        # alpha=0.0 纯 BM25
+        # alpha=1.0 纯向量
+        # alpha=0.5 平衡混合
+        ```
 
     练习 3：中文优化
         使用 jieba 分词优化中文 BM25 检索。
 
+        ✅ 参考答案：
+        ```python
+        import jieba
+        from rank_bm25 import BM25Okapi
+
+        def chinese_tokenizer(text: str):
+            return list(jieba.cut(text))
+
+        # 文档分词
+        docs = ["Python是编程语言", "机器学习改变世界"]
+        tokenized_docs = [chinese_tokenizer(doc) for doc in docs]
+
+        # 创建 BM25 索引
+        bm25 = BM25Okapi(tokenized_docs)
+
+        # 查询
+        query = "编程"
+        tokenized_query = chinese_tokenizer(query)
+        scores = bm25.get_scores(tokenized_query)
+        
+        # 获取排序结果
+        top_indices = scores.argsort()[::-1]
+        print([docs[i] for i in top_indices[:3]])
+        ```
+
     思考题：
         1. 什么场景下 BM25 比向量检索更好？
+           
+           ✅ 答案：
+           - 精确关键词匹配（产品型号、代码变量名）
+           - 罕见术语或新词（向量模型可能未训练过）
+           - 需要精确召回的场景
+           - 短文本查询
+           - 对语义理解要求不高的场景
+
         2. 如何动态调整融合权重？
+           
+           ✅ 答案：
+           - 基于查询特征：短查询用 BM25，长查询用向量
+           - 基于领域：技术文档偏 BM25，问答偏向量
+           - 基于用户反馈：根据点击率动态调整
+           - A/B 测试：找到最佳权重组合
+           - 使用 LLM 判断查询类型后路由
     """)
 
 

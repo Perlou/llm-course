@@ -303,12 +303,136 @@ def exercises():
 
     print("""
     练习 1：实现多级审批 - 不同操作需要不同级别审批
+
+        ✅ 参考答案：
+        ```python
+        from enum import IntEnum
+
+        class ApprovalLevel(IntEnum):
+            NONE = 0
+            TEAM_LEAD = 1
+            MANAGER = 2
+            DIRECTOR = 3
+
+        class MultiLevelApproval:
+            def __init__(self):
+                self.action_levels = {
+                    "view": ApprovalLevel.NONE,
+                    "edit": ApprovalLevel.TEAM_LEAD,
+                    "delete": ApprovalLevel.MANAGER,
+                    "deploy": ApprovalLevel.DIRECTOR,
+                }
+                self.approvers = {}  # level -> approver_func
+            
+            def request_approval(self, action: str, context: dict):
+                required_level = self.action_levels.get(action, ApprovalLevel.DIRECTOR)
+                
+                if required_level == ApprovalLevel.NONE:
+                    return {"approved": True, "level": "auto"}
+                
+                for level in range(1, required_level + 1):
+                    approver = self.approvers.get(level)
+                    if approver:
+                        result = approver(action, context)
+                        if not result["approved"]:
+                            return result
+                
+                return {"approved": True, "level": required_level.name}
+        ```
+
     练习 2：状态持久化 - 将工作流状态保存到文件
+
+        ✅ 参考答案：
+        ```python
+        import json
+        from pathlib import Path
+
+        class PersistentWorkflow:
+            def __init__(self, state_file: str):
+                self.state_file = Path(state_file)
+                self.state = self.load_state()
+            
+            def load_state(self):
+                if self.state_file.exists():
+                    return json.loads(self.state_file.read_text())
+                return {"step": 0, "data": {}, "pending_approvals": []}
+            
+            def save_state(self):
+                self.state_file.write_text(json.dumps(self.state, indent=2))
+            
+            def pause_for_approval(self, request):
+                self.state["pending_approvals"].append(request)
+                self.save_state()
+                return {"status": "paused", "request_id": request["id"]}
+            
+            def resume(self, request_id: str, decision: bool):
+                self.state["pending_approvals"] = [
+                    r for r in self.state["pending_approvals"]
+                    if r["id"] != request_id
+                ]
+                self.save_state()
+                return self.continue_workflow(decision)
+        ```
+
     练习 3：超时机制 - 审批超时自动处理
+
+        ✅ 参考答案：
+        ```python
+        import asyncio
+        from datetime import datetime, timedelta
+
+        class TimedApproval:
+            def __init__(self, default_timeout: int = 3600):
+                self.default_timeout = default_timeout  # 秒
+                self.pending = {}  # request_id -> {request, expires_at, default_action}
+            
+            async def request_with_timeout(self, request: dict, timeout: int = None):
+                timeout = timeout or self.default_timeout
+                expires_at = datetime.now() + timedelta(seconds=timeout)
+                
+                self.pending[request["id"]] = {
+                    "request": request,
+                    "expires_at": expires_at,
+                    "default_action": request.get("default", "reject")
+                }
+                
+                try:
+                    return await asyncio.wait_for(
+                        self.wait_for_approval(request["id"]),
+                        timeout=timeout
+                    )
+                except asyncio.TimeoutError:
+                    default = self.pending[request["id"]]["default_action"]
+                    return {"approved": default == "approve", "reason": "超时自动处理"}
+            
+            async def wait_for_approval(self, request_id):
+                while request_id in self.pending:
+                    await asyncio.sleep(1)
+                return self.results.get(request_id)
+        ```
     
     思考题：
     1. 如何在紧急情况下绕过审批？
+
+       ✅ 答：设置紧急权限角色、时间窗口限制、
+       事后审计机制、双人确认快速通道。
+
     2. 如何记录和审计所有人工决策？
+
+       ✅ 答：
+       ```python
+       class AuditLog:
+           def log_decision(self, request, decision, approver, reason):
+               entry = {
+                   "timestamp": datetime.now().isoformat(),
+                   "request_id": request["id"],
+                   "action": request["action"],
+                   "decision": decision,
+                   "approver": approver,
+                   "reason": reason,
+               }
+               self.store(entry)  # 存储到数据库或文件
+       ```
     """)
 
 

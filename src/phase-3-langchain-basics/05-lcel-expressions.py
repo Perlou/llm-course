@@ -214,15 +214,93 @@ def exercises():
     练习 1：并行分析
         使用 RunnableParallel 同时分析文本的情感和摘要。
 
+        ✅ 参考答案：
+        ```python
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.output_parsers import StrOutputParser
+        from langchain_core.runnables import RunnableParallel
+
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+
+        analysis_chain = RunnableParallel(
+            sentiment=ChatPromptTemplate.from_template(
+                "分析以下文本的情感倾向（正面/负面/中性）：{text}"
+            ) | llm | StrOutputParser(),
+            summary=ChatPromptTemplate.from_template(
+                "用一句话总结以下文本：{text}"
+            ) | llm | StrOutputParser(),
+            keywords=ChatPromptTemplate.from_template(
+                "提取以下文本的3个关键词：{text}"
+            ) | llm | StrOutputParser(),
+        )
+
+        result = analysis_chain.invoke({"text": "这款产品质量非常好，值得推荐"})
+        print(f"情感: {result['sentiment']}")
+        print(f"摘要: {result['summary']}")
+        print(f"关键词: {result['keywords']}")
+        ```
+
     练习 2：智能路由
         使用 RunnableBranch 根据问题类型选择不同处理。
+
+        ✅ 参考答案：
+        ```python
+        from langchain_core.runnables import RunnableBranch
+
+        def is_math_question(x):
+            keywords = ["计算", "求", "等于", "+", "-", "*", "/"]
+            return any(k in x["input"] for k in keywords)
+
+        def is_code_question(x):
+            keywords = ["代码", "程序", "函数", "bug", "错误"]
+            return any(k in x["input"] for k in keywords)
+
+        smart_router = RunnableBranch(
+            (is_math_question,
+             ChatPromptTemplate.from_template("作为数学专家解答: {input}") | llm | StrOutputParser()),
+            (is_code_question,
+             ChatPromptTemplate.from_template("作为编程专家解答: {input}") | llm | StrOutputParser()),
+            # 默认
+            ChatPromptTemplate.from_template("回答: {input}") | llm | StrOutputParser()
+        )
+        ```
 
     练习 3：回退链
         配置多个回退模型确保服务可用性。
 
+        ✅ 参考答案：
+        ```python
+        # 主模型
+        primary = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.7)
+        
+        # 回退模型（可以用不同配置或不同模型）
+        fallback1 = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.3)
+        fallback2 = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.5)
+
+        # 配置回退链
+        robust_llm = primary.with_fallbacks([fallback1, fallback2])
+
+        # 在链中使用
+        chain = prompt | robust_llm | StrOutputParser()
+        ```
+
     思考题：
         1. 并行执行有什么性能优势？
+           
+           ✅ 答案：
+           - 减少总耗时：多个 API 调用同时进行
+           - 提高吞吐量：充分利用网络 I/O
+           - 适合独立任务：各分支互不依赖时效果最佳
+           - 注意：并行会消耗更多 token 配额
+
         2. 条件分支有什么应用场景？
+           
+           ✅ 答案：
+           - 智能问答路由：技术/生活/学习问题分发
+           - 多模型选择：根据任务复杂度选模型
+           - 语言检测：自动选择对应语言处理
+           - 敏感内容过滤：敏感问题特殊处理
     """)
 
 
