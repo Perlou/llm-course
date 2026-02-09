@@ -247,15 +247,116 @@ def exercises():
     练习 1：产品信息提取
         从产品描述中提取名称、价格、特点等信息。
 
+        ✅ 参考答案：
+        ```
+        请从以下产品描述中提取结构化信息，以 JSON 格式输出。
+
+        产品描述：
+        \"\"\"
+        {产品描述文本}
+        \"\"\"
+
+        请严格按以下 JSON 格式输出：
+        {
+            "name": "产品名称",
+            "price": 价格数字,
+            "currency": "货币单位",
+            "features": ["特点1", "特点2", "特点3"],
+            "category": "产品类别",
+            "brand": "品牌名（如有）"
+        }
+
+        注意：如果某个字段信息不存在，使用 null。
+        ```
+
     练习 2：对话意图识别
         分析用户输入，返回意图和参数的JSON。
+
+        ✅ 参考答案：
+        ```
+        分析用户输入，识别意图和关键参数，以 JSON 格式输出。
+
+        可能的意图类型：
+        - query_weather: 查询天气
+        - book_ticket: 预订票务  
+        - order_food: 点餐
+        - get_info: 信息查询
+        - chitchat: 闲聊
+        - unknown: 无法识别
+
+        用户输入："{用户输入}"
+
+        输出格式：
+        {
+            "intent": "意图类型",
+            "confidence": 置信度(0-1),
+            "entities": {
+                "location": "地点（如有）",
+                "date": "日期（如有）",
+                "quantity": 数量（如有）
+            },
+            "response_suggestion": "建议的回复方向"
+        }
+        ```
 
     练习 3：数据验证
         实现JSON结构验证函数，检查必填字段。
 
+        ✅ 参考答案：
+        ```python
+        import json
+        from typing import Any
+
+        def validate_json_structure(
+            json_str: str,
+            required_fields: list[str],
+            field_types: dict[str, type] = None
+        ) -> tuple[bool, str, dict]:
+            '''
+            验证 JSON 结构是否符合要求
+            
+            Returns:
+                (是否有效, 错误信息, 解析后的数据)
+            '''
+            # 1. 尝试解析 JSON
+            try:
+                data = json.loads(json_str)
+            except json.JSONDecodeError as e:
+                return False, f"JSON 解析失败: {e}", None
+            
+            # 2. 检查必填字段
+            missing = [f for f in required_fields if f not in data]
+            if missing:
+                return False, f"缺少必填字段: {missing}", data
+            
+            # 3. 检查字段类型（如指定）
+            if field_types:
+                for field, expected_type in field_types.items():
+                    if field in data and not isinstance(data[field], expected_type):
+                        return False, f"字段 {field} 类型错误", data
+            
+            return True, "验证通过", data
+        ```
+
     思考题：
         1. Gemini 和 OpenAI 在 JSON 输出上有什么区别？
+           
+           ✅ 答案：
+           | 特性 | Gemini | OpenAI |
+           |------|--------|--------|
+           | 强制 JSON | response_mime_type | response_format |
+           | Schema 定义 | response_schema | json_schema |
+           | 可靠性 | 需更多提示词约束 | JSON 模式稳定性高 |
+           | 嵌套支持 | 支持，需明确示例 | 原生支持复杂结构 |
+
         2. 如何处理嵌套层级很深的结构？
+           
+           ✅ 答案：
+           - 分层提取：先提取顶层，再逐层深入
+           - 提供完整示例：在提示词中给出嵌套示例
+           - 使用 Schema：定义明确的 JSON Schema
+           - 拆分任务：将复杂结构拆成多个简单提取任务
+           - 后处理：用代码验证和修复结构问题
     """)
 
 

@@ -258,16 +258,104 @@ def exercises():
     练习 1：数学问题
         用自洽性解决一个应用题，对比单次和多次结果。
 
+        ✅ 参考答案：
+        问题：一个水池有进水管和出水管，进水管单独注满需要 6 小时，
+              出水管单独排空需要 8 小时。同时开两个管，多久注满？
+
+        多次采样（temperature=0.7，采样 5 次）：
+        - 运行 1：24 小时
+        - 运行 2：24 小时  
+        - 运行 3：24 小时
+        - 运行 4：12 小时（错误）
+        - 运行 5：24 小时
+
+        投票结果：24 小时（4票）> 12 小时（1票）
+        
+        正确答案验证：
+        进水速率 = 1/6，出水速率 = 1/8
+        净速率 = 1/6 - 1/8 = 4/24 - 3/24 = 1/24
+        时间 = 1 ÷ (1/24) = 24 小时 ✓
+
     练习 2：实现投票函数
         编写一个通用的自洽性答案提取函数。
+
+        ✅ 参考答案：
+        ```python
+        from collections import Counter
+        import re
+
+        def extract_answer(responses: list[str], pattern: str = None) -> str:
+            '''
+            从多次采样结果中提取最一致的答案
+            
+            Args:
+                responses: 多次模型输出列表
+                pattern: 可选的正则表达式，用于从输出中提取答案
+            
+            Returns:
+                出现次数最多的答案
+            '''
+            answers = []
+            for resp in responses:
+                if pattern:
+                    match = re.search(pattern, resp)
+                    if match:
+                        answers.append(match.group(1).strip())
+                else:
+                    # 默认提取最后一行数字
+                    numbers = re.findall(r'\\d+\\.?\\d*', resp)
+                    if numbers:
+                        answers.append(numbers[-1])
+            
+            if not answers:
+                return None
+                
+            counter = Counter(answers)
+            most_common = counter.most_common(1)[0]
+            return most_common[0], most_common[1] / len(responses)
+        ```
 
     练习 3：成本分析
         计算使用自洽性的 token 成本增加比例。
 
+        ✅ 参考答案：
+        假设：单次请求消耗 500 tokens（输入+输出）
+        
+        | 采样次数 | Token 消耗 | 成本倍数 |
+        |---------|-----------|---------|
+        | 1       | 500       | 1x      |
+        | 3       | 1,500     | 3x      |
+        | 5       | 2,500     | 5x      |
+        | 7       | 3,500     | 7x      |
+        
+        优化策略：
+        - 先用低 temperature 单次运行，不确定时再多次采样
+        - 对简单问题减少采样次数（3次即可）
+        - 对复杂/关键问题增加采样（5-7次）
+
     思考题：
         1. 采样次数如何影响准确性和成本？
+           
+           ✅ 答案：
+           - 准确性：通常呈边际递减，3-5 次显著提升，之后收益减小
+           - 成本：线性增长，采样 N 次成本约为 N 倍
+           - 平衡点：一般推荐 5 次，重要决策可用 7-9 次
+
         2. 如何处理平票情况？
+           
+           ✅ 答案：
+           - 方案 1：增加采样次数（建议用奇数次）
+           - 方案 2：返回置信度最高的答案（结合长度/详细程度）
+           - 方案 3：标记为"不确定"，人工复核
+           - 方案 4：使用更低 temperature 重新采样
+
         3. temperature 设置过低会怎样？
+           
+           ✅ 答案：
+           - 所有采样结果趋同，失去多样性
+           - 自洽性投票变得无意义
+           - 无法发现错误（同样的错误重复出现）
+           - 建议：temperature 设为 0.5-0.8
     """)
 
 

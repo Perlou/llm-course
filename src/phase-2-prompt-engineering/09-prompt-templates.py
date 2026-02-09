@@ -237,15 +237,150 @@ def exercises():
     练习 1：创建邮件模板
         设计一个可定制收件人、主题、正文的邮件模板。
 
+        ✅ 参考答案：
+        ```python
+        EMAIL_TEMPLATE = '''
+        请帮我撰写一封{email_type}邮件。
+
+        【邮件信息】
+        - 收件人：{recipient_name}（{recipient_title}）
+        - 发件人：{sender_name}
+        - 邮件类型：{email_type}
+        
+        【邮件内容要点】
+        {key_points}
+        
+        【语气要求】
+        - 正式程度：{formality}（正式/半正式/轻松）
+        - 紧急程度：{urgency}（紧急/普通/不急）
+        
+        请生成包含以下部分的邮件：
+        1. 邮件主题行
+        2. 称呼
+        3. 正文（分段落）
+        4. 结束语
+        5. 落款
+        '''
+        
+        # 使用示例
+        email = EMAIL_TEMPLATE.format(
+            email_type="请假申请",
+            recipient_name="张经理",
+            recipient_title="部门主管",
+            sender_name="李明",
+            key_points="因身体不适，申请明天请假一天",
+            formality="正式",
+            urgency="普通"
+        )
+        ```
+
     练习 2：代码生成模板
         创建一个根据语言、功能生成代码的模板。
+
+        ✅ 参考答案：
+        ```python
+        CODE_TEMPLATE = '''
+        请用 {language} 编写一个 {code_type}。
+
+        【功能描述】
+        {description}
+
+        【输入参数】
+        {inputs}
+
+        【输出要求】
+        {outputs}
+
+        【代码要求】
+        - 编码风格：{style_guide}
+        - 是否需要注释：{with_comments}
+        - 是否需要类型注解：{with_types}
+        - 是否需要单元测试：{with_tests}
+        
+        【示例调用】
+        {example_usage}
+        '''
+
+        # 使用示例
+        code_prompt = CODE_TEMPLATE.format(
+            language="Python",
+            code_type="函数",
+            description="计算斐波那契数列的第 n 项",
+            inputs="n: int - 第几项（从 0 开始）",
+            outputs="int - 第 n 项的值",
+            style_guide="PEP8",
+            with_comments="是",
+            with_types="是",
+            with_tests="是",
+            example_usage="fibonacci(10) → 55"
+        )
+        ```
 
     练习 3：模板管理系统
         实现一个简单的模板存储和查询系统。
 
+        ✅ 参考答案：
+        ```python
+        import json
+        from pathlib import Path
+        from datetime import datetime
+
+        class PromptTemplateManager:
+            def __init__(self, storage_path: str = "templates.json"):
+                self.storage_path = Path(storage_path)
+                self.templates = self._load()
+            
+            def _load(self) -> dict:
+                if self.storage_path.exists():
+                    return json.loads(self.storage_path.read_text())
+                return {}
+            
+            def _save(self):
+                self.storage_path.write_text(
+                    json.dumps(self.templates, ensure_ascii=False, indent=2)
+                )
+            
+            def add(self, name: str, template: str, tags: list = None):
+                self.templates[name] = {
+                    "template": template,
+                    "tags": tags or [],
+                    "created_at": datetime.now().isoformat(),
+                    "version": 1
+                }
+                self._save()
+            
+            def get(self, name: str) -> str:
+                return self.templates.get(name, {}).get("template")
+            
+            def search(self, tag: str) -> list:
+                return [k for k, v in self.templates.items() 
+                        if tag in v.get("tags", [])]
+            
+            def render(self, name: str, **kwargs) -> str:
+                template = self.get(name)
+                if template:
+                    return template.format(**kwargs)
+                return None
+        ```
+
     思考题：
         1. 如何版本化管理模板？
+           
+           ✅ 答案：
+           - 存储版本号和历史记录
+           - 使用 Git 管理模板文件
+           - 记录每次修改的时间和原因
+           - 支持回滚到历史版本
+           - A/B 测试不同版本效果
+
         2. 模板过于复杂时如何处理？
+           
+           ✅ 答案：
+           - 拆分为多个小模板，组合使用
+           - 使用模板继承/嵌套机制
+           - 将固定部分提取为常量
+           - 使用 Jinja2 等模板引擎支持条件逻辑
+           - 文档化每个变量的含义和取值范围
     """)
 
 
