@@ -191,14 +191,118 @@ def exercises():
 
     print("""
     练习 1：使用 Qwen2-VL 或 LLaVA 加载一个多模态模型
+
+        ✅ 参考答案：
+        ```python
+        from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
+        import torch
+        
+        class VisionLLM:
+            '''视觉 LLM 封装类'''
+            
+            def __init__(
+                self, 
+                model_name: str = "Qwen/Qwen2-VL-7B-Instruct"
+            ):
+                '''初始化模型'''
+                self.processor = AutoProcessor.from_pretrained(model_name)
+                self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+                    model_name,
+                    torch_dtype=torch.bfloat16,
+                    device_map="auto"
+                )
+            
+            def generate(
+                self, 
+                image, 
+                prompt: str,
+                max_tokens: int = 512
+            ) -> str:
+                '''生成响应'''
+                messages = [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "image", "image": image},
+                            {"type": "text", "text": prompt}
+                        ]
+                    }
+                ]
+                
+                text = self.processor.apply_chat_template(
+                    messages, 
+                    tokenize=False, 
+                    add_generation_prompt=True
+                )
+                
+                inputs = self.processor(
+                    text=[text],
+                    images=[image],
+                    return_tensors="pt"
+                ).to(self.model.device)
+                
+                generated_ids = self.model.generate(
+                    **inputs, 
+                    max_new_tokens=max_tokens
+                )
+                
+                output = self.processor.batch_decode(
+                    generated_ids[:, inputs.input_ids.shape[1]:],
+                    skip_special_tokens=True
+                )[0]
+                
+                return output
+        
+        # 使用示例
+        # vision_llm = VisionLLM()
+        # from PIL import Image
+        # img = Image.open("photo.jpg")
+        # response = vision_llm.generate(img, "这张图片里有什么？")
+        ```
+    
     练习 2：输入一张图片，让模型描述图片内容
 
+        ✅ 参考答案：
+        ```python
+        from PIL import Image
+        import google.generativeai as genai
+        
+        def describe_image_gemini(
+            image_path: str,
+            style: str = "detailed"
+        ) -> str:
+            '''使用 Gemini 描述图片'''
+            genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            prompts = {
+                "brief": "用一句话描述这张图片",
+                "detailed": "详细描述这张图片的内容，包括场景、物体、颜色和氛围",
+                "creative": "用诗意的语言描述这张图片",
+                "technical": "从摄影技术角度分析这张图片"
+            }
+            
+            img = Image.open(image_path)
+            response = model.generate_content([
+                prompts.get(style, prompts["detailed"]),
+                img
+            ])
+            
+            return response.text
+        
+        # 使用示例
+        # description = describe_image_gemini("sunset.jpg", style="creative")
+        # print(description)
+        ```
+
     思考题：为什么视觉编码器通常是预训练冻结的？
-    答案：视觉编码器（如 CLIP-ViT）已通过大规模数据预训练，
-          具有很强的图像表示能力。冻结它可以：
-          1. 减少训练成本
-          2. 保留已学到的视觉知识
-          3. 只需训练对齐层和 LLM
+
+        ✅ 答：
+        1. 保留知识 - 视觉编码器（如 CLIP-ViT）已通过海量数据预训练，具有强大的图像表示能力
+        2. 减少成本 - 冻结编码器大幅减少训练参数和计算资源
+        3. 防止遗忘 - 微调可能导致已学到的视觉知识被覆盖
+        4. 对齐层学习 - 只需训练轻量的对齐层将视觉特征映射到语言空间
+        5. 稳定训练 - 冻结大型组件有助于训练稳定性
     """)
 
 

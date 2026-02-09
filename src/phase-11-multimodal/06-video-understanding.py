@@ -280,15 +280,179 @@ def exercises():
 
     print("""
     练习 1：实现智能帧采样（基于场景变化）
+
+        ✅ 参考答案：
+        ```python
+        import cv2
+        import numpy as np
+        from PIL import Image
+        
+        class SmartFrameSampler:
+            '''智能帧采样器 - 基于场景变化'''
+            
+            def __init__(self, threshold: float = 30.0):
+                '''
+                threshold: 场景变化阈值，越小越敏感
+                '''
+                self.threshold = threshold
+            
+            def calculate_frame_diff(self, frame1, frame2) -> float:
+                '''计算两帧之间的差异'''
+                # 转换为灰度图
+                gray1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
+                gray2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
+                
+                # 计算直方图
+                hist1 = cv2.calcHist([gray1], [0], None, [256], [0, 256])
+                hist2 = cv2.calcHist([gray2], [0], None, [256], [0, 256])
+                
+                # 归一化
+                cv2.normalize(hist1, hist1)
+                cv2.normalize(hist2, hist2)
+                
+                # 计算相关性（1 表示完全相同，-1 表示完全不同）
+                correlation = cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
+                
+                # 转换为差异分数（0-100）
+                diff_score = (1 - correlation) * 100
+                return diff_score
+            
+            def extract_keyframes(
+                self, 
+                video_path: str,
+                min_frames: int = 5,
+                max_frames: int = 20
+            ) -> list:
+                '''提取关键帧'''
+                cap = cv2.VideoCapture(video_path)
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                
+                keyframes = []
+                prev_frame = None
+                frame_idx = 0
+                
+                while True:
+                    ret, frame = cap.read()
+                    if not ret:
+                        break
+                    
+                    if prev_frame is None:
+                        # 第一帧永远是关键帧
+                        keyframes.append({
+                            'frame_idx': frame_idx,
+                            'timestamp': frame_idx / fps,
+                            'image': Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)),
+                            'reason': 'first_frame'
+                        })
+                    else:
+                        diff = self.calculate_frame_diff(prev_frame, frame)
+                        if diff > self.threshold:
+                            keyframes.append({
+                                'frame_idx': frame_idx,
+                                'timestamp': frame_idx / fps,
+                                'image': Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)),
+                                'reason': f'scene_change (diff={diff:.1f})'
+                            })
+                    
+                    prev_frame = frame
+                    frame_idx += 1
+                
+                cap.release()
+                
+                # 确保帧数在范围内
+                if len(keyframes) < min_frames:
+                    # 补充均匀采样
+                    return self.uniform_sample(video_path, min_frames)
+                elif len(keyframes) > max_frames:
+                    # 保留最重要的帧
+                    step = len(keyframes) // max_frames
+                    keyframes = keyframes[::step][:max_frames]
+                
+                return keyframes
+        
+        # 使用示例
+        # sampler = SmartFrameSampler(threshold=25.0)
+        # frames = sampler.extract_keyframes("video.mp4", min_frames=8)
+        ```
+    
     练习 2：构建视频内容审核系统
 
+        ✅ 参考答案：
+        ```python
+        import google.generativeai as genai
+        
+        class VideoContentModerator:
+            '''视频内容审核系统'''
+            
+            def __init__(self, api_key: str):
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                self.sampler = SmartFrameSampler(threshold=20.0)
+            
+            def moderate_video(self, video_path: str) -> Dict:
+                '''审核视频内容'''
+                # 1. 提取关键帧
+                keyframes = self.sampler.extract_keyframes(
+                    video_path, 
+                    min_frames=10, 
+                    max_frames=20
+                )
+                
+                # 2. 构建审核请求
+                content = ['''审核这个视频的内容安全性。
+
+分析每一帧并返回综合评估 JSON：
+{
+    "overall_safe": true/false,
+    "risk_level": "low/medium/high/critical",
+    "categories": {
+        "violence": {"detected": bool, "frames": [帧编号], "severity": "..."},
+        "adult": {"detected": bool, "frames": [帧编号], "severity": "..."},
+        "dangerous": {"detected": bool, "frames": [帧编号], "severity": "..."},
+        "hate_speech": {"detected": bool, "frames": [帧编号], "severity": "..."}
+    },
+    "flagged_moments": [
+        {"timestamp": 秒, "reason": "原因"}
+    ],
+    "recommendation": "approve/manual_review/reject",
+    "summary": "视频内容概述"
+}''']
+                
+                for i, frame in enumerate(keyframes):
+                    content.append(f"帧 {i+1} (时间: {frame['timestamp']:.1f}秒):")
+                    content.append(frame['image'])
+                
+                response = self.model.generate_content(content)
+                
+                import json
+                return json.loads(response.text)
+            
+            def batch_moderate(self, video_paths: list) -> list:
+                '''批量审核'''
+                results = []
+                for path in video_paths:
+                    result = self.moderate_video(path)
+                    result['path'] = path
+                    results.append(result)
+                return results
+        
+        # 使用示例
+        # moderator = VideoContentModerator(os.getenv("GOOGLE_API_KEY"))
+        # result = moderator.moderate_video("uploaded_video.mp4")
+        # if result['recommendation'] == 'reject':
+        #     print(f"视频被拒绝: {result['summary']}")
+        ```
+
     思考题：帧采样数量如何选择？
-    答案：
-    - 短视频（<1分钟）：6-10帧
-    - 中等视频（1-5分钟）：10-16帧
-    - 长视频：按场景分段，每段采样
-    - 快速变化场景：增加采样密度
-    - 静态场景：可减少采样
+
+        ✅ 答：
+        1. 短视频（<1分钟）：6-10 帧，均匀采样即可
+        2. 中等视频（1-5分钟）：10-16 帧，结合场景变化
+        3. 长视频（>5分钟）：按场景分段，每段采样
+        4. 快速变化场景（动作片、体育）：增加采样密度
+        5. 静态场景（演讲、教程）：可减少采样
+        6. 成本考虑：每帧消耗 token，需平衡质量与成本
     """)
 
 

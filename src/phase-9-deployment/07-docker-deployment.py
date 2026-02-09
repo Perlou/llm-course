@@ -177,10 +177,125 @@ def exercises():
 
     print("""
     练习 1：编写 LLM 服务的 Dockerfile
+
+        ✅ 参考答案：
+        ```dockerfile
+        # Dockerfile
+        FROM nvidia/cuda:12.1-devel AS builder
+        WORKDIR /build
+        
+        # 安装依赖
+        COPY requirements.txt .
+        RUN pip install --prefix=/install --no-cache-dir -r requirements.txt
+        
+        # 运行阶段
+        FROM nvidia/cuda:12.1-runtime
+        WORKDIR /app
+        
+        # 创建非 root 用户
+        RUN useradd -m -u 1000 appuser
+        
+        # 复制依赖
+        COPY --from=builder /install /usr/local
+        
+        # 复制代码
+        COPY --chown=appuser:appuser ./app ./app
+        
+        # 切换用户
+        USER appuser
+        
+        # 健康检查
+        HEALTHCHECK --interval=30s --timeout=10s --start-period=60s \\
+            CMD curl -f http://localhost:8000/health || exit 1
+        
+        EXPOSE 8000
+        
+        # 启动命令
+        CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+        ```
+        
+        ```txt
+        # requirements.txt
+        uvicorn[standard]==0.27.0
+        fastapi==0.109.0
+        openai==1.10.0
+        vllm==0.3.0
+        ```
+    
     练习 2：使用 Docker Compose 部署完整服务栈
 
+        ✅ 参考答案：
+        ```yaml
+        # docker-compose.yml
+        version: "3.8"
+        
+        services:
+          vllm:
+            image: vllm/vllm-openai:latest
+            deploy:
+              resources:
+                reservations:
+                  devices:
+                    - driver: nvidia
+                      count: 1
+                      capabilities: [gpu]
+            command: --model Qwen/Qwen2-1.5B-Instruct --port 8000
+            volumes:
+              - model-cache:/root/.cache/huggingface
+            networks:
+              - llm-network
+          
+          api:
+            build: .
+            ports:
+              - "8080:8000"
+            environment:
+              - BACKEND_URL=http://vllm:8000
+            depends_on:
+              - vllm
+              - redis
+            networks:
+              - llm-network
+          
+          redis:
+            image: redis:7-alpine
+            volumes:
+              - redis-data:/data
+            networks:
+              - llm-network
+          
+          prometheus:
+            image: prom/prometheus
+            ports:
+              - "9090:9090"
+            volumes:
+              - ./prometheus.yml:/etc/prometheus/prometheus.yml
+            networks:
+              - llm-network
+        
+        volumes:
+          model-cache:
+          redis-data:
+        
+        networks:
+          llm-network:
+            driver: bridge
+        ```
+        
+        启动命令：
+        ```bash
+        docker-compose up -d
+        docker-compose logs -f api
+        ```
+
     思考题：为什么使用多阶段构建？
-    答案：减小最终镜像大小，分离构建环境和运行环境
+
+        ✅ 答：
+        1. 减小镜像大小 - 构建工具不进入最终镜像
+        2. 分离环境 - 构建环境和运行环境分开
+        3. 安全性 - 减少攻击面
+        4. 缓存优化 - 依赖层可复用
+        5. 构建速度 - 并行构建多阶段
     """)
 
 

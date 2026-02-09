@@ -268,17 +268,140 @@ def exercises():
     print("""
     练习 1：LoRA 合并
         训练一个 LoRA 并合并到基础模型
+
+        ✅ 参考答案：
+        ```python
+        from peft import PeftModel, LoraConfig, get_peft_model
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+        import torch
+        
+        # 1. 训练 LoRA (假设已完成)
+        # ...
+        
+        # 2. 加载基础模型
+        base_model = AutoModelForCausalLM.from_pretrained(
+            "Qwen/Qwen2-0.5B",
+            torch_dtype=torch.float16,
+        )
+        
+        # 3. 加载 LoRA adapter
+        peft_model = PeftModel.from_pretrained(base_model, "./lora_adapter")
+        
+        # 4. 合并权重
+        merged_model = peft_model.merge_and_unload()
+        
+        # 5. 保存合并后的模型
+        merged_model.save_pretrained("./merged_model")
+        
+        tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2-0.5B")
+        tokenizer.save_pretrained("./merged_model")
+        
+        # 6. 验证
+        loaded = AutoModelForCausalLM.from_pretrained("./merged_model")
+        print("合并成功！")
+        ```
     
     练习 2：多 Adapter 实验
         比较不同权重的合并效果
+
+        ✅ 参考答案：
+        ```python
+        def experiment_merge_weights(model, adapter_names, weight_pairs):
+            results = []
+            
+            for weights in weight_pairs:
+                # 创建合并的 adapter
+                model.add_weighted_adapter(
+                    adapters=adapter_names,
+                    weights=list(weights),
+                    adapter_name=f"merged_{weights}",
+                )
+                model.set_adapter(f"merged_{weights}")
+                
+                # 评估
+                task1_score = evaluate_task1(model)
+                task2_score = evaluate_task2(model)
+                
+                results.append({
+                    "weights": weights,
+                    "task1": task1_score,
+                    "task2": task2_score,
+                    "avg": (task1_score + task2_score) / 2,
+                })
+            
+            # 找到最佳权重
+            best = max(results, key=lambda x: x["avg"])
+            return results, best
+        
+        # 测试
+        weight_pairs = [(0.3, 0.7), (0.5, 0.5), (0.7, 0.3)]
+        results, best = experiment_merge_weights(
+            model, ["adapter_a", "adapter_b"], weight_pairs
+        )
+        ```
     
     练习 3：TIES 合并
         使用 mergekit 进行高级合并
+
+        ✅ 参考答案：
+        ```yaml
+        # merge_config.yaml
+        models:
+          - model: ./model_chat
+            parameters:
+              weight: 0.5
+              density: 0.5
+          - model: ./model_code
+            parameters:
+              weight: 0.5
+              density: 0.5
+        merge_method: ties
+        base_model: Qwen/Qwen2-0.5B
+        parameters:
+          normalize: true
+          int8_mask: true
+        dtype: float16
+        ```
+        
+        ```bash
+        # 执行合并
+        pip install mergekit
+        mergekit-yaml merge_config.yaml ./merged_output --cuda
+        ```
     
     思考题：
     ────────
     1. 合并后能否恢复原始 adapter？
+
+       ✅ 答：
+       不能。合并是不可逆操作。
+       建议：
+       - 合并前保存 adapter 副本
+       - 保存合并配置用于复现
+       - 使用版本控制管理 adapter
+
     2. 如何自动选择最佳合并权重？
+
+       ✅ 答：
+       - 网格搜索：遍历权重组合
+       - 贝叶斯优化：智能搜索
+       - 验证集驱动：使用验证集分数指导
+       
+       ```python
+       from sklearn.model_selection import ParameterGrid
+       
+       param_grid = {"w1": [0.3, 0.5, 0.7], "w2": [0.3, 0.5, 0.7]}
+       best_score = 0
+       best_weights = None
+       
+       for params in ParameterGrid(param_grid):
+           if params["w1"] + params["w2"] != 1.0:
+               continue
+           score = evaluate_merged(params["w1"], params["w2"])
+           if score > best_score:
+               best_score = score
+               best_weights = params
+       ```
     """)
 
 

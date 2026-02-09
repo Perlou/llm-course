@@ -295,14 +295,204 @@ def exercises():
 
     print("""
     练习 1：实现多音色播客生成（不同角色用不同音色）
+
+        ✅ 参考答案：
+        ```python
+        from openai import OpenAI
+        from pydub import AudioSegment
+        import os
+        from typing import List, Dict
+        
+        class MultiVoicePodcastGenerator:
+            '''多音色播客生成器'''
+            
+            def __init__(self, api_key: str = None):
+                self.client = OpenAI(api_key=api_key)
+                
+                # 角色-音色映射
+                self.voice_map = {
+                    "host": "alloy",        # 主持人 - 中性
+                    "guest_male": "onyx",   # 男嘉宾 - 低沉
+                    "guest_female": "nova", # 女嘉宾 - 温暖
+                    "narrator": "fable",    # 旁白 - 叙事感
+                }
+            
+            def generate_segment(
+                self, 
+                text: str, 
+                voice: str,
+                output_path: str
+            ) -> str:
+                '''生成单段语音'''
+                response = self.client.audio.speech.create(
+                    model="tts-1-hd",
+                    voice=voice,
+                    input=text
+                )
+                response.stream_to_file(output_path)
+                return output_path
+            
+            def generate_podcast(
+                self, 
+                script: List[Dict],
+                output_path: str
+            ) -> str:
+                '''生成多角色播客
+                
+                script 格式：
+                [
+                    {"role": "host", "text": "欢迎收听..."},
+                    {"role": "guest_male", "text": "谢谢邀请..."},
+                    ...
+                ]
+                '''
+                segments = []
+                temp_files = []
+                
+                for i, line in enumerate(script):
+                    role = line.get("role", "host")
+                    voice = self.voice_map.get(role, "alloy")
+                    text = line["text"]
+                    
+                    # 生成片段
+                    temp_path = f"temp_segment_{i}.mp3"
+                    self.generate_segment(text, voice, temp_path)
+                    temp_files.append(temp_path)
+                    
+                    # 加载音频片段
+                    segment = AudioSegment.from_file(temp_path)
+                    segments.append(segment)
+                    
+                    # 添加短暂停顿
+                    pause = AudioSegment.silent(duration=500)
+                    segments.append(pause)
+                
+                # 合并所有片段
+                podcast = sum(segments)
+                podcast.export(output_path, format="mp3")
+                
+                # 清理临时文件
+                for f in temp_files:
+                    os.remove(f)
+                
+                return output_path
+        
+        # 使用示例
+        script = [
+            {"role": "host", "text": "大家好，欢迎收听今天的节目。"},
+            {"role": "guest_male", "text": "谢谢邀请，很高兴来到这里。"},
+            {"role": "host", "text": "今天我们要讨论人工智能的发展。"},
+        ]
+        # generator = MultiVoicePodcastGenerator()
+        # generator.generate_podcast(script, "podcast.mp3")
+        ```
+    
     练习 2：构建完整的语音对话机器人
 
+        ✅ 参考答案：
+        ```python
+        import time
+        
+        class VoiceChatBot:
+            '''完整语音对话机器人'''
+            
+            def __init__(
+                self, 
+                api_key: str = None,
+                voice: str = "nova",
+                system_prompt: str = None
+            ):
+                self.client = OpenAI(api_key=api_key)
+                self.voice = voice
+                self.conversation = []
+                self.system_prompt = system_prompt or "你是一个友好的语音助手。回复要简洁自然，适合语音播放。"
+            
+            def listen(self, audio_path: str) -> str:
+                '''语音转文字'''
+                with open(audio_path, "rb") as f:
+                    response = self.client.audio.transcriptions.create(
+                        model="whisper-1",
+                        file=f,
+                        language="zh"
+                    )
+                return response.text
+            
+            def think(self, user_text: str) -> str:
+                '''LLM 生成回复'''
+                self.conversation.append({
+                    "role": "user", 
+                    "content": user_text
+                })
+                
+                messages = [
+                    {"role": "system", "content": self.system_prompt}
+                ] + self.conversation
+                
+                response = self.client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=messages,
+                    max_tokens=300
+                )
+                
+                assistant_text = response.choices[0].message.content
+                self.conversation.append({
+                    "role": "assistant",
+                    "content": assistant_text
+                })
+                
+                return assistant_text
+            
+            def speak(self, text: str, output_path: str) -> str:
+                '''文字转语音'''
+                response = self.client.audio.speech.create(
+                    model="tts-1",
+                    voice=self.voice,
+                    input=text
+                )
+                response.stream_to_file(output_path)
+                return output_path
+            
+            def process_turn(
+                self, 
+                input_audio: str, 
+                output_audio: str
+            ) -> Dict:
+                '''处理一轮对话'''
+                # 1. 听
+                user_text = self.listen(input_audio)
+                print(f"用户说: {user_text}")
+                
+                # 2. 想
+                assistant_text = self.think(user_text)
+                print(f"助手回复: {assistant_text}")
+                
+                # 3. 说
+                self.speak(assistant_text, output_audio)
+                
+                return {
+                    "user_text": user_text,
+                    "assistant_text": assistant_text,
+                    "audio_path": output_audio
+                }
+            
+            def reset_conversation(self):
+                '''重置对话历史'''
+                self.conversation = []
+        
+        # 使用示例
+        # bot = VoiceChatBot(voice="nova", system_prompt="你是一个旅行顾问")
+        # result = bot.process_turn("user_audio.mp3", "response.mp3")
+        ```
+
     思考题：如何选择合适的音色？
-    答案：
-    - 客服场景：nova（友好）或 shimmer（清晰）
-    - 有声书：fable（叙事感）
-    - 新闻播报：onyx（沉稳）或 alloy（中性）
-    - 助手对话：根据品牌调性选择
+
+        ✅ 答：
+        1. 客服场景 - nova（友好温暖）或 shimmer（清晰活泼）
+        2. 有声书/播客 - fable（叙事感强，适合讲故事）
+        3. 新闻播报 - onyx（沉稳权威）或 alloy（中性专业）
+        4. 儿童应用 - shimmer（活泼清晰）
+        5. 品牌调性匹配 - 根据品牌形象选择
+        6. 用户偏好 - 提供选项让用户自选
     """)
 
 

@@ -302,21 +302,169 @@ def exercises():
 
     print("""
     练习 1：实现身份证/名片信息提取函数
+
+        ✅ 参考答案：
+        ```python
+        import google.generativeai as genai
+        from PIL import Image
+        from typing import Dict
+        
+        class IDCardExtractor:
+            '''身份证/名片信息提取器'''
+            
+            def __init__(self, api_key: str):
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            def extract_id_card(self, image_path: str) -> Dict:
+                '''提取身份证信息'''
+                img = Image.open(image_path)
+                
+                prompt = '''识别这张身份证，提取信息并返回 JSON：
+{
+    "name": "姓名",
+    "gender": "性别",
+    "ethnicity": "民族",
+    "birth_date": "出生日期 (YYYY-MM-DD)",
+    "address": "住址",
+    "id_number": "身份证号",
+    "issuing_authority": "签发机关（如有）",
+    "valid_period": "有效期限（如有）",
+    "side": "正面/背面"
+}
+注意：保护隐私，部分信息可用 * 遮挡。'''
+                
+                response = self.model.generate_content([prompt, img])
+                
+                import json
+                return json.loads(response.text)
+            
+            def extract_business_card(self, image_path: str) -> Dict:
+                '''提取名片信息'''
+                img = Image.open(image_path)
+                
+                prompt = '''识别这张名片，提取信息并返回 JSON：
+{
+    "name": "姓名",
+    "title": "职位",
+    "company": "公司名称",
+    "department": "部门",
+    "phone": ["电话号码列表"],
+    "email": "邮箱",
+    "address": "地址",
+    "website": "网站",
+    "social_media": {"微信": "...", "其他": "..."}
+}'''
+                
+                response = self.model.generate_content([prompt, img])
+                
+                import json
+                return json.loads(response.text)
+        
+        # 使用示例
+        # extractor = IDCardExtractor(os.getenv("GOOGLE_API_KEY"))
+        # id_info = extractor.extract_id_card("id_card.jpg")
+        # card_info = extractor.extract_business_card("business_card.jpg")
+        ```
+    
     练习 2：实现多页 PDF 的批量 OCR 处理
 
-    思考题：多模态 LLM OCR 的优势和局限是什么？
-    答案：
-    优势：
-    - 理解语义，可进行信息抽取
-    - 处理复杂版面
-    - 支持多语言
-    - 可以回答关于文档的问题
+        ✅ 参考答案：
+        ```python
+        from pdf2image import convert_from_path
+        import tempfile
+        import os
+        
+        class PDFBatchOCR:
+            '''PDF 批量 OCR 处理器'''
+            
+            def __init__(self, api_key: str):
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            def pdf_to_images(
+                self, 
+                pdf_path: str, 
+                dpi: int = 200
+            ) -> list:
+                '''将 PDF 转换为图片'''
+                images = convert_from_path(pdf_path, dpi=dpi)
+                return images
+            
+            def ocr_page(self, image) -> str:
+                '''OCR 单页'''
+                prompt = '''请识别这页文档中的所有文字。
+保持原有格式，区分标题、正文、表格等。'''
+                
+                response = self.model.generate_content([prompt, image])
+                return response.text
+            
+            def ocr_pdf(
+                self, 
+                pdf_path: str,
+                output_format: str = "text"
+            ) -> Dict:
+                '''OCR 整个 PDF'''
+                images = self.pdf_to_images(pdf_path)
+                
+                results = []
+                full_text = []
+                
+                for i, img in enumerate(images):
+                    text = self.ocr_page(img)
+                    results.append({
+                        'page': i + 1,
+                        'text': text
+                    })
+                    full_text.append(f"=== 第 {i+1} 页 ===\\n{text}")
+                
+                return {
+                    'total_pages': len(images),
+                    'pages': results,
+                    'full_text': "\\n\\n".join(full_text)
+                }
+            
+            def extract_structure(self, pdf_path: str) -> Dict:
+                '''提取文档结构'''
+                images = self.pdf_to_images(pdf_path)
+                
+                # 只分析第一页获取目录结构
+                prompt = '''分析这个文档的结构，返回 JSON：
+{
+    "title": "文档标题",
+    "type": "文档类型（合同/报告/论文等）",
+    "sections": ["章节列表"],
+    "summary": "内容概要"
+}'''
+                
+                response = self.model.generate_content([prompt, images[0]])
+                
+                import json
+                return json.loads(response.text)
+        
+        # 使用示例
+        # ocr = PDFBatchOCR(os.getenv("GOOGLE_API_KEY"))
+        # result = ocr.ocr_pdf("document.pdf")
+        # print(f"共 {result['total_pages']} 页")
+        # print(result['full_text'])
+        ```
 
-    局限：
-    - 成本较高
-    - 速度较慢
-    - 超长文档需要分页处理
-    - 手写识别准确率有限
+    思考题：多模态 LLM OCR 的优势和局限是什么？
+
+        ✅ 答：
+        优势：
+        1. 语义理解 - 不仅识别文字，还理解含义
+        2. 信息抽取 - 自动提取关键字段
+        3. 复杂版面 - 处理表格、多栏、混合布局
+        4. 多语言 - 原生支持多种语言混排
+        5. 问答能力 - 可以就文档内容提问
+        
+        局限：
+        1. 成本较高 - 按 token 计费，大量文档成本高
+        2. 速度较慢 - 比传统 OCR 延迟更高
+        3. 长文档限制 - 需要分页处理
+        4. 手写识别 - 复杂手写准确率有限
+        5. 隐私风险 - 数据发送到云端处理
     """)
 
 

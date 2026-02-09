@@ -263,17 +263,116 @@ def exercises():
     print("""
     练习 1：对比实验
         比较 LoRA, Prefix Tuning, IA³ 效果
+
+        ✅ 参考答案：
+        ```python
+        from peft import LoraConfig, PrefixTuningConfig, IA3Config
+        
+        configs = {
+            "lora": LoraConfig(r=8, lora_alpha=16, target_modules=["q_proj", "v_proj"]),
+            "prefix": PrefixTuningConfig(num_virtual_tokens=20, prefix_projection=True),
+            "ia3": IA3Config(target_modules=["k_proj", "v_proj", "down_proj"]),
+        }
+        
+        results = {}
+        for name, config in configs.items():
+            model = get_peft_model(base_model, config)
+            trainer = Trainer(model=model, ...)
+            trainer.train()
+            results[name] = {
+                "params": model.num_parameters(only_trainable=True),
+                "eval_loss": trainer.evaluate()["eval_loss"],
+            }
+        
+        # 典型对比结果:
+        # LoRA:   params=4.2M,  loss=1.8,  适合大多数任务
+        # Prefix: params=0.8M,  loss=2.1,  参数最少
+        # IA³:    params=0.2M,  loss=2.3,  极简参数
+        ```
     
     练习 2：多 Adapter
         为不同任务训练多个 adapter
+
+        ✅ 参考答案：
+        ```python
+        from peft import PeftModel, LoraConfig
+        
+        # 训练任务 A 的 adapter
+        model.add_adapter(LoraConfig(...), adapter_name="translate")
+        # 训练...
+        model.save_pretrained("./adapter_translate")
+        
+        # 训练任务 B 的 adapter (重新加载基础模型)
+        model.add_adapter(LoraConfig(...), adapter_name="summarize")
+        # 训练...
+        model.save_pretrained("./adapter_summarize")
+        
+        # 推理时切换
+        model = PeftModel.from_pretrained(base_model, "./adapter_translate")
+        model.load_adapter("./adapter_summarize", adapter_name="summarize")
+        
+        # 翻译任务
+        model.set_adapter("default")
+        translate_output = model.generate(...)
+        
+        # 摘要任务
+        model.set_adapter("summarize")
+        summary_output = model.generate(...)
+        ```
     
     练习 3：Adapter 合并
         实验不同权重的 adapter 合并
+
+        ✅ 参考答案：
+        ```python
+        # 测试不同合并权重
+        weight_combinations = [
+            (0.8, 0.2),
+            (0.6, 0.4),
+            (0.5, 0.5),
+            (0.4, 0.6),
+        ]
+        
+        results = {}
+        for w1, w2 in weight_combinations:
+            model.add_weighted_adapter(
+                adapters=["translate", "summarize"],
+                weights=[w1, w2],
+                adapter_name=f"combined_{w1}_{w2}",
+                combination_type="linear",
+            )
+            model.set_adapter(f"combined_{w1}_{w2}")
+            
+            # 评估两个任务
+            translate_score = evaluate_translate(model)
+            summary_score = evaluate_summary(model)
+            
+            results[f"{w1}:{w2}"] = {
+                "translate": translate_score,
+                "summary": summary_score,
+            }
+        
+        # 典型结果: 0.5:0.5 通常表现最平衡
+        ```
     
     思考题：
     ────────
     1. 如何选择适合任务的 PEFT 方法？
+
+       ✅ 答：
+       - LoRA：通用首选，效果好，成熟稳定
+       - Prefix Tuning：适合生成任务，参数较少
+       - IA³：参数最少，适合资源极受限场景
+       - 选择标准：效果 vs 参数量 vs 训练速度
+
     2. 多 Adapter 的应用场景？
+
+       ✅ 答：
+       - 多语言支持：每种语言一个 adapter
+       - 多任务模型：不同任务切换使用
+       - A/B 测试：不同版本的 adapter
+       - 个性化定制：用户级别的 adapter
+       - 领域适应：不同领域专用 adapter
     """)
 
 

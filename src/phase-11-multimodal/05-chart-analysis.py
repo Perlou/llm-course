@@ -302,14 +302,173 @@ def exercises():
 
     print("""
     练习 1：实现财务报表图表分析函数
+
+        ✅ 参考答案：
+        ```python
+        import google.generativeai as genai
+        from PIL import Image
+        from typing import Dict
+        
+        class FinancialChartAnalyzer:
+            '''财务报表图表分析器'''
+            
+            def __init__(self, api_key: str):
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            def analyze_financial_chart(
+                self, 
+                image_path: str,
+                chart_type: str = "auto"
+            ) -> Dict:
+                '''分析财务图表'''
+                img = Image.open(image_path)
+                
+                prompt = '''分析这张财务图表，返回 JSON：
+{
+    "chart_type": "图表类型（折线图/柱状图/饼图）",
+    "title": "图表标题",
+    "time_period": "时间范围",
+    "metrics": ["包含的财务指标"],
+    "data_points": [
+        {"period": "时间点", "value": 数值, "unit": "单位"}
+    ],
+    "analysis": {
+        "trend": "整体趋势（上升/下降/波动）",
+        "growth_rate": "增长率（如可计算）",
+        "peak": {"period": "最高点时间", "value": 最大值},
+        "trough": {"period": "最低点时间", "value": 最小值},
+        "average": "平均值（如可计算）"
+    },
+    "insights": ["关键发现列表"],
+    "recommendations": ["建议事项"]
+}'''
+                
+                response = self.model.generate_content([prompt, img])
+                
+                import json
+                return json.loads(response.text)
+            
+            def compare_financial_charts(
+                self, 
+                image_paths: list,
+                context: str = ""
+            ) -> str:
+                '''对比多个财务图表'''
+                content = [f'''对比分析以下财务图表。
+背景信息：{context if context else "无"}
+
+请提供：
+1. 各图表反映的财务状况
+2. 趋势一致性或差异
+3. 相关性分析
+4. 潜在风险点
+5. 投资/经营建议''']
+                
+                for path in image_paths:
+                    img = Image.open(path)
+                    content.append(img)
+                
+                response = self.model.generate_content(content)
+                return response.text
+        
+        # 使用示例
+        # analyzer = FinancialChartAnalyzer(os.getenv("GOOGLE_API_KEY"))
+        # result = analyzer.analyze_financial_chart("revenue_chart.png")
+        # print(f"趋势: {result['analysis']['trend']}")
+        ```
+    
     练习 2：构建图表数据到 Excel 的导出功能
 
+        ✅ 参考答案：
+        ```python
+        import pandas as pd
+        from openpyxl import Workbook
+        from openpyxl.chart import LineChart, Reference
+        
+        class ChartToExcel:
+            '''图表数据导出到 Excel'''
+            
+            def __init__(self, api_key: str):
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            def extract_data(self, image_path: str) -> Dict:
+                '''从图表提取数据'''
+                img = Image.open(image_path)
+                
+                prompt = '''从这张图表中提取所有数据点。
+返回 JSON 格式：
+{
+    "title": "图表标题",
+    "columns": ["列名1", "列名2", ...],
+    "data": [
+        ["值1", "值2", ...],
+        ...
+    ]
+}
+请尽可能精确读取数值。'''
+                
+                response = self.model.generate_content([prompt, img])
+                
+                import json
+                return json.loads(response.text)
+            
+            def export_to_excel(
+                self, 
+                image_path: str, 
+                output_path: str
+            ) -> str:
+                '''导出图表数据到 Excel'''
+                # 提取数据
+                data = self.extract_data(image_path)
+                
+                # 创建 DataFrame
+                df = pd.DataFrame(
+                    data['data'], 
+                    columns=data['columns']
+                )
+                
+                # 导出到 Excel
+                with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+                    df.to_excel(writer, sheet_name='数据', index=False)
+                    
+                    # 获取工作簿和工作表
+                    workbook = writer.book
+                    worksheet = writer.sheets['数据']
+                    
+                    # 添加图表（如果有数值列）
+                    numeric_cols = df.select_dtypes(include=['number']).columns
+                    if len(numeric_cols) > 0:
+                        chart = LineChart()
+                        chart.title = data.get('title', '数据图表')
+                        
+                        data_ref = Reference(
+                            worksheet,
+                            min_col=2,
+                            max_col=len(df.columns),
+                            min_row=1,
+                            max_row=len(df) + 1
+                        )
+                        chart.add_data(data_ref, titles_from_data=True)
+                        worksheet.add_chart(chart, "E2")
+                
+                return output_path
+        
+        # 使用示例
+        # exporter = ChartToExcel(os.getenv("GOOGLE_API_KEY"))
+        # exporter.export_to_excel("sales_chart.png", "sales_data.xlsx")
+        ```
+
     思考题：多模态 LLM 分析图表的精度如何保证？
-    答案：
-    1. 使用 detail="high" 确保清晰度
-    2. 要求模型给出估计值的置信度
-    3. 对关键数据进行人工验证
-    4. 结合原始数据源进行校验
+
+        ✅ 答：
+        1. 高分辨率输入 - 使用 detail="high" 或高清图片
+        2. 置信度标注 - 要求模型标注估计值的置信度
+        3. 多次采样 - 多次请求取平均值或众数
+        4. 人工验证 - 关键数据进行人工复核
+        5. 原始数据校验 - 有条件时与原始数据源对比
+        6. 结构化输出 - 使用 JSON 格式减少解析错误
     """)
 
 

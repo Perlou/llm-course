@@ -245,17 +245,141 @@ def exercises():
     print("""
     练习 1：构建偏好数据
         为特定任务构建 100 条偏好对
+
+        ✅ 参考答案：
+        ```python
+        import json
+        
+        def build_preference_data(prompts: list, llm_good, llm_bad):
+            preference_data = []
+            
+            for prompt in prompts:
+                # 使用强模型生成 chosen
+                chosen = llm_good.invoke(prompt).content
+                
+                # 使用弱模型生成 rejected
+                rejected = llm_bad.invoke(prompt).content
+                
+                preference_data.append({
+                    "prompt": prompt,
+                    "chosen": chosen,
+                    "rejected": rejected,
+                })
+            
+            # 保存数据
+            with open("preference_data.jsonl", "w") as f:
+                for item in preference_data:
+                    f.write(json.dumps(item, ensure_ascii=False) + "\\n")
+            
+            return preference_data
+        
+        # 或使用人工标注方式
+        def collect_human_preference(prompt, response_a, response_b, human_choice):
+            if human_choice == "A":
+                return {"prompt": prompt, "chosen": response_a, "rejected": response_b}
+            else:
+                return {"prompt": prompt, "chosen": response_b, "rejected": response_a}
+        ```
     
     练习 2：DPO 训练
         在 SFT 模型基础上进行 DPO
+
+        ✅ 参考答案：
+        ```python
+        from trl import DPOTrainer, DPOConfig
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+        from datasets import load_dataset
+        
+        # 加载 SFT 模型
+        model = AutoModelForCausalLM.from_pretrained("./sft_model")
+        ref_model = AutoModelForCausalLM.from_pretrained("./sft_model")
+        tokenizer = AutoTokenizer.from_pretrained("./sft_model")
+        
+        # 加载偏好数据
+        dataset = load_dataset("json", data_files="preference_data.jsonl")
+        
+        # DPO 配置
+        config = DPOConfig(
+            output_dir="./dpo_model",
+            beta=0.1,
+            learning_rate=5e-5,
+            num_train_epochs=1,
+            max_length=512,
+        )
+        
+        # 训练
+        trainer = DPOTrainer(
+            model=model,
+            ref_model=ref_model,
+            args=config,
+            train_dataset=dataset["train"],
+            tokenizer=tokenizer,
+        )
+        trainer.train()
+        ```
     
     练习 3：评估对比
         比较 SFT 和 DPO 模型的效果
+
+        ✅ 参考答案：
+        ```python
+        def compare_models(sft_model, dpo_model, test_prompts: list, evaluator_llm):
+            results = {"sft_wins": 0, "dpo_wins": 0, "tie": 0}
+            
+            for prompt in test_prompts:
+                sft_response = sft_model.generate(prompt)
+                dpo_response = dpo_model.generate(prompt)
+                
+                # 使用 GPT-4 评估
+                eval_prompt = f'''比较以下两个回答，哪个更好？
+问题: {prompt}
+回答A: {sft_response}
+回答B: {dpo_response}
+输出: A/B/Tie'''
+                
+                result = evaluator_llm.invoke(eval_prompt).content
+                if "A" in result:
+                    results["sft_wins"] += 1
+                elif "B" in result:
+                    results["dpo_wins"] += 1
+                else:
+                    results["tie"] += 1
+            
+            return results
+        
+        # 典型结果: DPO 在安全性、有用性方面通常提升明显
+        ```
     
     思考题：
     ────────
     1. DPO 和 RLHF 各有什么优缺点？
+
+       ✅ 答：
+       DPO 优点:
+       - 实现简单，无需奖励模型
+       - 训练稳定，超参数少
+       - 显存需求较低
+       
+       DPO 缺点:
+       - 对偏好数据质量敏感
+       - 可能不如 RLHF 灵活
+       
+       RLHF 优点:
+       - 理论上效果更好
+       - 可以在线学习
+       
+       RLHF 缺点:
+       - 实现复杂
+       - 训练不稳定
+
     2. 什么情况下 DPO 效果不好？
+
+       ✅ 答：
+       - 偏好数据质量差 (chosen/rejected 区分不明显)
+       - SFT 模型本身效果差
+       - 偏好标准不一致
+       - 数据量过少 (< 1000 条)
+       - 过拟合偏好数据
     """)
 
 

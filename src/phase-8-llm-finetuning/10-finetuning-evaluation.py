@@ -303,17 +303,137 @@ def exercises():
     print("""
     练习 1：评估脚本
         编写自动化评估脚本
+
+        ✅ 参考答案：
+        ```python
+        import json
+        from datetime import datetime
+        
+        class ModelEvaluator:
+            def __init__(self, model, tokenizer, test_data):
+                self.model = model
+                self.tokenizer = tokenizer
+                self.test_data = test_data
+            
+            def evaluate_all(self):
+                results = {
+                    "timestamp": datetime.now().isoformat(),
+                    "metrics": {}
+                }
+                
+                # 1. 困惑度
+                results["metrics"]["perplexity"] = self.calculate_ppl()
+                
+                # 2. 准确率 (如果是分类任务)
+                results["metrics"]["accuracy"] = self.calculate_accuracy()
+                
+                # 3. 生成质量
+                results["metrics"]["generation"] = self.evaluate_generation()
+                
+                return results
+            
+            def calculate_ppl(self):
+                total_loss = 0
+                for sample in self.test_data:
+                    inputs = self.tokenizer(sample["text"], return_tensors="pt")
+                    outputs = self.model(**inputs, labels=inputs["input_ids"])
+                    total_loss += outputs.loss.item()
+                return math.exp(total_loss / len(self.test_data))
+            
+            def save_report(self, results, path):
+                with open(path, "w") as f:
+                    json.dump(results, f, indent=2, ensure_ascii=False)
+        ```
     
     练习 2：Benchmark 测试
         使用 lm-eval 测试模型
+
+        ✅ 参考答案：
+        ```bash
+        # 安装
+        pip install lm-eval
+        
+        # 运行评估
+        lm_eval --model hf \\
+            --model_args pretrained=./merged_model \\
+            --tasks mmlu,hellaswag,arc_easy \\
+            --batch_size 8 \\
+            --output_path ./eval_results
+        ```
+        
+        ```python
+        # Python API
+        from lm_eval import evaluator
+        
+        results = evaluator.simple_evaluate(
+            model="hf",
+            model_args="pretrained=./merged_model",
+            tasks=["mmlu", "hellaswag", "arc_easy"],
+            batch_size=8,
+        )
+        
+        print("MMLU:", results["results"]["mmlu"]["acc"])
+        print("HellaSwag:", results["results"]["hellaswag"]["acc_norm"])
+        print("ARC-Easy:", results["results"]["arc_easy"]["acc"])
+        ```
     
     练习 3：评估报告
         生成完整的评估报告
+
+        ✅ 参考答案：
+        ```python
+        def generate_eval_report(model_name, train_info, eval_results):
+            report = f'''
+# 微调评估报告
+
+## 模型信息
+- 模型名称: {model_name}
+- 训练数据量: {train_info["num_samples"]}
+- 训练轮数: {train_info["epochs"]}
+- 最终 Loss: {train_info["final_loss"]:.4f}
+
+## 评估结果
+
+### 任务指标
+| 指标 | 分数 |
+|------|------|
+| 准确率 | {eval_results["accuracy"]:.2%} |
+| F1 分数 | {eval_results["f1"]:.2%} |
+| 困惑度 | {eval_results["ppl"]:.2f} |
+
+### Benchmark 结果
+| Benchmark | 分数 |
+|-----------|------|
+| MMLU | {eval_results.get("mmlu", "N/A")} |
+| HellaSwag | {eval_results.get("hellaswag", "N/A")} |
+
+## 结论
+{generate_conclusion(eval_results)}
+'''
+            return report
+        ```
     
     思考题：
     ────────
     1. 如何平衡任务性能和通用能力？
+
+       ✅ 答：
+       - 训练数据混合: 加入少量通用数据 (5-10%)
+       - 监控多个指标: 同时跟踪任务和通用 benchmark
+       - 早停: 当通用能力明显下降时停止
+       - 较低学习率: 减少对原有知识的破坏
+       - 使用 LoRA: 参数高效方法影响更小
+
     2. 评估指标和实际应用效果的关系？
+
+       ✅ 答：
+       - 指标是代理指标，不是最终目标
+       - 高指标不一定等于好的用户体验
+       - 建议:
+         * 结合定量指标和定性评估
+         * 进行 A/B 测试或用户研究
+         * 关注边缘案例和失败模式
+         * 定期收集真实用户反馈
     """)
 
 

@@ -204,10 +204,147 @@ def exercises():
 
     print("""
     练习 1：编写 LLM 服务的 K8s 部署清单
+
+        ✅ 参考答案：
+        ```yaml
+        # llm-deployment.yaml
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: llm-service
+          labels:
+            app: llm-service
+        spec:
+          replicas: 2
+          selector:
+            matchLabels:
+              app: llm-service
+          template:
+            metadata:
+              labels:
+                app: llm-service
+            spec:
+              containers:
+              - name: vllm
+                image: llm-service:v1.0
+                ports:
+                - containerPort: 8000
+                resources:
+                  limits:
+                    nvidia.com/gpu: 1
+                    memory: "32Gi"
+                  requests:
+                    memory: "16Gi"
+                    cpu: "4"
+                env:
+                - name: MODEL_NAME
+                  value: "Qwen/Qwen2-7B-Instruct"
+                livenessProbe:
+                  httpGet:
+                    path: /health
+                    port: 8000
+                  initialDelaySeconds: 120
+                  periodSeconds: 10
+                readinessProbe:
+                  httpGet:
+                    path: /ready
+                    port: 8000
+                  initialDelaySeconds: 60
+                  periodSeconds: 5
+                volumeMounts:
+                - name: model-cache
+                  mountPath: /root/.cache/huggingface
+              volumes:
+              - name: model-cache
+                persistentVolumeClaim:
+                  claimName: model-cache-pvc
+              nodeSelector:
+                nvidia.com/gpu.product: "NVIDIA-A100"
+              tolerations:
+              - key: "nvidia.com/gpu"
+                operator: "Exists"
+                effect: "NoSchedule"
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: llm-service
+        spec:
+          selector:
+            app: llm-service
+          ports:
+          - port: 80
+            targetPort: 8000
+          type: ClusterIP
+        ```
+    
     练习 2：配置 HPA 并测试自动扩缩容
 
+        ✅ 参考答案：
+        ```yaml
+        # hpa.yaml
+        apiVersion: autoscaling/v2
+        kind: HorizontalPodAutoscaler
+        metadata:
+          name: llm-hpa
+        spec:
+          scaleTargetRef:
+            apiVersion: apps/v1
+            kind: Deployment
+            name: llm-service
+          minReplicas: 2
+          maxReplicas: 8
+          metrics:
+          - type: Resource
+            resource:
+              name: cpu
+              target:
+                type: Utilization
+                averageUtilization: 70
+          - type: Pods
+            pods:
+              metric:
+                name: llm_queue_size
+              target:
+                type: AverageValue
+                averageValue: "50"
+          behavior:
+            scaleDown:
+              stabilizationWindowSeconds: 300
+              policies:
+              - type: Percent
+                value: 10
+                periodSeconds: 60
+            scaleUp:
+              stabilizationWindowSeconds: 0
+              policies:
+              - type: Pods
+                value: 2
+                periodSeconds: 60
+        ```
+        
+        测试命令：
+        ```bash
+        # 部署
+        kubectl apply -f llm-deployment.yaml
+        kubectl apply -f hpa.yaml
+        
+        # 监控扩缩容
+        kubectl get hpa llm-hpa -w
+        
+        # 压测触发扩容
+        hey -n 1000 -c 50 http://llm-service/v1/chat/completions
+        ```
+
     思考题：K8s 部署 LLM 服务有什么挑战？
-    答案：1. GPU 调度复杂 2. 模型加载时间长 3. 资源成本高
+
+        ✅ 答：
+        1. GPU 调度复杂 - 需要 NVIDIA Device Plugin
+        2. 模型加载时间长 - 探针配置需要足够的启动延迟
+        3. 资源成本高 - GPU 节点昂贵
+        4. 显存管理 - 需要精细控制显存使用
+        5. 扩缩容延迟 - 新 Pod 启动慢
+        6. 持久化存储 - 模型缓存需要 PVC
     """)
 
 

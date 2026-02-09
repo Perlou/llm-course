@@ -191,12 +191,113 @@ def exercises():
 
     print("""
     练习 1：实现动态批处理服务
+
+        ✅ 参考答案：
+        ```python
+        import asyncio
+        import time
+        from typing import Dict, Any
+        import uuid
+        
+        class DynamicBatchService:
+            def __init__(self, model, max_batch=8, max_wait=0.1):
+                self.model = model
+                self.queue = asyncio.Queue()
+                self.max_batch = max_batch
+                self.max_wait = max_wait
+                self.running = True
+            
+            async def add_request(self, request: dict) -> str:
+                future = asyncio.Future()
+                request_id = str(uuid.uuid4())
+                await self.queue.put((request_id, request, future))
+                result = await future
+                return result
+            
+            async def batch_worker(self):
+                while self.running:
+                    batch = []
+                    futures = []
+                    deadline = time.time() + self.max_wait
+                    
+                    while len(batch) < self.max_batch:
+                        timeout = max(0, deadline - time.time())
+                        try:
+                            req_id, request, future = await asyncio.wait_for(
+                                self.queue.get(), timeout
+                            )
+                            batch.append(request)
+                            futures.append(future)
+                        except asyncio.TimeoutError:
+                            break
+                    
+                    if batch:
+                        results = await self.batch_inference(batch)
+                        for future, result in zip(futures, results):
+                            future.set_result(result)
+            
+            async def batch_inference(self, batch):
+                # 批量推理
+                inputs = [r["text"] for r in batch]
+                outputs = self.model.generate(inputs)
+                return outputs
+        
+        # 使用
+        service = DynamicBatchService(model, max_batch=8, max_wait=0.1)
+        asyncio.create_task(service.batch_worker())
+        result = await service.add_request({"text": "Hello"})
+        ```
+    
     练习 2：测试不同批处理参数对吞吐量和延迟的影响
 
+        ✅ 参考答案：
+        ```python
+        import asyncio
+        import time
+        
+        async def benchmark_batch_params(service_class, model, params_list):
+            results = []
+            
+            for max_batch, max_wait in params_list:
+                service = service_class(model, max_batch, max_wait)
+                asyncio.create_task(service.batch_worker())
+                
+                # 生成测试请求
+                requests = [{"text": f"Request {i}"} for i in range(100)]
+                
+                start = time.time()
+                tasks = [service.add_request(r) for r in requests]
+                await asyncio.gather(*tasks)
+                total_time = time.time() - start
+                
+                results.append({
+                    "max_batch": max_batch,
+                    "max_wait": max_wait,
+                    "throughput": len(requests) / total_time,
+                    "avg_latency": total_time / len(requests),
+                })
+                
+                service.running = False
+            
+            return results
+        
+        # 测试参数组合
+        params = [(4, 0.05), (8, 0.1), (16, 0.2), (32, 0.5)]
+        results = await benchmark_batch_params(DynamicBatchService, model, params)
+        
+        for r in results:
+            print(f"batch={r['max_batch']}, wait={r['max_wait']:.2f}s -> "
+                  f"throughput={r['throughput']:.1f}/s, latency={r['avg_latency']*1000:.0f}ms")
+        ```
+
     思考题：为什么 vLLM 的 Continuous Batching 比静态批处理更高效？
-    答案：静态批处理需要等待所有请求完成才能处理下一批，
-          Continuous Batching 在任意请求完成时立即加入新请求，
-          持续填充 GPU，最大化利用率。
+
+        ✅ 答：
+        1. 静态批处理需要等待所有请求完成才能处理下一批
+        2. Continuous Batching 在任意请求完成时立即加入新请求
+        3. 持续填充 GPU，保持高利用率
+        4. 短请求不会被长请求阻塞
+        5. 实际吞吐量可提升 2-3 倍
     """)
 
 

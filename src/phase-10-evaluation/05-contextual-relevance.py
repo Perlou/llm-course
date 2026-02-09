@@ -238,11 +238,161 @@ def exercises():
 
     print("""
     练习 1：实现上下文相关性评估函数
+
+        ✅ 参考答案：
+        ```python
+        from sentence_transformers import SentenceTransformer
+        import numpy as np
+        from typing import List, Dict
+        
+        class ContextRelevanceEvaluator:
+            '''上下文相关性评估器'''
+            
+            def __init__(self, model_name: str = 'all-MiniLM-L6-v2'):
+                self.model = SentenceTransformer(model_name)
+            
+            def compute_similarity(
+                self, 
+                text1: str, 
+                text2: str
+            ) -> float:
+                '''计算语义相似度'''
+                emb = self.model.encode([text1, text2])
+                return float(np.dot(emb[0], emb[1]) / (
+                    np.linalg.norm(emb[0]) * np.linalg.norm(emb[1])
+                ))
+            
+            def evaluate_precision(
+                self,
+                question: str,
+                contexts: List[str],
+                threshold: float = 0.5
+            ) -> Dict:
+                '''评估上下文精确率'''
+                q_emb = self.model.encode([question])[0]
+                ctx_embs = self.model.encode(contexts)
+                
+                scores = []
+                for ctx_emb in ctx_embs:
+                    sim = np.dot(q_emb, ctx_emb) / (
+                        np.linalg.norm(q_emb) * np.linalg.norm(ctx_emb)
+                    )
+                    scores.append(float(sim))
+                
+                relevant = sum(1 for s in scores if s >= threshold)
+                
+                return {
+                    'precision': relevant / len(contexts),
+                    'scores': scores,
+                    'relevant_count': relevant,
+                    'total': len(contexts)
+                }
+            
+            def evaluate_recall(
+                self,
+                contexts: List[str],
+                ground_truth: str,
+                threshold: float = 0.6
+            ) -> Dict:
+                '''评估上下文召回率'''
+                truth_sentences = [s.strip() for s in ground_truth.split('。') if s.strip()]
+                context_text = ' '.join(contexts)
+                
+                covered = 0
+                for sentence in truth_sentences:
+                    sim = self.compute_similarity(sentence, context_text)
+                    if sim >= threshold:
+                        covered += 1
+                
+                return {
+                    'recall': covered / len(truth_sentences) if truth_sentences else 0,
+                    'covered': covered,
+                    'total_points': len(truth_sentences)
+                }
+            
+            def evaluate_f1(
+                self,
+                question: str,
+                contexts: List[str],
+                ground_truth: str
+            ) -> Dict:
+                '''计算 F1 分数'''
+                p = self.evaluate_precision(question, contexts)['precision']
+                r = self.evaluate_recall(contexts, ground_truth)['recall']
+                
+                f1 = 2 * p * r / (p + r) if (p + r) > 0 else 0
+                
+                return {'precision': p, 'recall': r, 'f1': f1}
+        
+        # 使用示例
+        evaluator = ContextRelevanceEvaluator()
+        result = evaluator.evaluate_f1(
+            question="什么是 RAG？",
+            contexts=["RAG 是检索增强生成...", "今天天气很好"],
+            ground_truth="RAG 是检索增强生成技术，结合检索和生成"
+        )
+        print(f"F1: {result['f1']:.2f}")
+        ```
+    
     练习 2：对比不同 top_k 设置对 Precision/Recall 的影响
 
+        ✅ 参考答案：
+        ```python
+        class TopKExperiment:
+            '''top_k 实验'''
+            
+            def __init__(self, retriever, evaluator):
+                self.retriever = retriever
+                self.evaluator = evaluator
+            
+            def run_experiment(
+                self,
+                questions: List[str],
+                ground_truths: List[str],
+                k_values: List[int] = [1, 3, 5, 10, 20]
+            ) -> Dict:
+                '''运行 top_k 对比实验'''
+                results = {}
+                
+                for k in k_values:
+                    precisions, recalls = [], []
+                    
+                    for q, gt in zip(questions, ground_truths):
+                        contexts = self.retriever.retrieve(q, top_k=k)
+                        metrics = self.evaluator.evaluate_f1(q, contexts, gt)
+                        precisions.append(metrics['precision'])
+                        recalls.append(metrics['recall'])
+                    
+                    results[k] = {
+                        'precision': sum(precisions) / len(precisions),
+                        'recall': sum(recalls) / len(recalls),
+                        'f1': 2 * results[k]['precision'] * results[k]['recall'] / (
+                            results[k]['precision'] + results[k]['recall'] + 1e-6
+                        )
+                    }
+                
+                # 找到最优 k
+                best_k = max(results.keys(), key=lambda k: results[k]['f1'])
+                
+                return {
+                    'results': results,
+                    'best_k': best_k,
+                    'best_f1': results[best_k]['f1']
+                }
+        
+        # 预期结果趋势：
+        # k ↑ → Recall ↑, Precision ↓
+        # 需要找到 F1 最优的 k 值
+        ```
+
     思考题：如何在 Precision 和 Recall 之间取得平衡？
-    答案：使用 Reranker 在大量召回的基础上精选，
-          先保证 Recall，再通过重排序提高 Precision。
+
+        ✅ 答：
+        1. 两段式召回 - 先大量召回（高 Recall），再 Rerank 精选（高 Precision）
+        2. 动态 k - 根据问题复杂度动态调整 top_k
+        3. 阈值过滤 - 设置相似度阈值，过滤低质量结果
+        4. 混合检索 - 结合关键词和向量检索的优势
+        5. F1 优化 - 选择 F1 最高的配置作为平衡点
     """)
 
 

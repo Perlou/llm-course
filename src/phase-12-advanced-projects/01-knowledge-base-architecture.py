@@ -303,15 +303,192 @@ def api_design():
 def exercises():
     """练习"""
     print("\n" + "=" * 60)
-    print("下一步：02-knowledge-base-implementation.py")
+    print("练习与思考")
     print("=" * 60)
 
     print("""
-    完成架构设计后，下一步将进行完整实现，包括：
-    1. 项目结构搭建
-    2. 核心服务实现
-    3. API 开发
-    4. 部署配置
+    练习 1：设计一个多租户知识库系统的权限模型
+
+        ✅ 参考答案：
+        ```python
+        from enum import Enum
+        from typing import List, Optional
+        from pydantic import BaseModel
+        
+        class Permission(str, Enum):
+            '''权限类型'''
+            READ = "read"           # 查看文档和问答
+            WRITE = "write"         # 上传/编辑文档
+            DELETE = "delete"       # 删除文档
+            MANAGE = "manage"       # 管理成员权限
+            ADMIN = "admin"         # 完全控制
+        
+        class Role(str, Enum):
+            '''预定义角色'''
+            VIEWER = "viewer"       # 只读用户
+            EDITOR = "editor"       # 可编辑
+            ADMIN = "admin"         # 管理员
+            OWNER = "owner"         # 所有者
+        
+        # 角色-权限映射
+        ROLE_PERMISSIONS = {
+            Role.VIEWER: [Permission.READ],
+            Role.EDITOR: [Permission.READ, Permission.WRITE],
+            Role.ADMIN: [Permission.READ, Permission.WRITE, Permission.DELETE, Permission.MANAGE],
+            Role.OWNER: [Permission.READ, Permission.WRITE, Permission.DELETE, Permission.MANAGE, Permission.ADMIN],
+        }
+        
+        class KnowledgeBaseAccess(BaseModel):
+            '''知识库访问记录'''
+            user_id: str
+            kb_id: str
+            role: Role
+            granted_by: str
+            expires_at: Optional[str] = None
+        
+        class PermissionService:
+            '''权限服务'''
+            
+            async def check_permission(
+                self, 
+                user_id: str, 
+                kb_id: str, 
+                required: Permission
+            ) -> bool:
+                '''检查用户权限'''
+                access = await self.get_access(user_id, kb_id)
+                if not access:
+                    return False
+                
+                allowed = ROLE_PERMISSIONS.get(access.role, [])
+                return required in allowed
+            
+            async def grant_access(
+                self,
+                granter_id: str,
+                target_user_id: str,
+                kb_id: str,
+                role: Role
+            ) -> bool:
+                '''授予访问权限'''
+                # 检查授予者是否有 MANAGE 权限
+                if not await self.check_permission(granter_id, kb_id, Permission.MANAGE):
+                    raise PermissionError("无权授予访问权限")
+                
+                # 不能授予比自己更高的权限
+                granter_access = await self.get_access(granter_id, kb_id)
+                if self._role_level(role) > self._role_level(granter_access.role):
+                    raise PermissionError("不能授予比自己更高的权限")
+                
+                # 保存访问记录
+                await self.save_access(KnowledgeBaseAccess(
+                    user_id=target_user_id,
+                    kb_id=kb_id,
+                    role=role,
+                    granted_by=granter_id
+                ))
+                return True
+        ```
+    
+    练习 2：设计知识库的分块策略配置
+
+        ✅ 参考答案：
+        ```python
+        from pydantic import BaseModel, Field
+        from enum import Enum
+        
+        class ChunkStrategy(str, Enum):
+            '''分块策略'''
+            RECURSIVE = "recursive"         # 递归字符分割
+            SEMANTIC = "semantic"           # 语义分割
+            MARKDOWN = "markdown"           # Markdown 结构分割
+            CODE = "code"                   # 代码分割
+        
+        class ChunkConfig(BaseModel):
+            '''分块配置'''
+            strategy: ChunkStrategy = ChunkStrategy.RECURSIVE
+            chunk_size: int = Field(default=500, ge=100, le=2000)
+            chunk_overlap: int = Field(default=100, ge=0, le=500)
+            
+            # 语义分割特有配置
+            semantic_threshold: float = Field(default=0.7, ge=0.5, le=0.95)
+            
+            # 代码分割特有配置
+            code_language: str = "python"
+            split_by_function: bool = True
+        
+        # 预设配置
+        CHUNK_PRESETS = {
+            "default": ChunkConfig(),
+            "technical_docs": ChunkConfig(
+                strategy=ChunkStrategy.MARKDOWN,
+                chunk_size=800,
+                chunk_overlap=150
+            ),
+            "code_repo": ChunkConfig(
+                strategy=ChunkStrategy.CODE,
+                chunk_size=1000,
+                chunk_overlap=200,
+                split_by_function=True
+            ),
+            "qa_pairs": ChunkConfig(
+                strategy=ChunkStrategy.SEMANTIC,
+                chunk_size=300,
+                chunk_overlap=50,
+                semantic_threshold=0.8
+            ),
+        }
+        
+        def get_chunk_config(
+            doc_type: str, 
+            custom_config: dict = None
+        ) -> ChunkConfig:
+            '''获取分块配置'''
+            # 根据文档类型选择预设
+            presets_map = {
+                ".md": "technical_docs",
+                ".py": "code_repo",
+                ".js": "code_repo",
+                ".pdf": "default",
+            }
+            preset_name = presets_map.get(doc_type, "default")
+            config = CHUNK_PRESETS[preset_name].copy()
+            
+            # 应用自定义配置
+            if custom_config:
+                for key, value in custom_config.items():
+                    if hasattr(config, key):
+                        setattr(config, key, value)
+            
+            return config
+        ```
+
+    思考题：向量数据库和关系数据库如何配合使用？
+
+        ✅ 答：
+        1. 职责分离：
+           - 向量数据库：存储 embedding、语义检索
+           - 关系数据库：存储元数据、权限、关联关系
+        
+        2. 数据同步：
+           - 文档上传：先存 PostgreSQL，再存 Milvus
+           - 文档删除：先删 Milvus，再删 PostgreSQL
+           - 使用事务保证一致性
+        
+        3. 查询协作：
+           - 先从向量库检索相似文档 ID
+           - 用 ID 查询 PostgreSQL 获取元数据和权限
+           - 过滤无权访问的结果
+        
+        4. 典型架构：
+           ```
+           用户查询 -> 权限校验(PG) -> 向量检索(Milvus) 
+                    -> 元数据填充(PG) -> 返回结果
+           ```
+        
+        5. 索引策略：
+           - PostgreSQL: 常规查询索引 (B-tree)
+           - Milvus/Qdrant: ANN 索引 (HNSW/IVF_FLAT)
     """)
 
 

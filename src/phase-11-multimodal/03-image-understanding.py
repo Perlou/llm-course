@@ -282,14 +282,142 @@ def exercises():
 
     print("""
     练习 1：实现一个图片内容审核函数
+
+        ✅ 参考答案：
+        ```python
+        import google.generativeai as genai
+        from PIL import Image
+        from typing import Dict
+        
+        class ContentModerator:
+            '''图片内容审核器'''
+            
+            def __init__(self, api_key: str):
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            def moderate(self, image_path: str) -> Dict:
+                '''审核图片内容'''
+                img = Image.open(image_path)
+                
+                prompt = '''审核这张图片的内容安全性。
+                
+分析以下维度并返回 JSON：
+{
+    "safe": true/false,
+    "categories": {
+        "violence": {"detected": bool, "severity": "none/mild/moderate/severe"},
+        "adult": {"detected": bool, "severity": "none/mild/moderate/severe"},
+        "hate_speech": {"detected": bool, "severity": "none/mild/moderate/severe"},
+        "dangerous": {"detected": bool, "severity": "none/mild/moderate/severe"}
+    },
+    "description": "图片内容简述",
+    "recommendation": "pass/review/reject",
+    "reason": "审核理由"
+}'''
+                
+                response = self.model.generate_content([prompt, img])
+                
+                import json
+                return json.loads(response.text)
+            
+            def batch_moderate(self, image_paths: list) -> list:
+                '''批量审核'''
+                results = []
+                for path in image_paths:
+                    try:
+                        result = self.moderate(path)
+                        result['path'] = path
+                        results.append(result)
+                    except Exception as e:
+                        results.append({
+                            'path': path,
+                            'error': str(e),
+                            'recommendation': 'review'
+                        })
+                return results
+        
+        # 使用示例
+        # moderator = ContentModerator(os.getenv("GOOGLE_API_KEY"))
+        # result = moderator.moderate("uploaded_image.jpg")
+        # if result['recommendation'] == 'reject':
+        #     print("图片被拒绝:", result['reason'])
+        ```
+    
     练习 2：实现商品图片自动分类
 
+        ✅ 参考答案：
+        ```python
+        class ProductClassifier:
+            '''商品图片分类器'''
+            
+            def __init__(self, api_key: str, categories: list = None):
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                self.categories = categories or [
+                    "服装鞋帽", "数码电器", "家居家装", 
+                    "食品饮料", "美妆个护", "运动户外",
+                    "母婴用品", "图书文具", "其他"
+                ]
+            
+            def classify(self, image_path: str) -> Dict:
+                '''分类商品图片'''
+                img = Image.open(image_path)
+                
+                categories_str = ", ".join(self.categories)
+                prompt = f'''分析这张商品图片，返回 JSON：
+
+{{
+    "category": "从以下类别中选择: {categories_str}",
+    "subcategory": "更具体的子类别",
+    "product_name": "产品名称猜测",
+    "attributes": {{
+        "color": "颜色",
+        "brand": "品牌（如可识别）",
+        "style": "风格特点"
+    }},
+    "confidence": 0.0-1.0,
+    "tags": ["标签1", "标签2", "..."]
+}}'''
+                
+                response = self.model.generate_content([prompt, img])
+                
+                import json
+                return json.loads(response.text)
+            
+            def classify_batch(self, image_paths: list) -> Dict:
+                '''批量分类并统计'''
+                results = []
+                category_counts = {}
+                
+                for path in image_paths:
+                    result = self.classify(path)
+                    result['path'] = path
+                    results.append(result)
+                    
+                    cat = result.get('category', '其他')
+                    category_counts[cat] = category_counts.get(cat, 0) + 1
+                
+                return {
+                    'results': results,
+                    'statistics': category_counts
+                }
+        
+        # 使用示例
+        # classifier = ProductClassifier(os.getenv("GOOGLE_API_KEY"))
+        # result = classifier.classify("product.jpg")
+        # print(f"类别: {result['category']}, 置信度: {result['confidence']}")
+        ```
+
     思考题：多模态 LLM 在图像理解上有什么局限？
-    答案：
-    1. 精确计数困难（人多时容易出错）
-    2. 空间定位不够精确（无法输出坐标）
-    3. 小物体识别能力有限
-    4. 可能产生视觉幻觉
+
+        ✅ 答：
+        1. 精确计数困难 - 人群、密集物体容易出错
+        2. 空间定位不准 - 无法输出精确的边界框坐标
+        3. 小物体识别有限 - 远处或微小物体容易遗漏
+        4. 视觉幻觉 - 可能"看到"不存在的内容
+        5. 细粒度区分困难 - 相似物体（如不同品种的狗）
+        6. 数字/文字误读 - 复杂字体或手写容易出错
     """)
 
 

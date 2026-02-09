@@ -199,10 +199,122 @@ def exercises():
 
     print("""
     练习 1：使用 Celery 实现异步 LLM 推理服务
+
+        ✅ 参考答案：
+        ```python
+        # celery_app.py
+        from celery import Celery
+        
+        app = Celery(
+            "llm_tasks",
+            broker="redis://localhost:6379/0",
+            backend="redis://localhost:6379/1"
+        )
+        
+        app.conf.update(
+            task_serializer="json",
+            result_serializer="json",
+            task_time_limit=300,
+            task_soft_time_limit=280,
+        )
+        
+        # tasks.py
+        from celery_app import app
+        from openai import OpenAI
+        
+        client = OpenAI(base_url="http://localhost:8000/v1", api_key="x")
+        
+        @app.task(bind=True, max_retries=3)
+        def async_chat(self, messages: list, model: str, max_tokens: int):
+            try:
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                )
+                return {
+                    "status": "success",
+                    "content": response.choices[0].message.content,
+                    "usage": response.usage.dict(),
+                }
+            except Exception as e:
+                self.retry(countdown=5, exc=e)
+        
+        # api.py
+        from fastapi import FastAPI
+        from celery.result import AsyncResult
+        from tasks import async_chat
+        
+        app = FastAPI()
+        
+        @app.post("/v1/async/chat")
+        async def submit_chat(request: ChatRequest):
+            task = async_chat.delay(
+                [m.dict() for m in request.messages],
+                request.model,
+                request.max_tokens,
+            )
+            return {"task_id": task.id}
+        
+        @app.get("/v1/async/task/{task_id}")
+        async def get_result(task_id: str):
+            result = AsyncResult(task_id)
+            if result.ready():
+                return {"status": "completed", "result": result.get()}
+            return {"status": "pending"}
+        ```
+    
     练习 2：实现任务状态轮询和 WebSocket 通知
 
+        ✅ 参考答案：
+        ```python
+        from fastapi import FastAPI, WebSocket
+        from celery.result import AsyncResult
+        import asyncio
+        
+        app = FastAPI()
+        
+        # WebSocket 通知
+        @app.websocket("/ws/task/{task_id}")
+        async def task_websocket(websocket: WebSocket, task_id: str):
+            await websocket.accept()
+            
+            result = AsyncResult(task_id)
+            while not result.ready():
+                await websocket.send_json({"status": "pending"})
+                await asyncio.sleep(1)
+                result = AsyncResult(task_id)
+            
+            if result.successful():
+                await websocket.send_json({
+                    "status": "completed",
+                    "result": result.get()
+                })
+            else:
+                await websocket.send_json({
+                    "status": "failed",
+                    "error": str(result.result)
+                })
+            
+            await websocket.close()
+        
+        # 客户端使用
+        # import websocket
+        # ws = websocket.create_connection("ws://localhost:8080/ws/task/xxx")
+        # while True:
+        #     msg = ws.recv()
+        #     if "completed" in msg or "failed" in msg:
+        #         break
+        ```
+
     思考题：什么场景需要异步处理？
-    答案：1. 长时间推理任务 2. 批量处理 3. 需要解耦前后端
+
+        ✅ 答：
+        1. 长时间推理任务 - 避免 HTTP 超时
+        2. 批量处理 - 后台批量生成
+        3. 解耦前后端 - 请求和处理分离
+        4. 削峰填谷 - 高并发时队列缓冲
+        5. 重试机制 - 失败自动重试
     """)
 
 

@@ -224,10 +224,131 @@ def exercises():
 
     print("""
     练习 1：为 FastAPI 服务添加 Prometheus 指标
+
+        ✅ 参考答案：
+        ```python
+        from fastapi import FastAPI, Response
+        from prometheus_client import (
+            Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
+        )
+        import time
+        
+        app = FastAPI()
+        
+        # 定义指标
+        REQUEST_TOTAL = Counter(
+            "llm_request_total",
+            "Total number of requests",
+            ["model", "status"]
+        )
+        
+        REQUEST_LATENCY = Histogram(
+            "llm_request_latency_seconds",
+            "Request latency in seconds",
+            buckets=[0.5, 1, 2, 5, 10, 30, 60, 120]
+        )
+        
+        TTFT = Histogram(
+            "llm_ttft_seconds",
+            "Time to first token",
+            buckets=[0.1, 0.2, 0.5, 1, 2, 5]
+        )
+        
+        TOKENS_PER_SECOND = Gauge(
+            "llm_tokens_per_second",
+            "Token generation speed"
+        )
+        
+        QUEUE_SIZE = Gauge(
+            "llm_queue_size",
+            "Current request queue size"
+        )
+        
+        # 暴露指标端点
+        @app.get("/metrics")
+        def metrics():
+            return Response(
+                generate_latest(),
+                media_type=CONTENT_TYPE_LATEST
+            )
+        
+        # 使用装饰器记录指标
+        @app.post("/v1/chat/completions")
+        async def chat(request: ChatRequest):
+            start = time.time()
+            try:
+                result = await generate(request)
+                REQUEST_TOTAL.labels(
+                    model=request.model,
+                    status="success"
+                ).inc()
+                return result
+            except Exception as e:
+                REQUEST_TOTAL.labels(
+                    model=request.model,
+                    status="error"
+                ).inc()
+                raise
+            finally:
+                REQUEST_LATENCY.observe(time.time() - start)
+        ```
+    
     练习 2：配置 Grafana 仪表板展示 LLM 关键指标
 
+        ✅ 参考答案：
+        ```json
+        {
+          "dashboard": {
+            "title": "LLM Service Dashboard",
+            "panels": [
+              {
+                "title": "请求 QPS",
+                "type": "graph",
+                "targets": [{
+                  "expr": "rate(llm_request_total[1m])"
+                }]
+              },
+              {
+                "title": "P99 延迟",
+                "type": "graph",
+                "targets": [{
+                  "expr": "histogram_quantile(0.99, rate(llm_request_latency_seconds_bucket[5m]))"
+                }]
+              },
+              {
+                "title": "TTFT P95",
+                "type": "graph",
+                "targets": [{
+                  "expr": "histogram_quantile(0.95, rate(llm_ttft_seconds_bucket[5m]))"
+                }]
+              },
+              {
+                "title": "队列大小",
+                "type": "stat",
+                "targets": [{
+                  "expr": "llm_queue_size"
+                }]
+              },
+              {
+                "title": "错误率",
+                "type": "graph",
+                "targets": [{
+                  "expr": "rate(llm_request_total{status='error'}[5m]) / rate(llm_request_total[5m])"
+                }]
+              }
+            ]
+          }
+        }
+        ```
+
     思考题：TTFT（首 Token 延迟）为什么是重要指标？
-    答案：TTFT 直接影响用户感知延迟，是流式响应体验的关键
+
+        ✅ 答：
+        1. 用户感知 - 直接影响用户等待体验
+        2. 流式核心 - 决定流式响应何时开始
+        3. 预填充性能 - 反映模型加载和预处理效率
+        4. 长短请求区分 - 与总延迟配合分析请求类型
+        5. SLA 关键指标 - 通常用于定义服务质量
     """)
 
 

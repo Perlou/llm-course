@@ -316,17 +316,107 @@ def exercises():
     print("""
     练习 1：准备一个小型数据集
         收集 100 条问答对，转换为 Alpaca 格式
+
+        ✅ 参考答案：
+        ```python
+        import json
+        
+        def prepare_dataset(qa_pairs: list) -> list:
+            alpaca_data = []
+            for qa in qa_pairs:
+                alpaca_data.append({
+                    "instruction": qa["question"],
+                    "input": "",
+                    "output": qa["answer"]
+                })
+            
+            # 保存为 JSONL
+            with open("train.jsonl", "w") as f:
+                for item in alpaca_data:
+                    f.write(json.dumps(item, ensure_ascii=False) + "\\n")
+            
+            return alpaca_data
+        ```
     
     练习 2：实现去重
         基于文本相似度进行数据去重
+
+        ✅ 参考答案：
+        ```python
+        from difflib import SequenceMatcher
+        
+        def deduplicate(samples: list, threshold: float = 0.85) -> list:
+            unique = []
+            
+            for sample in samples:
+                text = sample.get("instruction", "") + sample.get("output", "")
+                is_duplicate = False
+                
+                for existing in unique:
+                    existing_text = existing.get("instruction", "") + existing.get("output", "")
+                    similarity = SequenceMatcher(None, text, existing_text).ratio()
+                    
+                    if similarity > threshold:
+                        is_duplicate = True
+                        break
+                
+                if not is_duplicate:
+                    unique.append(sample)
+            
+            print(f"去重: {len(samples)} -> {len(unique)}")
+            return unique
+        ```
     
     练习 3：数据增强
         使用同义词替换增强数据
+
+        ✅ 参考答案：
+        ```python
+        import random
+        
+        # 简单同义词表
+        SYNONYMS = {
+            "好": ["优秀", "出色", "棒"],
+            "快": ["迅速", "快速", "敏捷"],
+            "大": ["巨大", "庞大", "很大"],
+        }
+        
+        def augment_with_synonyms(text: str) -> str:
+            words = list(text)
+            for i, char in enumerate(words):
+                if char in SYNONYMS and random.random() < 0.3:
+                    words[i] = random.choice(SYNONYMS[char])
+            return "".join(words)
+        
+        def augment_dataset(samples: list, num_augment: int = 2) -> list:
+            augmented = []
+            for sample in samples:
+                augmented.append(sample)  # 保留原始
+                for _ in range(num_augment):
+                    new_sample = sample.copy()
+                    new_sample["output"] = augment_with_synonyms(sample["output"])
+                    augmented.append(new_sample)
+            return augmented
+        ```
     
     思考题：
     ────────
     1. 如何判断数据质量是否足够？
+
+       ✅ 答：
+       - 标注一致性：多人标注一致率 > 90%
+       - 覆盖率：覆盖主要场景和边界情况
+       - 验证集表现：在留出数据上效果稳定
+       - 人工检查：抽样审核无明显错误
+
     2. 合成数据有什么潜在问题？
+
+       ✅ 答：
+       - 质量不稳定：可能包含错误或幻觉
+       - 多样性不足：生成模型有偏好
+       - 风格单一：趋向于生成模型的风格
+       - 法律风险：版权和使用许可问题
+       - 循环问题：用 AI 生成数据训练 AI
     """)
 
 

@@ -270,17 +270,114 @@ def exercises():
     print("""
     练习 1：实现 SFT
         使用 TRL 训练一个简单的问答模型
+
+        ✅ 参考答案：
+        ```python
+        from trl import SFTTrainer, SFTConfig
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+        from datasets import load_dataset
+        
+        # 加载模型
+        model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen2-0.5B")
+        tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2-0.5B")
+        tokenizer.pad_token = tokenizer.eos_token
+        
+        # 准备数据
+        dataset = load_dataset("json", data_files="qa_data.jsonl")
+        
+        def format_prompt(example):
+            return f"问题: {example['question']}; 回答: {example['answer']}"
+        
+        # 配置训练
+        config = SFTConfig(
+            output_dir="./sft_qa_model",
+            max_seq_length=256,
+            num_train_epochs=3,
+            learning_rate=2e-4,
+        )
+        
+        # 训练
+        trainer = SFTTrainer(
+            model=model,
+            args=config,
+            train_dataset=dataset["train"],
+        )
+        trainer.train()
+        ```
     
     练习 2：模板设计
         设计一个适合你任务的对话模板
+
+        ✅ 参考答案：
+        ```python
+        # 客服场景模板
+        def format_customer_service(sample):
+            return f'''<|im_start|>system
+你是一个专业的客服助手，请礼貌、准确地回答用户问题。<|im_end|>
+<|im_start|>user
+{sample["question"]}<|im_end|>
+<|im_start|>assistant
+{sample["answer"]}<|im_end|>'''
+        
+        # 代码助手模板
+        def format_code_assistant(sample):
+            return f'''### Instruction:
+{sample["instruction"]}
+
+### Response:
+{sample["code"]}'''
+        ```
     
     练习 3：数据增强
         扩展训练数据的多样性
+
+        ✅ 参考答案：
+        ```python
+        def augment_sft_data(dataset, llm):
+            augmented = []
+            for sample in dataset:
+                augmented.append(sample)  # 原始数据
+                
+                # 改写指令
+                new_instruction = llm.invoke(
+                    f"改写这个指令，保持意思不变: {sample['instruction']}"
+                ).content
+                augmented.append({
+                    "instruction": new_instruction,
+                    "output": sample["output"]
+                })
+                
+                # 改写回答风格
+                formal_output = llm.invoke(
+                    f"用更正式的语气改写: {sample['output']}"
+                ).content
+                augmented.append({
+                    "instruction": sample["instruction"],
+                    "output": formal_output
+                })
+            
+            return augmented
+        ```
     
     思考题：
     ────────
     1. 如何评估 SFT 的效果？
+
+       ✅ 答：
+       - 训练指标: Loss/PPL 趋势
+       - 任务指标: 准确率、ROUGE、BLEU 等
+       - 人工评估: 指令遵循度、回答质量
+       - GPT-4 评估: 使用 GPT-4 作为评判
+       - A/B 测试: 与基线模型对比
+
     2. SFT 和 RLHF 的关系？
+
+       ✅ 答：
+       - SFT 是 RLHF 的前置步骤
+       - SFT: 学习如何回答 (模仿学习)
+       - RLHF: 学习如何更好地回答 (强化学习)
+       - 流程: 预训练 -> SFT -> RLHF/DPO
+       - SFT 效果好时，RLHF 收益递减
     """)
 
 

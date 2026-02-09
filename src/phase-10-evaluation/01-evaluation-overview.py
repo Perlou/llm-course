@@ -182,11 +182,78 @@ def exercises():
 
     print("""
     练习 1：列出你的 LLM 应用需要评估的维度
+
+        ✅ 参考答案（以 RAG 问答系统为例）：
+        
+        ```python
+        # RAG 问答系统评估维度
+        evaluation_dimensions = {
+            # 1. 检索质量
+            "retrieval": {
+                "metrics": ["Context Precision", "Context Recall", "MRR", "NDCG"],
+                "weight": 0.3,
+                "description": "检索文档的相关性和完整性"
+            },
+            
+            # 2. 生成质量
+            "generation": {
+                "metrics": ["Faithfulness", "Answer Relevancy", "Coherence"],
+                "weight": 0.35,
+                "description": "回答的准确性、相关性和连贯性"
+            },
+            
+            # 3. 安全性
+            "safety": {
+                "metrics": ["Toxicity", "Bias", "PII Leakage"],
+                "weight": 0.2,
+                "description": "回答的安全性和合规性"
+            },
+            
+            # 4. 效率
+            "efficiency": {
+                "metrics": ["Latency", "Throughput", "Cost per Query"],
+                "weight": 0.15,
+                "description": "响应速度和资源消耗"
+            }
+        }
+        
+        # 根据应用场景调整权重
+        # - 医疗领域：提高 safety 权重到 0.35
+        # - 客服场景：提高 efficiency 权重
+        # - 知识库：提高 retrieval 权重
+        ```
+    
     练习 2：选择适合你应用场景的评估基准
 
+        ✅ 参考答案：
+        
+        ```
+        ┌────────────────┬────────────────────┬─────────────────────┐
+        │   应用场景     │    推荐基准        │     评估指标        │
+        ├────────────────┼────────────────────┼─────────────────────┤
+        │ 通用问答       │ TriviaQA, NQ       │ EM, F1              │
+        │ 代码助手       │ HumanEval, MBPP    │ pass@k              │
+        │ 中文应用       │ C-Eval, CMMLU      │ Accuracy            │
+        │ 数学推理       │ GSM8K, MATH        │ Accuracy + CoT      │
+        │ RAG 系统       │ Ragas, RGB         │ 忠实度、相关性      │
+        │ 对话系统       │ MT-Bench           │ 1-10 分评分         │
+        └────────────────┴────────────────────┴─────────────────────┘
+        ```
+        
+        选择原则：
+        1. 任务对齐 - 基准测试与实际任务相匹配
+        2. 难度适中 - 既能区分模型差异又不至于全对/全错
+        3. 数据新鲜 - 避免被训练数据污染
+        4. 可复现 - 有明确的评估协议
+
     思考题：为什么单一指标不足以评估 LLM？
-    答案：LLM 能力多维，单一指标无法全面反映模型表现。
-          例如，准确率高不代表无幻觉，流畅度高不代表事实正确。
+
+        ✅ 答：
+        1. 能力多维度 - LLM 涉及知识、推理、语言、安全等多个维度
+        2. 指标冲突 - 准确率高不代表无幻觉，流畅度高不代表事实正确
+        3. 任务差异 - 不同任务需要不同能力，如代码看逻辑、写作看创意
+        4. 目标多元 - 用户关注准确性，产品关注成本，领导关注体验
+        5. 取舍权衡 - 过度优化单一指标可能损害其他方面
     """)
 
 

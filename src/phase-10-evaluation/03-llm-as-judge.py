@@ -308,12 +308,163 @@ def exercises():
 
     print("""
     练习 1：实现一个完整的 LLM-as-Judge 评估器
+
+        ✅ 参考答案：
+        ```python
+        import google.generativeai as genai
+        import json
+        from typing import Dict, List
+        
+        class LLMJudge:
+            '''LLM-as-Judge 评估器'''
+            
+            def __init__(self, api_key: str):
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                
+                self.single_prompt = '''
+你是一个专业的 AI 回答评估专家。请评估以下回答的质量。
+
+问题：{question}
+回答：{response}
+
+请从以下维度评分（1-10）：
+1. 准确性：信息是否正确
+2. 相关性：是否切题回答问题
+3. 完整性：是否全面覆盖问题
+4. 清晰度：表达是否清楚易懂
+
+输出 JSON 格式：
+{{"accuracy": int, "relevance": int, "completeness": int, "clarity": int, "overall": int, "reason": "评估理由"}}
+'''
+                
+                self.pairwise_prompt = '''
+比较以下两个回答，选择更好的一个。
+
+问题：{question}
+回答 A：{response_a}
+回答 B：{response_b}
+
+评估标准：准确性、相关性、完整性、清晰度
+
+输出 JSON：{{"winner": "A"或"B"或"tie", "reason": "选择理由"}}
+'''
+            
+            def evaluate_single(
+                self, 
+                question: str, 
+                response: str
+            ) -> Dict:
+                '''单点评分'''
+                prompt = self.single_prompt.format(
+                    question=question,
+                    response=response
+                )
+                result = self.model.generate_content(prompt)
+                return json.loads(result.text)
+            
+            def evaluate_pairwise(
+                self, 
+                question: str,
+                response_a: str,
+                response_b: str,
+                swap_position: bool = True
+            ) -> Dict:
+                '''成对比较（带位置交换消除偏见）'''
+                # 正向比较
+                r1 = self._pairwise_once(question, response_a, response_b)
+                
+                if swap_position:
+                    # 交换位置再比较
+                    r2 = self._pairwise_once(question, response_b, response_a)
+                    # 综合判断
+                    if r1['winner'] == 'A' and r2['winner'] == 'B':
+                        return {'winner': 'A', 'confidence': 'high'}
+                    elif r1['winner'] == 'B' and r2['winner'] == 'A':
+                        return {'winner': 'B', 'confidence': 'high'}
+                    return {'winner': 'tie', 'confidence': 'low'}
+                
+                return r1
+            
+            def batch_evaluate(
+                self, 
+                test_cases: List[Dict]
+            ) -> Dict:
+                '''批量评估'''
+                scores = []
+                for case in test_cases:
+                    result = self.evaluate_single(
+                        case['question'], 
+                        case['response']
+                    )
+                    scores.append(result['overall'])
+                
+                return {
+                    'avg_score': sum(scores) / len(scores),
+                    'min': min(scores),
+                    'max': max(scores)
+                }
+        ```
+    
     练习 2：对比不同评判模型的评估结果
 
+        ✅ 参考答案：
+        ```python
+        class JudgeComparison:
+            '''对比不同评判模型'''
+            
+            def __init__(self, models: List[str]):
+                self.judges = {name: LLMJudge(name) for name in models}
+            
+            def compare_judges(
+                self, 
+                test_cases: List[Dict]
+            ) -> Dict:
+                '''对比评判结果'''
+                results = {}
+                
+                for name, judge in self.judges.items():
+                    scores = []
+                    for case in test_cases:
+                        result = judge.evaluate_single(
+                            case['question'],
+                            case['response']
+                        )
+                        scores.append(result['overall'])
+                    results[name] = {
+                        'avg': sum(scores) / len(scores),
+                        'scores': scores
+                    }
+                
+                # 计算评判一致性
+                return {
+                    'by_judge': results,
+                    'agreement': self._calc_agreement(results)
+                }
+            
+            def _calc_agreement(self, results: Dict) -> float:
+                '''计算评判间一致性'''
+                # 使用 Kendall's tau 或 Spearman 相关系数
+                from scipy.stats import kendalltau
+                judges = list(results.keys())
+                if len(judges) < 2:
+                    return 1.0
+                tau, _ = kendalltau(
+                    results[judges[0]]['scores'],
+                    results[judges[1]]['scores']
+                )
+                return tau
+        ```
+
     思考题：如何验证 LLM 评判的可靠性？
-    答案：1. 与人工评估结果对比计算相关性
-          2. 测试评估的一致性（重复评估）
-          3. 检测位置偏见和自我偏好
+
+        ✅ 答：
+        1. 人机一致性 - 与人工评估结果计算 Kendall's tau 或 Spearman 相关系数
+        2. 重复一致性 - 相同输入多次评估，计算评分方差
+        3. 位置偏见测试 - 交换 A/B 位置，检查选择是否一致
+        4. 自我偏好测试 - 检查模型是否偏爱自己的输出
+        5. 长度偏见测试 - 检查是否偏爱更长的回答
+        6. 对抗测试 - 使用明显错误的回答测试是否能识别
     """)
 
 

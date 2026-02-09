@@ -257,11 +257,152 @@ def exercises():
 
     print("""
     练习 1：使用 Ragas 评估你的 RAG 系统
+
+        ✅ 参考答案：
+        ```python
+        from ragas import evaluate
+        from ragas.metrics import (
+            faithfulness,
+            answer_relevancy,
+            context_precision,
+            context_recall
+        )
+        from datasets import Dataset
+        
+        class RAGEvaluator:
+            '''RAG 系统 Ragas 评估器'''
+            
+            def __init__(self, rag_system):
+                self.rag_system = rag_system
+                self.metrics = [
+                    faithfulness,
+                    answer_relevancy,
+                    context_precision,
+                    context_recall
+                ]
+            
+            def collect_data(
+                self, 
+                questions: list,
+                ground_truths: list = None
+            ) -> Dataset:
+                '''收集评估数据'''
+                data = {
+                    "question": [],
+                    "answer": [],
+                    "contexts": []
+                }
+                
+                if ground_truths:
+                    data["ground_truth"] = []
+                
+                for i, q in enumerate(questions):
+                    result = self.rag_system.query(q)
+                    data["question"].append(q)
+                    data["answer"].append(result["answer"])
+                    data["contexts"].append(result["contexts"])
+                    
+                    if ground_truths:
+                        data["ground_truth"].append(ground_truths[i])
+                
+                return Dataset.from_dict(data)
+            
+            def evaluate(
+                self, 
+                questions: list,
+                ground_truths: list = None
+            ) -> dict:
+                '''运行评估'''
+                dataset = self.collect_data(questions, ground_truths)
+                
+                result = evaluate(
+                    dataset,
+                    metrics=self.metrics
+                )
+                
+                return {
+                    "faithfulness": result["faithfulness"],
+                    "answer_relevancy": result["answer_relevancy"],
+                    "context_precision": result["context_precision"],
+                    "context_recall": result["context_recall"],
+                    "overall": (
+                        result["faithfulness"] + 
+                        result["answer_relevancy"]
+                    ) / 2
+                }
+        
+        # 使用示例
+        # evaluator = RAGEvaluator(my_rag)
+        # questions = ["什么是 RAG？", "LangChain 有什么用？"]
+        # scores = evaluator.evaluate(questions)
+        # print(f"Faithfulness: {scores['faithfulness']:.2f}")
+        ```
+    
     练习 2：根据评估结果优化 RAG 系统并重新评估
 
+        ✅ 参考答案：
+        ```python
+        class RAGOptimizer:
+            '''基于评估结果优化 RAG'''
+            
+            def __init__(self, rag_system, evaluator):
+                self.rag = rag_system
+                self.evaluator = evaluator
+            
+            def optimize_based_on_scores(
+                self, 
+                scores: dict,
+                test_questions: list
+            ) -> dict:
+                '''根据评分优化'''
+                optimizations = []
+                
+                # 1. Faithfulness 低 → 增强提示词约束
+                if scores["faithfulness"] < 0.7:
+                    self.rag.update_prompt(
+                        "仅基于上下文回答，不要添加额外信息。"
+                        "如果上下文不足，明确说明。"
+                    )
+                    optimizations.append("增强忠实度约束")
+                
+                # 2. Context Precision 低 → 添加 Reranker
+                if scores["context_precision"] < 0.7:
+                    self.rag.add_reranker()
+                    optimizations.append("添加 Reranker")
+                
+                # 3. Context Recall 低 → 增加召回数量
+                if scores["context_recall"] < 0.7:
+                    self.rag.update_config(top_k=10)
+                    self.rag.enable_hybrid_search()
+                    optimizations.append("扩大召回范围")
+                
+                # 4. Answer Relevancy 低 → 优化问题改写
+                if scores["answer_relevancy"] < 0.7:
+                    self.rag.enable_query_rewrite()
+                    optimizations.append("启用查询改写")
+                
+                # 重新评估
+                new_scores = self.evaluator.evaluate(test_questions)
+                
+                return {
+                    "before": scores,
+                    "after": new_scores,
+                    "optimizations": optimizations,
+                    "improvement": {
+                        k: new_scores[k] - scores[k]
+                        for k in scores if k in new_scores
+                    }
+                }
+        ```
+
     思考题：为什么 Ragas 不需要人工标注的参考答案？
-    答案：Ragas 使用 LLM 作为评判者，通过分析回答与上下文
-          的关系来计算指标，无需预先准备标准答案。
+
+        ✅ 答：
+        1. LLM 作为评判 - 使用 LLM 分析回答与上下文的关系
+        2. 声明级检验 - 将回答分解为声明，逐条验证是否有上下文支持
+        3. 自洽性验证 - 通过生成问题再比较的方式评估相关性
+        4. 自动化流程 - 整个评估过程无需人工干预
+        5. 但注意：Context Recall 仍需要 ground_truth 来计算召回率
     """)
 
 

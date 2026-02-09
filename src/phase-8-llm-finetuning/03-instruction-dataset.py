@@ -339,17 +339,119 @@ def exercises():
     print("""
     练习 1：构建领域数据集
         为特定领域（如客服）构建 100 条指令数据
+
+        ✅ 参考答案：
+        ```python
+        # 客服领域指令模板
+        TEMPLATES = [
+            ("用户咨询{product}的价格", "您好！{product}的价格是..."),
+            ("如何退换{product}", "关于{product}的退换流程..."),
+            ("投诉{issue}", "非常抱歉给您带来不便，关于{issue}..."),
+            ("{product}有什么功能", "{product}的主要功能包括..."),
+            ("如何使用{feature}", "使用{feature}的步骤是..."),
+        ]
+        
+        PRODUCTS = ["手机", "电脑", "耳机", "平板", "手表"]
+        FEATURES = ["蓝牙", "快充", "语音助手", "拍照", "导航"]
+        
+        def generate_customer_service_data():
+            data = []
+            for template, answer_template in TEMPLATES:
+                for product in PRODUCTS:
+                    instruction = template.format(
+                        product=product, 
+                        issue="物流问题",
+                        feature=random.choice(FEATURES)
+                    )
+                    data.append({
+                        "instruction": instruction,
+                        "input": "",
+                        "output": answer_template.format(
+                            product=product,
+                            issue="物流问题",
+                            feature=random.choice(FEATURES)
+                        )
+                    })
+            return data
+        ```
     
     练习 2：数据增强
         对现有指令进行改写增强
+
+        ✅ 参考答案：
+        ```python
+        def rewrite_instruction(instruction: str, llm) -> list:
+            prompt = f'''请将以下指令改写成3种不同的表达方式，保持意思不变：
+            
+原指令：{instruction}
+
+改写版本：'''
+            
+            response = llm.invoke(prompt)
+            # 解析返回的多个改写版本
+            variants = parse_variants(response.content)
+            return variants
+        
+        def augment_instructions(dataset: list, llm) -> list:
+            augmented = []
+            for item in dataset:
+                augmented.append(item)
+                variants = rewrite_instruction(item["instruction"], llm)
+                for variant in variants:
+                    augmented.append({
+                        "instruction": variant,
+                        "input": item["input"],
+                        "output": item["output"]
+                    })
+            return augmented
+        ```
     
     练习 3：质量评估
         设计指令数据质量评估标准
+
+        ✅ 参考答案：
+        ```python
+        class InstructionQualityChecker:
+            def check(self, sample: dict) -> dict:
+                scores = {}
+                
+                # 1. 指令清晰度 (是否明确)
+                instruction = sample["instruction"]
+                scores["clarity"] = len(instruction) > 10 and "?" in instruction or "请" in instruction
+                
+                # 2. 输出完整性 (是否完整回答)
+                output = sample["output"]
+                scores["completeness"] = len(output) > 20
+                
+                # 3. 格式规范性
+                scores["format"] = not output.startswith(" ") and output.endswith(("。", "!", "?", "..."))
+                
+                # 4. 相关性检查 (指令和输出是否匹配)
+                keywords = set(instruction)
+                scores["relevance"] = len(keywords & set(output)) > 2
+                
+                # 综合评分
+                scores["overall"] = sum(scores.values()) / len(scores)
+                return scores
+        ```
     
     思考题：
     ────────
     1. 如何平衡数据量和质量？
+
+       ✅ 答：
+       - 优先质量：宁少勿滥，高质量 1000 条胜过低质量 10000 条
+       - 分层策略：核心场景用高质量数据，边缘场景可降低标准
+       - 迭代改进：先小规模高质量训练，根据效果再扩充
+       - 混合策略：70% 高质量人工标注 + 30% 合成增强
+
     2. 合成数据的局限性是什么？
+
+       ✅ 答：
+       - 知识截断：不包含训练集之后的信息
+       - 幻觉传播：生成模型的错误会被学习
+       - 分布偏差：偏向常见模式，缺少长尾场景
+       - 风格单一：倾向于生成模型的表达风格
     """)
 
 

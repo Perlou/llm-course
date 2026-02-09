@@ -308,13 +308,181 @@ def exercises():
 
     print("""
     练习 1：实现一个带缓存的 LLM 调用函数
+
+        ✅ 参考答案：
+        ```python
+        import hashlib
+        import json
+        from functools import lru_cache
+        from typing import Optional
+        import redis
+        
+        class CachedLLMClient:
+            '''带缓存的 LLM 客户端'''
+            
+            def __init__(
+                self, 
+                model,
+                redis_url: str = None,
+                local_cache_size: int = 1000,
+                ttl: int = 3600
+            ):
+                self.model = model
+                self.ttl = ttl
+                self.local_cache = {}
+                self.redis = redis.from_url(redis_url) if redis_url else None
+                self.stats = {'hits': 0, 'misses': 0}
+            
+            def _cache_key(self, prompt: str, **kwargs) -> str:
+                '''生成缓存键'''
+                content = json.dumps({'prompt': prompt, **kwargs}, sort_keys=True)
+                return hashlib.md5(content.encode()).hexdigest()
+            
+            def _get_cache(self, key: str) -> Optional[str]:
+                '''获取缓存'''
+                # 先查本地
+                if key in self.local_cache:
+                    self.stats['hits'] += 1
+                    return self.local_cache[key]
+                
+                # 再查 Redis
+                if self.redis:
+                    cached = self.redis.get(key)
+                    if cached:
+                        self.stats['hits'] += 1
+                        return cached.decode()
+                
+                self.stats['misses'] += 1
+                return None
+            
+            def _set_cache(self, key: str, value: str):
+                '''设置缓存'''
+                self.local_cache[key] = value
+                if self.redis:
+                    self.redis.setex(key, self.ttl, value)
+            
+            def generate(
+                self, 
+                prompt: str, 
+                use_cache: bool = True,
+                **kwargs
+            ) -> str:
+                '''生成（带缓存）'''
+                if use_cache:
+                    key = self._cache_key(prompt, **kwargs)
+                    cached = self._get_cache(key)
+                    if cached:
+                        return cached
+                
+                # 调用模型
+                response = self.model.generate(prompt, **kwargs)
+                
+                if use_cache:
+                    self._set_cache(key, response)
+                
+                return response
+            
+            def get_stats(self) -> dict:
+                '''获取缓存统计'''
+                total = self.stats['hits'] + self.stats['misses']
+                return {
+                    **self.stats,
+                    'hit_rate': self.stats['hits'] / total if total > 0 else 0,
+                    'estimated_savings': self.stats['hits'] * 0.01  # 假设每次节省 $0.01
+                }
+        ```
+    
     练习 2：设计一个基于任务复杂度的模型路由策略
 
+        ✅ 参考答案：
+        ```python
+        from enum import Enum
+        from typing import Dict, Callable
+        
+        class TaskComplexity(Enum):
+            SIMPLE = 'simple'      # 简单问答
+            MEDIUM = 'medium'      # 一般任务
+            COMPLEX = 'complex'    # 复杂推理
+            CREATIVE = 'creative'  # 创意任务
+        
+        class SmartModelRouter:
+            '''智能模型路由器'''
+            
+            def __init__(self):
+                # 模型配置：(模型名, 每 1K tokens 成本)
+                self.models = {
+                    TaskComplexity.SIMPLE: ('gpt-4o-mini', 0.00015),
+                    TaskComplexity.MEDIUM: ('gpt-4o-mini', 0.00015),
+                    TaskComplexity.COMPLEX: ('gpt-4o', 0.0025),
+                    TaskComplexity.CREATIVE: ('gpt-4o', 0.0025),
+                }
+                
+                # 复杂度关键词
+                self.complexity_keywords = {
+                    TaskComplexity.COMPLEX: [
+                        '分析', '推理', '比较', '代码', '数学',
+                        '解释为什么', '详细说明'
+                    ],
+                    TaskComplexity.CREATIVE: [
+                        '写作', '创作', '设计', '故事', '诗歌'
+                    ]
+                }
+            
+            def classify(self, prompt: str) -> TaskComplexity:
+                '''分类任务复杂度'''
+                prompt_lower = prompt.lower()
+                
+                # 检查关键词
+                for complexity, keywords in self.complexity_keywords.items():
+                    if any(kw in prompt_lower for kw in keywords):
+                        return complexity
+                
+                # 根据长度判断
+                if len(prompt) > 500:
+                    return TaskComplexity.MEDIUM
+                
+                return TaskComplexity.SIMPLE
+            
+            def route(self, prompt: str) -> tuple:
+                '''路由到合适的模型'''
+                complexity = self.classify(prompt)
+                model, cost = self.models[complexity]
+                
+                return {
+                    'model': model,
+                    'complexity': complexity.value,
+                    'estimated_cost_per_1k': cost
+                }
+            
+            def generate_with_fallback(
+                self, 
+                prompt: str,
+                quality_threshold: float = 0.7
+            ) -> str:
+                '''带降级的生成'''
+                route_info = self.route(prompt)
+                
+                # 先用便宜模型
+                response = self._generate(route_info['model'], prompt)
+                quality = self._check_quality(response)
+                
+                # 质量不足则升级模型
+                if quality < quality_threshold:
+                    response = self._generate('gpt-4o', prompt)
+                
+                return response
+        ```
+
     思考题：如何在质量和成本之间找到平衡？
-    答案：1. 根据任务重要性选择模型
-          2. 利用缓存减少重复调用
-          3. 优化提示词减少 token
-          4. 监控成本设置预算告警
+
+        ✅ 答：
+        1. 任务分层 - 重要任务用强模型，简单任务用便宜模型
+        2. 缓存复用 - 相同/相似请求复用结果，减少调用
+        3. Prompt 精简 - 减少冗余表达，降低 token 消耗
+        4. 批量处理 - 合并请求，利用批量折扣
+        5. 预算告警 - 设置日/月预算上限，超预算降级服务
+        6. 质量监控 - 监控低成本模型的质量，确保可接受
+        7. A/B 测试 - 测试不同模型配置的性价比
     """)
 
 

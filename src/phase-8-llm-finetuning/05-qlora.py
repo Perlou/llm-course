@@ -278,17 +278,102 @@ def exercises():
     print("""
     练习 1：显存计算
         计算 13B 模型使用 QLoRA 需要多少显存
+
+        ✅ 参考答案：
+        13B 参数模型使用 QLoRA (4-bit):
+        
+        基础模型 (4-bit): 13B × 0.5 bytes = 6.5 GB
+        LoRA 参数 (FP16): ~26M × 2 bytes = 0.05 GB
+        梯度 (仅 LoRA): ~0.05 GB
+        优化器状态: ~0.2 GB
+        激活值/缓存: ~2 GB
+        
+        总计: ~9-10 GB
+        
+        对比 LoRA (FP16): 13B × 2 bytes = 26 GB + 额外 ≈ 35 GB
+        节省: 约 70% 显存
     
     练习 2：配置对比
         比较 NF4 和 FP4 量化效果
+
+        ✅ 参考答案：
+        ```python
+        import torch
+        from transformers import BitsAndBytesConfig
+        
+        # NF4 配置
+        nf4_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",  # NormalFloat
+            bnb_4bit_compute_dtype=torch.bfloat16,
+        )
+        
+        # FP4 配置  
+        fp4_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="fp4",  # Float Point
+            bnb_4bit_compute_dtype=torch.bfloat16,
+        )
+        
+        # 对比结果（典型）:
+        # NF4: 困惑度 ↑0.1-0.3, 更适合 Transformer 权重分布
+        # FP4: 困惑度 ↑0.3-0.5, 通用性较好
+        # 结论: NF4 通常略优于 FP4
+        ```
     
     练习 3：推理优化
         将 QLoRA 模型导出用于推理
+
+        ✅ 参考答案：
+        ```python
+        from peft import PeftModel
+        from transformers import AutoModelForCausalLM
+        import torch
+        
+        # 1. 加载训练好的 QLoRA 模型
+        base_model = AutoModelForCausalLM.from_pretrained(
+            "base_model_name",
+            torch_dtype=torch.float16,  # 反量化为 FP16
+            device_map="auto",
+        )
+        model = PeftModel.from_pretrained(base_model, "./qlora_adapter")
+        
+        # 2. 合并 LoRA 权重
+        merged_model = model.merge_and_unload()
+        
+        # 3. 保存为标准格式
+        merged_model.save_pretrained("./merged_model")
+        tokenizer.save_pretrained("./merged_model")
+        
+        # 4. 可选：重新量化用于推理
+        # 使用 llama.cpp, GPTQ, AWQ 等工具
+        # 例如: python quantize.py ./merged_model --bits 4
+        ```
     
     思考题：
     ────────
     1. 什么情况下应该用 QLoRA 而不是 LoRA？
+
+       ✅ 答：
+       - GPU 显存有限（< 16GB）时
+       - 训练更大模型（13B+）时
+       - 成本敏感的场景
+       - 快速原型验证
+       
+       使用 LoRA 的情况：
+       - 追求最佳效果
+       - 有足够显存
+       - 需要频繁推理（量化有损）
+
     2. 量化精度和任务难度的关系？
+
+       ✅ 答：
+       - 简单任务（分类、命名实体）：4-bit 足够
+       - 中等任务（问答、摘要）：4-bit 通常可接受
+       - 复杂任务（数学推理、代码）：可能需要 8-bit 或更高
+       - 创意生成：量化影响相对较小
+       
+       建议：先用 4-bit 尝试，效果不佳再提升精度
     """)
 
 

@@ -345,12 +345,140 @@ def exercises():
 
     print("""
     练习 1：实现一个图片描述函数
+
+        ✅ 参考答案：
+        ```python
+        import google.generativeai as genai
+        from PIL import Image
+        import base64
+        from typing import Optional
+        
+        class ImageDescriber:
+            '''图片描述器'''
+            
+            def __init__(self, api_key: str):
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            def describe(
+                self,
+                image_path: str,
+                detail_level: str = "medium",
+                language: str = "zh"
+            ) -> str:
+                '''描述图片内容'''
+                prompts = {
+                    "brief": "用一句话描述这张图片",
+                    "medium": "描述这张图片的主要内容，包括场景、物体和活动",
+                    "detailed": '''详细描述这张图片：
+                        1. 场景和环境
+                        2. 主要物体和人物
+                        3. 颜色和光线
+                        4. 情感和氛围
+                        5. 任何文字或标志'''
+                }
+                
+                img = Image.open(image_path)
+                lang_prompt = "请用中文回答" if language == "zh" else ""
+                
+                response = self.model.generate_content([
+                    prompts.get(detail_level, prompts["medium"]) + lang_prompt,
+                    img
+                ])
+                
+                return response.text
+            
+            def describe_from_url(self, image_url: str) -> str:
+                '''从 URL 描述图片'''
+                import requests
+                from io import BytesIO
+                
+                response = requests.get(image_url)
+                img = Image.open(BytesIO(response.content))
+                
+                return self.model.generate_content([
+                    "描述这张图片的内容",
+                    img
+                ]).text
+        
+        # 使用示例
+        # describer = ImageDescriber(os.getenv("GOOGLE_API_KEY"))
+        # desc = describer.describe("photo.jpg", detail_level="detailed")
+        ```
+    
     练习 2：实现一个多图比较分析
 
+        ✅ 参考答案：
+        ```python
+        class MultiImageAnalyzer:
+            '''多图分析器'''
+            
+            def __init__(self, api_key: str):
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            def compare(
+                self,
+                image_paths: list,
+                comparison_type: str = "general"
+            ) -> str:
+                '''比较多张图片'''
+                prompts = {
+                    "general": "比较这些图片的相似点和不同点",
+                    "style": "比较这些图片的风格和视觉效果差异",
+                    "content": "分析这些图片在内容上的关联和区别",
+                    "timeline": "如果这是按时间顺序的图片，描述发生了什么变化",
+                    "quality": "比较这些图片的质量和清晰度"
+                }
+                
+                content = [prompts.get(comparison_type, prompts["general"])]
+                
+                for i, path in enumerate(image_paths):
+                    img = Image.open(path)
+                    content.append(f"图片 {i+1}:")
+                    content.append(img)
+                
+                response = self.model.generate_content(content)
+                return response.text
+            
+            def find_differences(
+                self, 
+                image1_path: str, 
+                image2_path: str
+            ) -> str:
+                '''找出两张图片的差异（找茬游戏）'''
+                img1 = Image.open(image1_path)
+                img2 = Image.open(image2_path)
+                
+                prompt = '''仔细对比这两张图片，找出所有不同之处。
+                列出每个差异的位置和具体变化。'''
+                
+                response = self.model.generate_content([prompt, img1, img2])
+                return response.text
+        
+        # 使用示例
+        # analyzer = MultiImageAnalyzer(os.getenv("GOOGLE_API_KEY"))
+        # result = analyzer.compare(
+        #     ["before.jpg", "after.jpg"], 
+        #     comparison_type="timeline"
+        # )
+        ```
+
     思考题：什么时候用 low，什么时候用 high？
-    答案：
-    - low: 简单识别、快速分类、低成本场景
-    - high: OCR、图表分析、细节识别、文档理解
+
+        ✅ 答：
+        - low 适用场景：
+          1. 简单分类任务（是否/类别判断）
+          2. 快速预览或筛选
+          3. 成本敏感的批量处理
+          4. 不需要读取细节的场景
+        
+        - high 适用场景：
+          1. OCR 文字识别
+          2. 图表数据提取
+          3. 文档分析
+          4. 细节识别（小物体、远处内容）
+          5. 专业图像分析（医学、法律）
     """)
 
 

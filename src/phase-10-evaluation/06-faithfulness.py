@@ -225,12 +225,166 @@ def exercises():
 
     print("""
     练习 1：实现基于 LLM 的忠实度评估函数
+
+        ✅ 参考答案：
+        ```python
+        import google.generativeai as genai
+        import json
+        from typing import Dict, List
+        
+        class FaithfulnessEvaluator:
+            '''忠实度评估器'''
+            
+            def __init__(self, api_key: str):
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                
+                self.prompt = '''
+分析以下回答是否忠实于给定的上下文。
+
+上下文：
+{context}
+
+回答：
+{answer}
+
+请执行以下步骤：
+1. 将回答分解为独立的声明/陈述
+2. 对每个声明，判断是否能从上下文中推断出来
+3. 计算忠实度分数 = 支持的声明数 / 总声明数
+
+输出 JSON 格式：
+{{
+    "claims": [
+        {{"claim": "声明内容", "supported": true/false, "evidence": "上下文依据或无依据说明"}}
+    ],
+    "faithfulness_score": 0.0-1.0,
+    "unsupported_claims": ["不支持的声明列表"],
+    "analysis": "整体分析"
+}}
+'''
+            
+            def evaluate(
+                self, 
+                context: str, 
+                answer: str
+            ) -> Dict:
+                '''评估忠实度'''
+                prompt = self.prompt.format(
+                    context=context,
+                    answer=answer
+                )
+                
+                response = self.model.generate_content(prompt)
+                return json.loads(response.text)
+            
+            def batch_evaluate(
+                self, 
+                samples: List[Dict]
+            ) -> Dict:
+                '''批量评估'''
+                scores = []
+                for sample in samples:
+                    result = self.evaluate(
+                        sample['context'],
+                        sample['answer']
+                    )
+                    scores.append(result['faithfulness_score'])
+                
+                return {
+                    'avg_faithfulness': sum(scores) / len(scores),
+                    'min': min(scores),
+                    'max': max(scores),
+                    'below_threshold': sum(1 for s in scores if s < 0.8)
+                }
+        
+        # 使用示例
+        evaluator = FaithfulnessEvaluator(api_key="...")
+        result = evaluator.evaluate(
+            context="北京是中国的首都，人口约2100万。",
+            answer="北京是中国的首都，人口约3000万。"
+        )
+        print(f"忠实度: {result['faithfulness_score']:.2f}")
+        print(f"不支持的声明: {result['unsupported_claims']}")
+        ```
+    
     练习 2：设计减少幻觉的 prompt 并测试效果
 
+        ✅ 参考答案：
+        ```python
+        class AntiHallucinationPrompts:
+            '''减少幻觉的 Prompt 设计'''
+            
+            # 基础版 - 简单约束
+            basic = '''
+请根据以下上下文回答问题。
+上下文：{context}
+问题：{question}
+'''
+            
+            # 增强版 - 明确约束
+            enhanced = '''
+请仅基于以下上下文回答问题。
+如果上下文中没有足够信息，请明确说明"根据提供的信息无法确定"。
+不要添加上下文中没有的信息。
+
+上下文：
+{context}
+
+问题：{question}
+
+回答：
+'''
+            
+            # 高级版 - 引用格式
+            advanced = '''
+你是一个严谨的问答助手。请根据上下文回答问题。
+
+规则：
+1. 只使用上下文中的信息
+2. 使用【引用】标记信息来源
+3. 不确定的内容标注"不确定"
+4. 信息不足时说明"无法确定"
+
+上下文：
+{context}
+
+问题：{question}
+
+回答格式：
+[结论] 你的回答
+[引用] 支持结论的上下文原文
+[确定度] 高/中/低
+'''
+        
+        # 测试不同 prompt 的效果
+        def compare_prompts(
+            evaluator, 
+            prompts: dict,
+            test_cases: list
+        ) -> dict:
+            results = {}
+            for name, prompt in prompts.items():
+                scores = []
+                for case in test_cases:
+                    answer = generate(prompt.format(**case))
+                    result = evaluator.evaluate(case['context'], answer)
+                    scores.append(result['faithfulness_score'])
+                results[name] = sum(scores) / len(scores)
+            return results
+            
+        # 预期：advanced > enhanced > basic
+        ```
+
     思考题：为什么完全消除幻觉很困难？
-    答案：1. LLM 是概率模型，无法保证完全准确
-          2. 训练数据可能包含错误信息
-          3. 模型倾向于生成流畅而非准确的内容
+
+        ✅ 答：
+        1. 概率本质 - LLM 是概率模型，无法保证 100% 准确
+        2. 训练污染 - 训练数据可能包含错误信息
+        3. 流畅优先 - 模型倾向于生成流畅而非准确的内容
+        4. 知识边界模糊 - 模型难以准确判断自己"不知道"
+        5. 推理错误 - 即使事实正确，推理过程也可能错误
+        6. 上下文长度 - 长上下文中信息可能被遗漏
     """)
 
 

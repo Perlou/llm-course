@@ -271,17 +271,107 @@ def exercises():
     print("""
     练习 1：参数计算
         计算 13B 模型使用 LoRA (r=16) 的参数量
+
+        ✅ 参考答案：
+        13B 模型通常有 40 层，每层 4 个注意力投影矩阵
+        假设隐藏维度 d = 5120
+        
+        LoRA 参数量 = 层数 × 目标模块数 × 2 × d × r
+                    = 40 × 4 × 2 × 5120 × 16
+                    = 26,214,400 参数
+                    ≈ 26M 参数
+        
+        占比 = 26M / 13B = 0.2%
     
     练习 2：配置优化
         设计一个 LoRA 配置，权衡效果和训练速度
+
+        ✅ 参考答案：
+        ```python
+        from peft import LoraConfig
+        
+        # 平衡配置
+        balanced_config = LoraConfig(
+            r=8,                          # 中等秩
+            lora_alpha=16,                # alpha = 2*r
+            lora_dropout=0.05,            # 轻微 dropout
+            target_modules=[
+                "q_proj", "v_proj",       # 只训练 Q 和 V
+            ],
+            bias="none",
+        )
+        
+        # 效果优先配置
+        quality_config = LoraConfig(
+            r=32,
+            lora_alpha=64,
+            lora_dropout=0.1,
+            target_modules=[
+                "q_proj", "k_proj", "v_proj", "o_proj",
+                "gate_proj", "up_proj", "down_proj",
+            ],
+        )
+        
+        # 速度优先配置
+        speed_config = LoraConfig(
+            r=4,
+            lora_alpha=8,
+            lora_dropout=0,
+            target_modules=["q_proj", "v_proj"],
+        )
+        ```
     
     练习 3：实验对比
         比较不同 rank 值的训练效果
+
+        ✅ 参考答案：
+        ```python
+        def compare_ranks(base_model, dataset, ranks=[4, 8, 16, 32]):
+            results = {}
+            
+            for r in ranks:
+                config = LoraConfig(r=r, lora_alpha=r*2, ...)
+                model = get_peft_model(base_model, config)
+                
+                # 训练
+                trainer = Trainer(model=model, ...)
+                trainer.train()
+                
+                # 评估
+                eval_result = trainer.evaluate()
+                results[f"rank_{r}"] = {
+                    "params": model.num_parameters(only_trainable=True),
+                    "loss": eval_result["eval_loss"],
+                    "accuracy": eval_result["eval_accuracy"],
+                }
+            
+            return results
+        
+        # 典型结果模式:
+        # rank_4:  params=2.1M, loss=2.1, accuracy=78%
+        # rank_8:  params=4.2M, loss=1.8, accuracy=82%
+        # rank_16: params=8.4M, loss=1.6, accuracy=85%
+        # rank_32: params=16.8M, loss=1.5, accuracy=86%
+        ```
     
     思考题：
     ────────
     1. 为什么 LoRA 选择在注意力层应用？
+
+       ✅ 答：
+       - 注意力层参数量最大，对输出影响最显著
+       - 研究表明注意力权重的增量是低秩的
+       - Q/K/V 投影直接影响模型的"关注"内容
+       - 相比 FFN 层，注意力层更易于适应新任务
+
     2. LoRA 的局限性是什么？
+
+       ✅ 答：
+       - 对极复杂任务可能不如全量微调
+       - 需要选择合适的 rank 和目标模块
+       - 不同任务可能需要不同配置
+       - 多个 LoRA 同时使用可能冲突
+       - 对预训练阶段的知识注入效果有限
     """)
 
 

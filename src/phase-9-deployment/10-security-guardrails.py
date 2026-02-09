@@ -235,12 +235,154 @@ def exercises():
 
     print("""
     练习 1：实现完整的输入/输出安全护栏
+
+        ✅ 参考答案：
+        ```python
+        import re
+        from dataclasses import dataclass
+        from typing import List, Optional
+        
+        @dataclass
+        class GuardResult:
+            passed: bool
+            reason: str = ""
+            severity: str = "low"  # low, medium, high
+        
+        class LLMGuardrails:
+            def __init__(self):
+                # 输入检测模式
+                self.injection_patterns = [
+                    r"ignore.*previous.*instructions",
+                    r"disregard.*above",
+                    r"you are now",
+                    r"forget everything",
+                    r"system prompt",
+                    r"\\[INST\\].*\\[/INST\\]",
+                ]
+                
+                # PII 模式
+                self.pii_patterns = {
+                    "phone": r"1[3-9]\\d{9}",
+                    "id_card": r"\\d{17}[\\dXx]",
+                    "email": r"[\\w\\.-]+@[\\w\\.-]+\\.\\w+",
+                    "bank_card": r"\\d{16,19}",
+                }
+                
+                # 敏感词
+                self.sensitive_words = ["暴力", "毒品", ...]
+            
+            def check_input(self, text: str) -> GuardResult:
+                # 长度检查
+                if len(text) > 8192:
+                    return GuardResult(False, "输入过长", "medium")
+                
+                # 注入检测
+                for pattern in self.injection_patterns:
+                    if re.search(pattern, text, re.IGNORECASE):
+                        return GuardResult(False, "检测到注入攻击", "high")
+                
+                # 敏感词检测
+                for word in self.sensitive_words:
+                    if word in text:
+                        return GuardResult(False, f"包含敏感词: {word}", "medium")
+                
+                return GuardResult(True)
+            
+            def check_output(self, text: str) -> GuardResult:
+                # PII 检测
+                for name, pattern in self.pii_patterns.items():
+                    if re.search(pattern, text):
+                        return GuardResult(False, f"检测到 PII: {name}", "high")
+                
+                return GuardResult(True)
+            
+            def mask_pii(self, text: str) -> str:
+                for name, pattern in self.pii_patterns.items():
+                    text = re.sub(pattern, f"[{name.upper()}_MASKED]", text)
+                return text
+        
+        # 使用
+        guard = LLMGuardrails()
+        
+        # 输入检查
+        input_result = guard.check_input(user_input)
+        if not input_result.passed:
+            return {"error": input_result.reason}
+        
+        # 生成响应
+        response = model.generate(user_input)
+        
+        # 输出检查
+        output_result = guard.check_output(response)
+        if not output_result.passed:
+            response = guard.mask_pii(response)  # 脱敏处理
+        
+        return {"response": response}
+        ```
+    
     练习 2：集成第三方内容审核 API
 
+        ✅ 参考答案：
+        ```python
+        import requests
+        from typing import Tuple
+        
+        class ContentModerationService:
+            def __init__(self, api_key: str, api_url: str):
+                self.api_key = api_key
+                self.api_url = api_url
+            
+            def check(self, text: str) -> Tuple[bool, str]:
+                '''调用第三方审核 API'''
+                try:
+                    response = requests.post(
+                        self.api_url,
+                        headers={"Authorization": f"Bearer {self.api_key}"},
+                        json={"text": text},
+                        timeout=5
+                    )
+                    result = response.json()
+                    
+                    if result.get("flagged"):
+                        categories = result.get("categories", [])
+                        return False, f"内容违规: {', '.join(categories)}"
+                    return True, ""
+                    
+                except Exception as e:
+                    # 降级策略：API 失败时放行
+                    return True, f"审核服务异常: {str(e)}"
+            
+            async def check_async(self, text: str) -> Tuple[bool, str]:
+                '''异步版本'''
+                import aiohttp
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(
+                        self.api_url,
+                        headers={"Authorization": f"Bearer {self.api_key}"},
+                        json={"text": text}
+                    ) as response:
+                        result = await response.json()
+                        if result.get("flagged"):
+                            return False, "内容违规"
+                        return True, ""
+        
+        # 使用
+        moderation = ContentModerationService(
+            api_key="your-api-key",
+            api_url="https://api.moderation.com/v1/check"
+        )
+        passed, reason = moderation.check(output_text)
+        ```
+
     思考题：如何平衡安全性和用户体验？
-    答案：1. 分级审核（严格/宽松模式）
-          2. 误报时提供申诉机制
-          3. 对敏感内容脱敏而非直接拒绝
+
+        ✅ 答：
+        1. 分级审核 - 根据场景选择严格/宽松模式
+        2. 误报处理 - 提供申诉机制
+        3. 脱敏而非拒绝 - 对敏感内容脱敏处理
+        4. 透明提示 - 告知用户被过滤的原因
+        5. 异步审核 - 不阻塞主流程
+        6. 白名单机制 - 对可信用户放宽限制
     """)
 
 
