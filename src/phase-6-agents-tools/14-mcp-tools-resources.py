@@ -195,7 +195,7 @@ class MCPReActAgent:
     
     def __init__(self, mcp_clients: dict):
         genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-        self.llm = genai.GenerativeModel('gemini-1.5-flash')
+        self.llm = genai.GenerativeModel('gemini-2.0-flash')
         self.mcp_clients = mcp_clients  # {name: client}
         self.tools = []
         self.tool_map = {}  # tool_name -> (client, original_name)

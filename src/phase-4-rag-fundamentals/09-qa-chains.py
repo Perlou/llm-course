@@ -90,12 +90,12 @@ def basic_qa_chain():
             ),
         ]
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
         retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
 
         # 构建 QA 链
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         prompt = ChatPromptTemplate.from_template("""
 基于以下信息回答问题。如果信息中没有相关内容，请说明无法回答。
@@ -157,11 +157,11 @@ def qa_with_sources():
             ),
         ]
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
         retriever = vectorstore.as_retriever()
 
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         prompt = ChatPromptTemplate.from_template("""
 基于以下信息回答问题，并引用来源。
@@ -306,12 +306,12 @@ def exercises():
         ]
 
         # 构建向量库
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
         retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
 
         # 构建 QA 链
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
         prompt = ChatPromptTemplate.from_template('''
         基于以下信息回答问题：
         {context}

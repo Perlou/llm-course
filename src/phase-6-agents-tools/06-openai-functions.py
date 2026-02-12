@@ -327,7 +327,7 @@ def exercises():
             return str(eval(expression))
 
         tools = [get_weather, search, calculate]
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
         llm_with_tools = llm.bind_tools(tools)
 
         def run_agent(query: str):

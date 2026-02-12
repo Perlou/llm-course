@@ -275,7 +275,7 @@ tools = [
 ]
 
 # 创建规划器和执行器
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 planner = load_chat_planner(llm)
 executor = load_agent_executor(llm, tools, verbose=True)
 

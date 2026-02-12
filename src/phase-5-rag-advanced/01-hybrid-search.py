@@ -168,7 +168,7 @@ def langchain_hybrid():
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
         from langchain_chroma import Chroma
         from langchain_community.retrievers import BM25Retriever
-        from langchain.retrievers import EnsembleRetriever
+        from langchain_classic.retrievers import EnsembleRetriever
         from langchain_core.documents import Document
 
         # 准备文档
@@ -184,7 +184,7 @@ def langchain_hybrid():
         bm25_retriever.k = 2
 
         # 创建向量检索器
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
         vector_retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
 
@@ -305,7 +305,7 @@ def exercises():
 
         ✅ 参考答案：
         ```python
-        from langchain.retrievers import EnsembleRetriever
+        from langchain_classic.retrievers import EnsembleRetriever
 
         # 测试不同权重组合
         alphas = [0.0, 0.3, 0.5, 0.7, 1.0]

@@ -245,7 +245,7 @@ def transformation_pipeline():
     print("=" * 60)
 
     from langchain_core.documents import Document
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
     import re
 
     def create_pipeline():
@@ -364,7 +364,7 @@ def exercises():
             return unique
 
         # 使用向量相似度（更快）
-        # embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        # embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
         # vectors = embeddings.embed_documents([d.page_content for d in docs])
         # 然后计算余弦相似度去重
         ```

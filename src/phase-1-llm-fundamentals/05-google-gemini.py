@@ -266,7 +266,7 @@ def show_system_instruction_example():
 # Gemini 系统指令
 
 model = genai.GenerativeModel(
-    "gemini-1.5-flash",
+    "gemini-2.0-flash",
     system_instruction="你是一个专业的翻译官..."  # 在创建模型时设置
 )
 

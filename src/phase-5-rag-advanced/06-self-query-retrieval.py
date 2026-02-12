@@ -148,7 +148,7 @@ def langchain_self_query():
 
     try:
         from langchain.chains.query_constructor.base import AttributeInfo
-        from langchain.retrievers.self_query.base import SelfQueryRetriever
+        from langchain_classic.retrievers.self_query.base import SelfQueryRetriever
         from langchain_google_genai import (
             ChatGoogleGenerativeAI,
             GoogleGenerativeAIEmbeddings,
@@ -188,11 +188,11 @@ def langchain_self_query():
         ]
 
         # 创建向量存储
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
         # 创建 SelfQueryRetriever
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
         retriever = SelfQueryRetriever.from_llm(
             llm=llm,
             vectorstore=vectorstore,
@@ -260,7 +260,7 @@ def custom_filter():
             ),
         ]
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
         # 带过滤的检索

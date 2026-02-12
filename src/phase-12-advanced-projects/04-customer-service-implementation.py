@@ -93,7 +93,7 @@ class IntentService:
 {{"intent": "意图", "confidence": 0.95, "entities": {{"实体类型": "值"}}}}"""
 
     def __init__(self):
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
 
     async def recognize(self, user_input: str, context: List[Dict] = None) -> IntentResult:
         """识别意图"""
@@ -469,7 +469,7 @@ class SentimentAnalyzer:
 {messages}"""
 
     def __init__(self):
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
 
     async def analyze(self, messages: list) -> dict:
         """分析情感"""

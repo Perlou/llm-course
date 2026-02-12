@@ -81,7 +81,7 @@ MODELS = {
     "gemini-flash": ModelConfig(
         name="Gemini 1.5 Flash",
         provider="gemini",
-        model_id="gemini-1.5-flash",
+        model_id="gemini-2.0-flash",
         input_price=0.000075,
         output_price=0.0003,
     ),

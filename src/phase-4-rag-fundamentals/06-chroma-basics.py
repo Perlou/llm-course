@@ -85,7 +85,7 @@ def basic_usage():
         ]
 
         # 创建 Chroma（内存模式）
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
         # 相似度搜索
@@ -119,7 +119,7 @@ def search_with_score():
             Document(page_content="强化学习通过试错优化策略"),
         ]
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
         # 带分数搜索
@@ -164,7 +164,7 @@ def metadata_filtering():
             ),
         ]
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
         # 过滤搜索
@@ -209,7 +209,7 @@ def persistent_storage():
             Document(page_content="持久化测试文档二"),
         ]
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
 
         # 保存
         vectorstore = Chroma.from_documents(
@@ -261,7 +261,7 @@ def exercises():
         ]
 
         # 创建持久化知识库
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(
             articles,
             embeddings,
@@ -311,7 +311,7 @@ def exercises():
         ✅ 参考答案：
         ```python
         # 连接已有数据库
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma(
             persist_directory="./my_knowledge_base",
             embedding_function=embeddings

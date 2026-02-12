@@ -356,7 +356,7 @@ def exercises():
         class SmartAgent(SimpleAgent):
             def __init__(self, name: str):
                 super().__init__(name)
-                self.llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+                self.llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
             def think(self, query: str) -> str:
                 '''使用 LLM 决定工具'''
@@ -385,7 +385,7 @@ def exercises():
 
         def think_with_llm(self, query: str) -> tuple:
             '''使用 LLM 进行推理和决策'''
-            llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+            llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
             
             prompt = f'''
             你是一个智能助手，可以使用以下工具：

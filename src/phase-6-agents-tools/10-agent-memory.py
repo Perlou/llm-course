@@ -359,7 +359,7 @@ def exercises():
 
         class SemanticMemory:
             def __init__(self):
-                self.embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+                self.embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
                 self.vectorstore = Chroma(embedding_function=self.embeddings)
                 self.memory_id = 0
 

@@ -294,7 +294,7 @@ def exercises():
             
             def __init__(self, api_key: str):
                 genai.configure(api_key=api_key)
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                self.model = genai.GenerativeModel('gemini-2.0-flash')
             
             def moderate(self, image_path: str) -> Dict:
                 '''审核图片内容'''
@@ -353,7 +353,7 @@ def exercises():
             
             def __init__(self, api_key: str, categories: list = None):
                 genai.configure(api_key=api_key)
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                self.model = genai.GenerativeModel('gemini-2.0-flash')
                 self.categories = categories or [
                     "服装鞋帽", "数码电器", "家居家装", 
                     "食品饮料", "美妆个护", "运动户外",

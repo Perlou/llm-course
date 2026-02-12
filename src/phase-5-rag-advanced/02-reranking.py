@@ -154,7 +154,7 @@ def llm_reranking():
         from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
 
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         query = "Python 的优点"
         documents = [
@@ -283,7 +283,7 @@ def exercises():
         from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
 
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
         
         def qa_without_rerank(query):
             docs = retriever.invoke(query)[:3]

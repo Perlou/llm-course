@@ -22,7 +22,12 @@
 
 import os
 import json
+import sys
 from dotenv import load_dotenv
+
+# 添加 utils 目录到路径
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from utils.clear_json_response import clean_json_response
 
 load_dotenv()
 
@@ -94,7 +99,7 @@ class SmartCustomerService:
             prompt, generation_config={"max_output_tokens": 50}
         )
 
-        return json.loads(response.text)
+        return json.loads(clean_json_response(response.text))
 
     def analyze_sentiment(self, user_input: str) -> dict:
         """情感分析"""
@@ -113,7 +118,7 @@ class SmartCustomerService:
             prompt, generation_config={"max_output_tokens": 50}
         )
 
-        return json.loads(response.text)
+        return json.loads(clean_json_response(response.text))
 
     def filter_input(self, text: str) -> tuple:
         """输入过滤"""

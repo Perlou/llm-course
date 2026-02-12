@@ -314,7 +314,7 @@ def exercises():
             
             def __init__(self, api_key: str):
                 genai.configure(api_key=api_key)
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                self.model = genai.GenerativeModel('gemini-2.0-flash')
             
             def extract_id_card(self, image_path: str) -> Dict:
                 '''提取身份证信息'''
@@ -380,7 +380,7 @@ def exercises():
             
             def __init__(self, api_key: str):
                 genai.configure(api_key=api_key)
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                self.model = genai.GenerativeModel('gemini-2.0-flash')
             
             def pdf_to_images(
                 self, 

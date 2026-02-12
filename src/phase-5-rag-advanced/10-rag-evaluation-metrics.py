@@ -89,7 +89,7 @@ def generation_metrics():
     try:
         from langchain_google_genai import ChatGoogleGenerativeAI
 
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
 
         context = "Python 是一种解释型编程语言。"
         answer = "Python 是一种解释型编程语言。"

@@ -39,7 +39,7 @@ def model_types_overview():
     | 类型        | 输入           | 输出        | 典型模型          |
     |------------|---------------|------------|------------------|
     | Chat Models| 消息列表       | AI消息对象   | gemini-2.0-flash |
-    | Embeddings | 文本           | 向量        | embedding-001    |
+    | Embeddings | 文本           | 向量        | gemini-embedding-001    |
     
     💡 Chat Models 最常用，是开发的首选。
     """)
@@ -134,7 +134,7 @@ def embeddings_demo():
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
         import numpy as np
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
 
         # 单个文本嵌入
         text = "LangChain 是一个强大的框架"
@@ -221,7 +221,7 @@ def exercises():
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
         import numpy as np
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
 
         def cosine_similarity(v1, v2):
             v1, v2 = np.array(v1), np.array(v2)

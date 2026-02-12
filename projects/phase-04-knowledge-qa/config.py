@@ -17,8 +17,8 @@ class Config:
     google_api_key: str = os.getenv("GOOGLE_API_KEY", "")
 
     # 模型配置
-    llm_model: str = os.getenv("LLM_MODEL", "gemini-1.5-flash")
-    embedding_model: str = os.getenv("EMBEDDING_MODEL", "models/text-embedding-004")
+    llm_model: str = os.getenv("LLM_MODEL", "gemini-2.0-flash")
+    embedding_model: str = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
 
     # RAG 参数
     chunk_size: int = int(os.getenv("CHUNK_SIZE", "500"))

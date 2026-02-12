@@ -75,7 +75,7 @@ def question_rewriting():
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import StrOutputParser
 
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         rewrite_prompt = ChatPromptTemplate.from_template("""
 基于对话历史，将用户的后续问题改写为独立的完整问题。
@@ -133,11 +133,11 @@ def conversational_rag_chain():
             ),
         ]
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
         retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
 
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         # 问题改写链
         rewrite_prompt = ChatPromptTemplate.from_messages(

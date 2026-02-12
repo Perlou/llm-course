@@ -262,7 +262,7 @@ tools = [genai.types.Tool(function_declarations=[get_weather_func])]
 
 # 2. 创建模型（带工具）
 model = genai.GenerativeModel(
-    'gemini-1.5-flash',
+    'gemini-2.0-flash',
     tools=tools
 )
 

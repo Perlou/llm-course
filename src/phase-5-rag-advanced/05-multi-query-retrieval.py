@@ -85,7 +85,7 @@ def langchain_multi_query():
     print("=" * 60)
 
     try:
-        from langchain.retrievers.multi_query import MultiQueryRetriever
+        from langchain_classic.retrievers.multi_query import MultiQueryRetriever
         from langchain_google_genai import (
             ChatGoogleGenerativeAI,
             GoogleGenerativeAIEmbeddings,
@@ -103,12 +103,12 @@ def langchain_multi_query():
         ]
 
         # 创建向量存储
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
         base_retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
 
         # 创建多查询检索器
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
         multi_retriever = MultiQueryRetriever.from_llm(
             retriever=base_retriever, llm=llm
         )
@@ -117,7 +117,7 @@ def langchain_multi_query():
         query = "Python 代码优化"
 
         # 查看生成的查询
-        from langchain.retrievers.multi_query import LineListOutputParser
+        from langchain_classic.retrievers.multi_query import LineListOutputParser
         import logging
 
         logging.getLogger("langchain.retrievers.multi_query").setLevel(logging.DEBUG)
@@ -147,7 +147,7 @@ def custom_query_generator():
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import StrOutputParser
 
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         # 自定义提示模板
         prompt = ChatPromptTemplate.from_template("""
@@ -333,7 +333,7 @@ def exercises():
         from langchain_google_genai import ChatGoogleGenerativeAI
 
         def test_query_count(original_query: str, counts: list = [2, 3, 5, 7]):
-            llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+            llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
             
             for n in counts:
                 prompt = f"为以下问题生成 {n} 个不同的搜索查询：{original_query}"

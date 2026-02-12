@@ -132,7 +132,7 @@ def automatic_optimization():
 import google.generativeai as genai
 
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 META_PROMPT = """
 你是一个提示词优化专家。请优化以下提示词以提高效果。

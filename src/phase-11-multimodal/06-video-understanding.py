@@ -387,7 +387,7 @@ def exercises():
             
             def __init__(self, api_key: str):
                 genai.configure(api_key=api_key)
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                self.model = genai.GenerativeModel('gemini-2.0-flash')
                 self.sampler = SmartFrameSampler(threshold=20.0)
             
             def moderate_video(self, video_path: str) -> Dict:

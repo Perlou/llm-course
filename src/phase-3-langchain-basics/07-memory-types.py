@@ -63,29 +63,26 @@ def buffer_memory_demo():
     print("第二部分：ConversationBufferMemory")
     print("=" * 60)
 
-    from langchain.memory import ConversationBufferMemory
+    from langchain_community.chat_message_histories import ChatMessageHistory
 
-    # 创建 Memory
-    memory = ConversationBufferMemory(return_messages=True)
+    # 创建 Memory (使用 ChatMessageHistory 替代已废弃的 ConversationBufferMemory)
+    memory = ChatMessageHistory()
 
     # 手动添加对话
-    memory.save_context(
-        {"input": "你好，我叫张三"}, {"output": "你好张三！很高兴认识你！"}
-    )
-    memory.save_context(
-        {"input": "我喜欢编程"}, {"output": "编程是个很棒的技能！你主要用什么语言？"}
-    )
+    memory.add_user_message("你好，我叫张三")
+    memory.add_ai_message("你好张三！很高兴认识你！")
+    memory.add_user_message("我喜欢编程")
+    memory.add_ai_message("编程是个很棒的技能！你主要用什么语言？")
 
     print("📌 存储的对话历史：")
-    history = memory.load_memory_variables({})
-    for msg in history["history"]:
+    for msg in memory.messages:
         role = type(msg).__name__.replace("Message", "")
         print(f"  [{role}] {msg.content}")
 
     # 清空
     print("\n📌 清空记忆：")
     memory.clear()
-    print(f"  清空后: {memory.load_memory_variables({})}")
+    print(f"  清空后: {memory.messages}")
 
 
 # ==================== 第三部分：ConversationBufferWindowMemory ====================
@@ -97,10 +94,29 @@ def window_memory_demo():
     print("第三部分：WindowMemory（滑动窗口）")
     print("=" * 60)
 
-    from langchain.memory import ConversationBufferWindowMemory
+    from langchain_community.chat_message_histories import ChatMessageHistory
+
+    # 创建一个辅助类来实现窗口记忆
+    class WindowMemory:
+        def __init__(self, k=2):
+            self.k = k  # 保留最近 k 轮对话（1轮 = 1个用户消息 + 1个AI消息）
+            self.history = ChatMessageHistory()
+
+        def add_conversation(self, user_msg, ai_msg):
+            self.history.add_user_message(user_msg)
+            self.history.add_ai_message(ai_msg)
+            # 保持窗口大小：每轮对话有2条消息（用户+AI）
+            max_messages = self.k * 2
+            if len(self.history.messages) > max_messages:
+                # 删除最旧的消息
+                self.history.messages = self.history.messages[-max_messages:]
+
+        @property
+        def messages(self):
+            return self.history.messages
 
     # 只保留最近 2 轮
-    memory = ConversationBufferWindowMemory(k=2, return_messages=True)
+    memory = WindowMemory(k=2)
 
     # 添加 3 轮对话
     conversations = [
@@ -111,12 +127,11 @@ def window_memory_demo():
 
     print("📌 添加 3 轮对话（k=2 只保留最近 2 轮）：")
     for user, ai in conversations:
-        memory.save_context({"input": user}, {"output": ai})
+        memory.add_conversation(user, ai)
         print(f"  添加: {user} -> {ai}")
 
     print("\n📌 实际保留的历史：")
-    history = memory.load_memory_variables({})
-    for msg in history["history"]:
+    for msg in memory.messages:
         role = type(msg).__name__.replace("Message", "")
         print(f"  [{role}] {msg.content}")
 
@@ -196,11 +211,10 @@ def exercises():
 
     print("""
     练习 1：创建客服机器人
-        使用 BufferMemory 创建能记住用户信息的客服。
+        使用 ChatMessageHistory 创建能记住用户信息的客服。
 
         ✅ 参考答案：
         ```python
-        from langchain.memory import ConversationBufferMemory
         from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
         from langchain_core.runnables.history import RunnableWithMessageHistory
@@ -232,22 +246,35 @@ def exercises():
 
         ✅ 参考答案：
         ```python
-        from langchain.memory import ConversationBufferWindowMemory
+        from langchain_community.chat_message_histories import ChatMessageHistory
+
+        # 使用前面定义的 WindowMemory 类
+        class WindowMemory:
+            def __init__(self, k=2):
+                self.k = k
+                self.history = ChatMessageHistory()
+            
+            def add_conversation(self, user_msg, ai_msg):
+                self.history.add_user_message(user_msg)
+                self.history.add_ai_message(ai_msg)
+                max_messages = self.k * 2
+                if len(self.history.messages) > max_messages:
+                    self.history.messages = self.history.messages[-max_messages:]
 
         # 测试 k=1（只记住最后1轮）
-        memory_k1 = ConversationBufferWindowMemory(k=1, return_messages=True)
+        memory_k1 = WindowMemory(k=1)
 
         # 测试 k=3（记住最后3轮）
-        memory_k3 = ConversationBufferWindowMemory(k=3, return_messages=True)
+        memory_k3 = WindowMemory(k=3)
 
         # 添加5轮对话
         for i in range(5):
-            memory_k1.save_context({"input": f"问题{i}"}, {"output": f"回答{i}"})
-            memory_k3.save_context({"input": f"问题{i}"}, {"output": f"回答{i}"})
+            memory_k1.add_conversation(f"问题{i}", f"回答{i}")
+            memory_k3.add_conversation(f"问题{i}", f"回答{i}")
 
         # 对比
-        print(f"k=1 保留: {len(memory_k1.load_memory_variables({})['history'])} 条")
-        print(f"k=3 保留: {len(memory_k3.load_memory_variables({})['history'])} 条")
+        print(f"k=1 保留: {len(memory_k1.history.messages)} 条")
+        print(f"k=3 保留: {len(memory_k3.history.messages)} 条")
         ```
 
     练习 3：多会话管理

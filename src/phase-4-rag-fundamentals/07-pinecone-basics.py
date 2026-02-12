@@ -128,7 +128,7 @@ def langchain_integration():
     ]
     
     # 创建向量存储
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+    embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
     vectorstore = PineconeVectorStore.from_documents(
         docs,
         embeddings,

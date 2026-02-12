@@ -37,10 +37,8 @@ class PersonalKnowledgeBase:
         from langchain_chroma import Chroma
         from langchain_core.messages import HumanMessage, AIMessage
 
-        self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004"
-        )
-        self.llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        self.embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
+        self.llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
         self.persist_dir = persist_directory
         self.vectorstore = None
         self.history = []
@@ -55,7 +53,7 @@ class PersonalKnowledgeBase:
     def add_documents(self, file_paths: list):
         """添加文档到知识库"""
         from langchain_community.document_loaders import TextLoader
-        from langchain.text_splitter import RecursiveCharacterTextSplitter
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
         from langchain_chroma import Chroma
 
         all_docs = []

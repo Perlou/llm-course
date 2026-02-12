@@ -26,6 +26,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+def clean_json_response(text: str) -> str:
+    """清理 LLM 返回的 JSON 响应，去除 markdown 代码块标记"""
+    text = text.strip()
+    # 移除 markdown 代码块
+    if text.startswith("```json"):
+        text = text[7:]
+    elif text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    return text.strip()
+
+
 # ==================== 第一部分：实体提取 ====================
 
 
@@ -65,7 +78,7 @@ def entity_extraction():
         prompt, generation_config={"max_output_tokens": 300}
     )
 
-    data = json.loads(response.text)
+    data = json.loads(clean_json_response(response.text))
     print("提取的实体：")
     for entity in data.get("entities", []):
         print(f"  [{entity['type']}] {entity['text']}")
@@ -104,7 +117,7 @@ def relation_extraction():
         prompt, generation_config={"max_output_tokens": 300}
     )
 
-    data = json.loads(response.text)
+    data = json.loads(clean_json_response(response.text))
 
     print("实体:", data.get("entities", []))
     print("\n关系：")
@@ -163,7 +176,7 @@ def form_extraction():
         prompt, generation_config={"max_output_tokens": 400}
     )
 
-    data = json.loads(response.text)
+    data = json.loads(clean_json_response(response.text))
     print("提取结果：")
     print(json.dumps(data, ensure_ascii=False, indent=2))
 
@@ -209,7 +222,7 @@ def event_extraction():
         prompt, generation_config={"max_output_tokens": 400}
     )
 
-    data = json.loads(response.text)
+    data = json.loads(clean_json_response(response.text))
     print("提取的事件：")
     for i, event in enumerate(data.get("events", []), 1):
         print(f"\n事件 {i}:")

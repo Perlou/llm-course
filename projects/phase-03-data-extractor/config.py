@@ -14,7 +14,7 @@ load_dotenv(ROOT_DIR / ".env")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 # 模型配置
-GEMINI_MODEL = "gemini-1.5-flash"
+GEMINI_MODEL = "gemini-2.0-flash"
 
 # 输出目录
 OUTPUT_DIR = Path(__file__).parent / "output"

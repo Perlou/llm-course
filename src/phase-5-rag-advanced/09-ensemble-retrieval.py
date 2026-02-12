@@ -85,7 +85,7 @@ def langchain_ensemble():
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
         from langchain_chroma import Chroma
         from langchain_community.retrievers import BM25Retriever
-        from langchain.retrievers import EnsembleRetriever
+        from langchain_classic.retrievers import EnsembleRetriever
         from langchain_core.documents import Document
 
         # 准备文档
@@ -101,7 +101,7 @@ def langchain_ensemble():
         bm25_retriever.k = 2
 
         # 创建向量检索器
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
         vector_retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
 
@@ -150,7 +150,7 @@ def adaptive_retrieval():
         from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
 
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         classify_prompt = ChatPromptTemplate.from_template("""
 分析以下查询的类型，选择最佳检索策略。
@@ -358,7 +358,7 @@ def exercises():
 
         ✅ 参考答案：
         ```python
-        from langchain.retrievers import EnsembleRetriever
+        from langchain_classic.retrievers import EnsembleRetriever
 
         # 假设有三个检索器
         retrievers = [bm25_retriever, vector_retriever, keyword_retriever]
@@ -394,7 +394,7 @@ def exercises():
         class QueryRouter:
             def __init__(self, retrievers: dict):
                 self.retrievers = retrievers
-                self.llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+                self.llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
             def classify_query(self, query: str) -> str:
                 # 规则优先

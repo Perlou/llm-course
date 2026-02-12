@@ -17,7 +17,7 @@ class Config:
     google_api_key: str = os.getenv("GOOGLE_API_KEY", "")
 
     # 模型配置
-    llm_model: str = os.getenv("LLM_MODEL", "gemini-1.5-flash")
+    llm_model: str = os.getenv("LLM_MODEL", "gemini-2.0-flash")
 
     # Agent 配置
     max_iterations: int = int(os.getenv("MAX_ITERATIONS", "15"))

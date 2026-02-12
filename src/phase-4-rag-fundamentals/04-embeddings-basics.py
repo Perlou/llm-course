@@ -71,7 +71,7 @@ def gemini_embedding():
     try:
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
 
         # 单文本嵌入
         text = "人工智能正在改变世界"
@@ -107,7 +107,7 @@ def vector_similarity():
         import numpy as np
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
 
         # 计算相似度
         def cosine_similarity(v1, v2):
@@ -145,7 +145,7 @@ def semantic_search():
         import numpy as np
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
 
         # 文档库
         documents = [
@@ -232,7 +232,7 @@ def exercises():
         import numpy as np
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
 
         def cosine_similarity(v1, v2):
             return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))

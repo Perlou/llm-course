@@ -21,9 +21,7 @@ class Config:
     """应用配置"""
 
     # API 配置
-    google_api_key: str = field(
-        default_factory=lambda: os.getenv("GOOGLE_API_KEY", "")
-    )
+    google_api_key: str = field(default_factory=lambda: os.getenv("GOOGLE_API_KEY", ""))
 
     # 模型配置
     llm_provider: Literal["gemini", "ollama"] = field(
@@ -41,7 +39,7 @@ class Config:
 
     # Embedding 配置
     embedding_model: str = field(
-        default_factory=lambda: os.getenv("EMBEDDING_MODEL", "models/text-embedding-004")
+        default_factory=lambda: os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
     )
 
     # 路径配置
@@ -75,17 +73,11 @@ class Config:
     chunk_overlap: int = field(
         default_factory=lambda: int(os.getenv("CHUNK_OVERLAP", "200"))
     )
-    top_k: int = field(
-        default_factory=lambda: int(os.getenv("TOP_K", "5"))
-    )
+    top_k: int = field(default_factory=lambda: int(os.getenv("TOP_K", "5")))
 
     # 服务配置
-    api_host: str = field(
-        default_factory=lambda: os.getenv("API_HOST", "0.0.0.0")
-    )
-    api_port: int = field(
-        default_factory=lambda: int(os.getenv("API_PORT", "8000"))
-    )
+    api_host: str = field(default_factory=lambda: os.getenv("API_HOST", "0.0.0.0"))
+    api_port: int = field(default_factory=lambda: int(os.getenv("API_PORT", "8000")))
 
     def validate(self) -> bool:
         """验证配置"""

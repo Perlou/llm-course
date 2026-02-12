@@ -17,7 +17,7 @@ class Config:
     google_api_key: str = os.getenv("GOOGLE_API_KEY", "")
 
     # 模型配置
-    model_name: str = os.getenv("MODEL_NAME", "gemini-1.5-flash")
+    model_name: str = os.getenv("MODEL_NAME", "gemini-2.0-flash")
     temperature: float = float(os.getenv("TEMPERATURE", "0.7"))
     max_tokens: int = int(os.getenv("MAX_TOKENS", "2000"))
 

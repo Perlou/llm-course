@@ -81,8 +81,8 @@ class Settings(BaseSettings):
 
     # LLM
     GOOGLE_API_KEY: str
-    EMBEDDING_MODEL: str = "models/embedding-001"
-    CHAT_MODEL: str = "gemini-1.5-flash"
+    EMBEDDING_MODEL: str = "models/gemini-embedding-001"
+    CHAT_MODEL: str = "gemini-2.0-flash"
 
     # RAG 配置
     CHUNK_SIZE: int = 500
@@ -115,7 +115,7 @@ DOCUMENT_SERVICE = '''
 from langchain_community.document_loaders import (
     PyPDFLoader, Docx2txtLoader, UnstructuredExcelLoader, TextLoader
 )
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from app.config import get_settings
 
 settings = get_settings()

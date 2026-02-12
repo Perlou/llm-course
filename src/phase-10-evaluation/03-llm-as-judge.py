@@ -72,7 +72,7 @@ def single_point_scoring():
 import google.generativeai as genai
 
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 JUDGE_PROMPT = """
 你是一个专业的评估助手。请根据以下标准评估AI助手的回复质量。
@@ -320,7 +320,7 @@ def exercises():
             
             def __init__(self, api_key: str):
                 genai.configure(api_key=api_key)
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                self.model = genai.GenerativeModel('gemini-2.0-flash')
                 
                 self.single_prompt = '''
 你是一个专业的 AI 回答评估专家。请评估以下回答的质量。

@@ -314,7 +314,7 @@ def exercises():
             
             def __init__(self, api_key: str):
                 genai.configure(api_key=api_key)
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                self.model = genai.GenerativeModel('gemini-2.0-flash')
             
             def analyze_financial_chart(
                 self, 
@@ -391,7 +391,7 @@ def exercises():
             
             def __init__(self, api_key: str):
                 genai.configure(api_key=api_key)
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                self.model = genai.GenerativeModel('gemini-2.0-flash')
             
             def extract_data(self, image_path: str) -> Dict:
                 '''从图表提取数据'''

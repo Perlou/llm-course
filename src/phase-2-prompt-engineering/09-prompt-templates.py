@@ -166,6 +166,7 @@ def conditional_template():
     def build_analysis_prompt(text, options):
         """构建分析提示词"""
         base = f"请分析以下文本：\n\n{text}\n\n分析内容："
+        print(options)
 
         tasks = []
         if options.get("sentiment"):

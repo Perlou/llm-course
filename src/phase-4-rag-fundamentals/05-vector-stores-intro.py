@@ -200,7 +200,7 @@ def in_memory_store():
         ]
 
         # 创建向量存储
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
         vectorstore = DocArrayInMemorySearch.from_documents(docs, embeddings)
 
         # 搜索
@@ -242,7 +242,7 @@ def exercises():
             Document(page_content="Web 开发教程"),
         ]
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
         vectorstore = DocArrayInMemorySearch.from_documents(docs, embeddings)
 
         query = "AI 学习"

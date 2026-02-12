@@ -111,10 +111,10 @@ def hyde_implementation():
         ]
 
         # 创建向量存储
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         # 传统检索
         query = "什么是梯度下降"
@@ -167,10 +167,8 @@ def langchain_hyde():
         from langchain_core.prompts import ChatPromptTemplate
 
         # 创建 HyDE embedder
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
-        base_embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004"
-        )
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+        base_embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
 
         prompt = ChatPromptTemplate.from_template("""
 请根据以下问题，写一段可能出现在相关文档中的回答。
@@ -308,8 +306,8 @@ def exercises():
         from langchain_chroma import Chroma
         import time
 
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
 
         def traditional_retrieval(query: str):
             return vectorstore.similarity_search(query, k=3)

@@ -79,7 +79,7 @@ def vectorstore_retriever():
             Document(page_content="JavaScript 是 Web 开发的核心语言"),
         ]
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
         # 创建 Retriever
@@ -136,7 +136,7 @@ def mmr_retrieval():
             Document(page_content="JavaScript 用于前端开发"),
         ]
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
         # MMR 检索
@@ -174,7 +174,7 @@ def similarity_threshold():
             Document(page_content="今天天气晴朗"),
         ]
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
         # 带阈值的检索
@@ -221,7 +221,7 @@ def multi_query_retriever():
     from langchain.retrievers.multi_query import MultiQueryRetriever
     from langchain_google_genai import ChatGoogleGenerativeAI
     
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
+    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
     
     retriever = MultiQueryRetriever.from_llm(
         retriever=vectorstore.as_retriever(),
@@ -261,7 +261,7 @@ def exercises():
             Document(page_content="机器学习入门"),
         ]
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
 
         query = "Python"
@@ -316,7 +316,7 @@ def exercises():
         from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
 
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         def rerank(query: str, docs: list, top_k: int = 3):
             prompt = ChatPromptTemplate.from_template('''

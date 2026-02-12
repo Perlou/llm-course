@@ -276,7 +276,7 @@ def exercises():
         
         # 回退模型（可以用不同配置或不同模型）
         fallback1 = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.3)
-        fallback2 = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.5)
+        fallback2 = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.5)
 
         # 配置回退链
         robust_llm = primary.with_fallbacks([fallback1, fallback2])

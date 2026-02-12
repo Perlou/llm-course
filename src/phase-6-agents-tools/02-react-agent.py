@@ -360,7 +360,7 @@ Action Input: [参数]"""
 
     def __init__(self):
         genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
         self.tools = {
             "search": self.search,
             "calculate": self.calculate,

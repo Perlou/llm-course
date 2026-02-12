@@ -69,7 +69,7 @@ def llm_based_evaluation():
 import google.generativeai as genai
 
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 FAITHFULNESS_PROMPT = """
 请分析以下回答是否忠实于给定的上下文。
@@ -237,7 +237,7 @@ def exercises():
             
             def __init__(self, api_key: str):
                 genai.configure(api_key=api_key)
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                self.model = genai.GenerativeModel('gemini-2.0-flash')
                 
                 self.prompt = '''
 分析以下回答是否忠实于给定的上下文。

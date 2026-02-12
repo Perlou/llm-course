@@ -125,7 +125,7 @@ def llm_query_expansion():
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import StrOutputParser
 
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         prompt = ChatPromptTemplate.from_template("""
 你是一个查询扩展专家。给定用户的原始查询，请生成 3-5 个语义相近但表述不同的查询变体。
@@ -163,7 +163,7 @@ def query_rewriting():
         from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
 
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         # 对话历史改写
         history_rewrite_prompt = ChatPromptTemplate.from_template("""
@@ -220,7 +220,7 @@ def step_back_prompting():
         from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
 
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         step_back_prompt = ChatPromptTemplate.from_template("""
 给定一个具体问题，请生成一个更抽象、更基础的问题。

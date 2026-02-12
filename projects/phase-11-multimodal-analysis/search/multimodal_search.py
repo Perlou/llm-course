@@ -89,7 +89,7 @@ class MultimodalSearch:
         """获取文本嵌入向量"""
         # 使用 Gemini embedding model
         result = genai.embed_content(
-            model="models/text-embedding-004",
+            model="gemini-embedding-001",
             content=text,
             task_type="retrieval_document",
         )
@@ -98,7 +98,7 @@ class MultimodalSearch:
     def _get_query_embedding(self, query: str) -> List[float]:
         """获取查询嵌入向量"""
         result = genai.embed_content(
-            model="models/text-embedding-004",
+            model="gemini-embedding-001",
             content=query,
             task_type="retrieval_query",
         )
@@ -128,7 +128,9 @@ class MultimodalSearch:
         # 加载图片
         if isinstance(image_source, Image.Image):
             image = image_source
-            image_path = metadata.get("path", "inline_image") if metadata else "inline_image"
+            image_path = (
+                metadata.get("path", "inline_image") if metadata else "inline_image"
+            )
         else:
             image_path = str(image_source)
             image = Image.open(image_path)
@@ -252,7 +254,9 @@ class MultimodalSearch:
                         score=score,
                         metadata=metadata,
                         description=document,
-                        image_path=metadata.get("path") if metadata.get("type") == "image" else None,
+                        image_path=metadata.get("path")
+                        if metadata.get("type") == "image"
+                        else None,
                     )
                 )
 
@@ -337,7 +341,9 @@ class MultimodalSearch:
                         score=score,
                         metadata=metadata,
                         description=document,
-                        image_path=metadata.get("path") if metadata.get("type") == "image" else None,
+                        image_path=metadata.get("path")
+                        if metadata.get("type") == "image"
+                        else None,
                     )
                 )
 

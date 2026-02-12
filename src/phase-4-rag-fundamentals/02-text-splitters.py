@@ -76,7 +76,7 @@ def character_splitter():
     print("第二部分：字符分割器")
     print("=" * 60)
 
-    from langchain.text_splitter import CharacterTextSplitter
+    from langchain_text_splitters import CharacterTextSplitter
 
     text = """人工智能正在改变世界。从医疗诊断到自动驾驶，AI 技术的应用越来越广泛。
 
@@ -108,7 +108,7 @@ def recursive_splitter():
     print("第三部分：递归字符分割器（推荐）")
     print("=" * 60)
 
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
 
     text = """# 人工智能概述
 
@@ -147,7 +147,7 @@ def token_splitter():
     print("=" * 60)
 
     try:
-        from langchain.text_splitter import TokenTextSplitter
+        from langchain_text_splitters import TokenTextSplitter
 
         text = (
             "人工智能和机器学习正在快速发展，深度学习模型如 GPT 和 BERT 已经广泛应用。"
@@ -188,7 +188,7 @@ def specialized_splitters():
     """)
 
     # Markdown 分割示例
-    from langchain.text_splitter import MarkdownTextSplitter
+    from langchain_text_splitters import MarkdownTextSplitter
 
     md_text = """# 标题
 
@@ -256,7 +256,7 @@ def exercises():
 
         ✅ 参考答案：
         ```python
-        from langchain.text_splitter import RecursiveCharacterTextSplitter
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
 
         text = "你的长文本内容..."
 
@@ -275,7 +275,7 @@ def exercises():
 
         ✅ 参考答案：
         ```python
-        from langchain.text_splitter import PythonCodeTextSplitter
+        from langchain_text_splitters import PythonCodeTextSplitter
 
         with open("example.py", "r") as f:
             code = f.read()
@@ -297,7 +297,7 @@ def exercises():
         ✅ 参考答案：
         ```python
         import tiktoken
-        from langchain.text_splitter import RecursiveCharacterTextSplitter
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
 
         # 获取编码器
         encoding = tiktoken.get_encoding("cl100k_base")

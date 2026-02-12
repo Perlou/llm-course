@@ -80,7 +80,7 @@ def extractive_compression():
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
         import numpy as np
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
 
         # 示例文档
         document = """
@@ -128,8 +128,8 @@ def langchain_compression():
     print("=" * 60)
 
     try:
-        from langchain.retrievers import ContextualCompressionRetriever
-        from langchain.retrievers.document_compressors import LLMChainExtractor
+        from langchain_classic.retrievers import ContextualCompressionRetriever
+        from langchain_classic.retrievers.document_compressors import LLMChainExtractor
         from langchain_google_genai import (
             ChatGoogleGenerativeAI,
             GoogleGenerativeAIEmbeddings,
@@ -151,12 +151,12 @@ Python 的标准库非常丰富，涵盖网络、文件处理等功能。
         ]
 
         # 创建基础检索器
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
         vectorstore = Chroma.from_documents(docs, embeddings)
         base_retriever = vectorstore.as_retriever()
 
         # 创建压缩器
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
         compressor = LLMChainExtractor.from_llm(llm)
 
         # 创建压缩检索器
@@ -190,7 +190,7 @@ def generative_compression():
         from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.prompts import ChatPromptTemplate
 
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         document = """
 Python 是一种高级编程语言，由 Guido van Rossum 于 1991 年创建。
@@ -234,11 +234,11 @@ def filter_compression():
     print("=" * 60)
 
     try:
-        from langchain.retrievers.document_compressors import EmbeddingsFilter
+        from langchain_classic.retrievers.document_compressors import EmbeddingsFilter
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
         from langchain_core.documents import Document
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
 
         # 创建相关性过滤器
         embeddings_filter = EmbeddingsFilter(
@@ -276,9 +276,9 @@ def compression_pipeline():
     print("=" * 60)
 
     code_example = """
-from langchain.retrievers.document_compressors import DocumentCompressorPipeline
-from langchain.retrievers.document_compressors import EmbeddingsFilter
-from langchain.text_splitter import CharacterTextSplitter
+from langchain_classic.retrievers.document_compressors import DocumentCompressorPipeline
+from langchain_classic.retrievers.document_compressors import EmbeddingsFilter
+from langchain_text_splitters import CharacterTextSplitter
 
 # 创建压缩管道
 splitter = CharacterTextSplitter(chunk_size=300, chunk_overlap=0)
@@ -320,10 +320,10 @@ def exercises():
         ✅ 参考答案：
         ```python
         from langchain_google_genai import ChatGoogleGenerativeAI
-        from langchain.retrievers import ContextualCompressionRetriever
-        from langchain.retrievers.document_compressors import LLMChainExtractor
+        from langchain_classic.retrievers import ContextualCompressionRetriever
+        from langchain_classic.retrievers.document_compressors import LLMChainExtractor
 
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
         def compare_compression(query: str):
             # 无压缩检索
@@ -355,7 +355,7 @@ def exercises():
 
         ✅ 参考答案：
         ```python
-        from langchain.retrievers.document_compressors import EmbeddingsFilter
+        from langchain_classic.retrievers.document_compressors import EmbeddingsFilter
 
         thresholds = [0.5, 0.6, 0.7, 0.8, 0.9]
         query = "Python 性能优化"
@@ -383,7 +383,7 @@ def exercises():
 
         ✅ 参考答案：
         ```python
-        from langchain.retrievers.document_compressors import BaseDocumentCompressor
+        from langchain_classic.retrievers.document_compressors.base import BaseDocumentCompressor
         from langchain_core.documents import Document
         import re
 
