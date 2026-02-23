@@ -5,7 +5,7 @@
 
 from typing import List, Optional
 from dataclasses import dataclass, field
-from langchain.schema import HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage, AIMessage
 
 
 @dataclass

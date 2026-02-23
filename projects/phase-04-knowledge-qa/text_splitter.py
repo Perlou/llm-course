@@ -5,7 +5,7 @@
 
 from typing import List
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 from config import config
 

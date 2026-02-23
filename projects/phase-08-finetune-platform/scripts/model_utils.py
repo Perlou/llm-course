@@ -7,6 +7,11 @@ from typing import Optional, Dict, Any
 import torch
 
 
+def _resolve_torch_dtype():
+    """根据设备选择合适的数据类型。"""
+    return torch.float16 if torch.cuda.is_available() else torch.float32
+
+
 def load_base_model(
     model_name: str,
     quantization_config=None,
@@ -35,7 +40,7 @@ def load_base_model(
         quantization_config=quantization_config,
         device_map=device_map,
         trust_remote_code=trust_remote_code,
-        torch_dtype=torch.float16,
+        torch_dtype=_resolve_torch_dtype(),
     )
 
     print(f"模型加载完成，参数量: {model.num_parameters():,}")
@@ -73,7 +78,7 @@ def merge_lora_weights(
     print(f"加载基础模型: {base_model_name}")
     base_model = AutoModelForCausalLM.from_pretrained(
         base_model_name,
-        torch_dtype=torch.float16,
+        torch_dtype=_resolve_torch_dtype(),
         device_map="auto",
         trust_remote_code=trust_remote_code,
     )
@@ -110,6 +115,7 @@ def generate_response(
 ) -> str:
     """生成响应"""
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    input_length = inputs["input_ids"].shape[1]
 
     with torch.no_grad():
         outputs = model.generate(
@@ -122,9 +128,8 @@ def generate_response(
             eos_token_id=tokenizer.eos_token_id,
         )
 
-    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    # 去掉输入部分
-    response = response[len(prompt) :].strip()
+    generated_ids = outputs[0][input_length:]
+    response = tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
 
     return response
 

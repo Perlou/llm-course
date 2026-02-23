@@ -99,9 +99,22 @@ def get_quantization_config(quant_cfg: Dict):
     )
 
 
-def get_training_arguments(training_cfg: Dict, output_dir: str = None):
+def get_training_arguments(
+    training_cfg: Dict,
+    output_dir: str = None,
+    evaluation_cfg: Dict = None,
+    has_eval_dataset: bool = True,
+):
     """获取训练参数"""
     from transformers import TrainingArguments
+
+    evaluation_cfg = evaluation_cfg or {}
+    do_eval = bool(evaluation_cfg.get("do_eval", True) and has_eval_dataset)
+    eval_steps = evaluation_cfg.get(
+        "eval_steps", max(1, int(training_cfg.get("logging_steps", 10)))
+    )
+    metric_for_best_model = evaluation_cfg.get("metric_for_best_model", "eval_loss")
+    greater_is_better = False if "loss" in metric_for_best_model else None
 
     return TrainingArguments(
         output_dir=output_dir or training_cfg.get("output_dir", "./outputs"),
@@ -121,6 +134,12 @@ def get_training_arguments(training_cfg: Dict, output_dir: str = None):
         optim=training_cfg.get("optim", "paged_adamw_32bit"),
         report_to="none",
         remove_unused_columns=False,
+        do_eval=do_eval,
+        evaluation_strategy="steps" if do_eval else "no",
+        eval_steps=eval_steps if do_eval else None,
+        metric_for_best_model=metric_for_best_model if do_eval else None,
+        load_best_model_at_end=do_eval,
+        greater_is_better=greater_is_better if do_eval else None,
     )
 
 

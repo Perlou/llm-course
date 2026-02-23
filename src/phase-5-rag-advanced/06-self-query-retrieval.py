@@ -147,7 +147,7 @@ def langchain_self_query():
     print("=" * 60)
 
     try:
-        from langchain.chains.query_constructor.base import AttributeInfo
+        from langchain_classic.chains.query_constructor.base import AttributeInfo
         from langchain_classic.retrievers.self_query.base import SelfQueryRetriever
         from langchain_google_genai import (
             ChatGoogleGenerativeAI,
@@ -374,7 +374,7 @@ def exercises():
         }
 
         # LangChain AttributeInfo 定义
-        from langchain.chains.query_constructor.base import AttributeInfo
+        from langchain_classic.chains.query_constructor.base import AttributeInfo
 
         metadata_field_info = [
             AttributeInfo(name="category", description="文档类别", type="string"),

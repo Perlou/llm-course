@@ -88,13 +88,21 @@ def format_prompt(sample: Dict, format_type: str = "alpaca") -> str:
             prompt += f"\n### 输入:\n{input_text}\n"
         prompt += f"\n### 回答:\n{output}"
         return prompt
+    elif format_type == "sharegpt":
+        conversations = sample.get("conversations", [])
+        lines = []
+        for conv in conversations:
+            role = conv.get("from", "human")
+            content = conv.get("value", "")
+            lines.append(f"{role}: {content}")
+        return "\n".join(lines)
     else:
         messages = sample.get("messages", [])
         lines = []
         for msg in messages:
             role = msg.get("role", "user")
             content = msg.get("content", "")
-            lines.append(f"[{role}]: {content}")
+            lines.append(f"{role}: {content}")
         return "\n".join(lines)
 
 
@@ -104,12 +112,21 @@ def split_dataset(
     """分割数据集"""
     import random
 
+    if not data:
+        return [], []
+
     if shuffle:
         random.seed(seed)
         data = data.copy()
         random.shuffle(data)
 
+    train_ratio = max(0.0, min(1.0, train_ratio))
     split_idx = int(len(data) * train_ratio)
+    if len(data) == 1:
+        split_idx = 1
+    else:
+        split_idx = min(max(split_idx, 1), len(data) - 1)
+
     return data[:split_idx], data[split_idx:]
 
 
@@ -132,6 +149,15 @@ def get_dataset_stats(data: List[Dict], format_type: str = "alpaca") -> Dict:
             if format_type == "alpaca":
                 instruction_lens.append(len(sample.get("instruction", "")))
                 output_lens.append(len(sample.get("output", "")))
+            elif format_type == "sharegpt":
+                convs = sample.get("conversations", [])
+                for conv in convs:
+                    role = conv.get("from")
+                    content = conv.get("value", "")
+                    if role == "human":
+                        instruction_lens.append(len(content))
+                    elif role == "gpt":
+                        output_lens.append(len(content))
             elif format_type == "messages":
                 msgs = sample.get("messages", [])
                 for msg in msgs:

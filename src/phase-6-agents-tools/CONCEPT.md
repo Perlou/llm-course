@@ -1205,7 +1205,7 @@ async def get_prompt(name: str, arguments: dict):
     )
     ]
     }
-        raise ValueError(f"未知提示词模板: {name}")
+    raise ValueError(f"未知提示词模板: {name}")
 
 # 启动服务器
 
@@ -1220,7 +1220,9 @@ server.create_initialization_options()
 if **name** == "**main**":
 asyncio.run(main())
 
-````
+```
+
+```
 
 ### 5.5 MCP Client 实现
 
@@ -1394,7 +1396,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-````
+```
 
 ### 5.6 MCP 配置文件
 

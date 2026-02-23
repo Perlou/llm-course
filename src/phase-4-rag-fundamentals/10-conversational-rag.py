@@ -213,9 +213,9 @@ def langchain_solution():
     print("=" * 60)
 
     code_example = """
-    from langchain.chains import create_history_aware_retriever
-    from langchain.chains import create_retrieval_chain
-    from langchain.chains.combine_documents import create_stuff_documents_chain
+    from langchain_classic.chains import create_history_aware_retriever
+    from langchain_classic.chains import create_retrieval_chain
+    from langchain_classic.chains.combine_documents import create_stuff_documents_chain
     
     # 创建历史感知检索器
     history_aware_retriever = create_history_aware_retriever(

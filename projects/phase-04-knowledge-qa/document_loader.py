@@ -13,7 +13,7 @@ from langchain_community.document_loaders import (
     TextLoader,
     UnstructuredMarkdownLoader,
 )
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 
 @dataclass

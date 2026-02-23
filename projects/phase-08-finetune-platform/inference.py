@@ -28,9 +28,11 @@ def load_model(model_path: str, use_lora: bool = False, adapter_path: str = None
 
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
+    torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
-        torch_dtype=torch.float16,
+        torch_dtype=torch_dtype,
         device_map="auto",
         trust_remote_code=True,
     )

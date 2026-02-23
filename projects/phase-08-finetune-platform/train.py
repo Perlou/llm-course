@@ -31,13 +31,16 @@ def create_dataset(data_config, tokenizer, max_seq_length: int):
     train_file = data_config.get("train_file", "./data/processed/train.json")
     eval_file = data_config.get("eval_file", "./data/processed/eval.json")
 
-    dataset = load_dataset(
-        "json",
-        data_files={
-            "train": train_file,
-            "eval": eval_file if os.path.exists(eval_file) else train_file,
-        },
-    )
+    data_files = {"train": train_file}
+    has_eval = os.path.exists(eval_file)
+    if has_eval:
+        data_files["eval"] = eval_file
+    else:
+        console.print(
+            f"[yellow]未找到验证集文件，已禁用评估: {eval_file}[/yellow]"
+        )
+
+    dataset = load_dataset("json", data_files=data_files)
 
     def format_example(example):
         """格式化单个样本"""
@@ -64,7 +67,7 @@ def create_dataset(data_config, tokenizer, max_seq_length: int):
 
     dataset = dataset.map(tokenize, batched=True)
 
-    return dataset
+    return dataset, has_eval
 
 
 def main():
@@ -86,6 +89,7 @@ def main():
     quant_cfg = config.get("quantization", {})
     training_cfg = config.get("training", {})
     data_cfg = config.get("data", {})
+    evaluation_cfg = config.get("evaluation", {})
 
     # 输出目录
     output_dir = args.output or training_cfg.get("output_dir", "./outputs")
@@ -123,13 +127,21 @@ def main():
     # 创建数据集
     console.print("\n准备数据集...")
     max_seq_length = training_cfg.get("max_seq_length", 1024)
-    dataset = create_dataset(data_cfg, tokenizer, max_seq_length)
+    dataset, has_eval = create_dataset(data_cfg, tokenizer, max_seq_length)
 
     console.print(f"训练集: {len(dataset['train'])} 样本")
-    console.print(f"验证集: {len(dataset['eval'])} 样本")
+    if has_eval:
+        console.print(f"验证集: {len(dataset['eval'])} 样本")
+    else:
+        console.print("验证集: 未提供（跳过评估）")
 
     # 训练参数
-    training_args = get_training_arguments(training_cfg, output_dir)
+    training_args = get_training_arguments(
+        training_cfg,
+        output_dir,
+        evaluation_cfg=evaluation_cfg,
+        has_eval_dataset=has_eval,
+    )
 
     # 创建 Trainer
     from trl import SFTTrainer
@@ -138,7 +150,7 @@ def main():
         model=model,
         args=training_args,
         train_dataset=dataset["train"],
-        eval_dataset=dataset["eval"],
+        eval_dataset=dataset["eval"] if has_eval else None,
         tokenizer=tokenizer,
         dataset_text_field="text",
         max_seq_length=max_seq_length,

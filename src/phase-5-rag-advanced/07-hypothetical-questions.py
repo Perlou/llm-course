@@ -159,7 +159,7 @@ def langchain_hyde():
     print("=" * 60)
 
     try:
-        from langchain.chains import HypotheticalDocumentEmbedder
+        from langchain_classic.chains import HypotheticalDocumentEmbedder
         from langchain_google_genai import (
             ChatGoogleGenerativeAI,
             GoogleGenerativeAIEmbeddings,
@@ -178,7 +178,7 @@ def langchain_hyde():
 文档内容:""")
 
         hyde_embeddings = HypotheticalDocumentEmbedder.from_llm(
-            llm=llm, base_embeddings=base_embeddings, prompt_key="question"
+            llm=llm, base_embeddings=base_embeddings, custom_prompt=prompt
         )
 
         # 获取嵌入
