@@ -1,0 +1,37 @@
+# Mini-Dify
+.env
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+
+# Data
+data/uploads/*
+!data/uploads/.gitkeep
+
+# Backend
+!backend/app/models
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Docker
+docker/data/
+
+# Alembic
+backend/alembic/__pycache__/
+backend/alembic/versions/__pycache__/
