@@ -2,16 +2,31 @@
 Mini-Dify - Prompt 管理 API
 """
 
+import re
+import asyncio
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
+from app.models.provider import Provider
 from app.models.prompt import Prompt, PromptVersion
-from app.schemas import PromptCreate, PromptUpdate, PromptResponse
+from app.core.model_service import ModelService, ChatMessage
+from app.schemas import (
+    PromptCreate,
+    PromptUpdate,
+    PromptResponse,
+    PromptVersionResponse,
+    PromptTestRequest,
+    PromptTestResponse,
+    PromptTestResultItem,
+)
 
 router = APIRouter(prefix="/prompts", tags=["Prompt 管理"])
+
+
+# ==================== CRUD ====================
 
 
 @router.post("", response_model=PromptResponse, status_code=201)
@@ -77,7 +92,7 @@ async def update_prompt(
             version=prompt.current_version,
             system_prompt=prompt.system_prompt,
             user_prompt=prompt.user_prompt,
-            change_note="自动保存",
+            change_note=update_data.get("change_note", "更新"),
         )
         db.add(version)
 
@@ -96,13 +111,133 @@ async def delete_prompt(prompt_id: UUID, db: AsyncSession = Depends(get_db)):
     await db.commit()
 
 
-@router.post("/{prompt_id}/test")
-async def test_prompt(
-    prompt_id: UUID, variables: dict = {}, db: AsyncSession = Depends(get_db)
-):
-    """测试 Prompt 模板渲染"""
+# ==================== Version History ====================
+
+
+@router.get("/{prompt_id}/versions", response_model=list[PromptVersionResponse])
+async def list_versions(prompt_id: UUID, db: AsyncSession = Depends(get_db)):
+    """获取 Prompt 版本历史"""
     prompt = await db.get(Prompt, prompt_id)
     if not prompt:
         raise HTTPException(404, "Prompt 不存在")
-    # TODO: 实现 Jinja2 变量渲染 + 模型调用
-    return {"rendered_prompt": prompt.user_prompt, "variables": variables}
+
+    result = await db.execute(
+        select(PromptVersion)
+        .where(PromptVersion.prompt_id == prompt_id)
+        .order_by(PromptVersion.version.desc())
+    )
+    return result.scalars().all()
+
+
+@router.post("/{prompt_id}/versions/{version}/rollback", response_model=PromptResponse)
+async def rollback_version(
+    prompt_id: UUID, version: int, db: AsyncSession = Depends(get_db)
+):
+    """回滚到指定版本"""
+    prompt = await db.get(Prompt, prompt_id)
+    if not prompt:
+        raise HTTPException(404, "Prompt 不存在")
+
+    result = await db.execute(
+        select(PromptVersion).where(
+            PromptVersion.prompt_id == prompt_id,
+            PromptVersion.version == version,
+        )
+    )
+    target_version = result.scalar_one_or_none()
+    if not target_version:
+        raise HTTPException(404, f"版本 v{version} 不存在")
+
+    # 更新当前 prompt 内容
+    prompt.system_prompt = target_version.system_prompt
+    prompt.user_prompt = target_version.user_prompt
+    prompt.current_version += 1
+
+    # 创建新的版本记录（回滚也是一个新版本）
+    new_version = PromptVersion(
+        prompt_id=prompt.id,
+        version=prompt.current_version,
+        system_prompt=target_version.system_prompt,
+        user_prompt=target_version.user_prompt,
+        change_note=f"回滚至 v{version}",
+    )
+    db.add(new_version)
+    await db.commit()
+    await db.refresh(prompt)
+    return prompt
+
+
+# ==================== Prompt Test ====================
+
+
+def render_template(template: str, variables: dict) -> str:
+    """使用简单的 {{var}} 模板渲染"""
+    result = template
+    for key, value in variables.items():
+        result = result.replace(f"{{{{{key}}}}}", str(value))
+    return result
+
+
+def extract_variables(template: str) -> list[str]:
+    """从模板中提取 {{var}} 格式变量"""
+    return list(set(re.findall(r"\{\{(\w+)\}\}", template)))
+
+
+@router.post("/{prompt_id}/test", response_model=PromptTestResponse)
+async def test_prompt(
+    prompt_id: UUID,
+    data: PromptTestRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """测试 Prompt（多模型对比）"""
+    prompt = await db.get(Prompt, prompt_id)
+    if not prompt:
+        raise HTTPException(404, "Prompt 不存在")
+
+    # 渲染模板
+    rendered_system = render_template(prompt.system_prompt, data.variables)
+    rendered_user = render_template(prompt.user_prompt, data.variables)
+
+    # 并行调用多个模型
+    async def _call_model(config):
+        provider = await db.get(Provider, config.provider_id)
+        if not provider:
+            return PromptTestResultItem(
+                model=config.model,
+                provider_id=config.provider_id,
+                error="供应商不存在",
+            )
+        try:
+            messages = [
+                ChatMessage(role="system", content=rendered_system),
+                ChatMessage(role="user", content=rendered_user),
+            ]
+            result = await ModelService.chat(
+                provider_type=provider.provider_type,
+                messages=messages,
+                api_key=provider.api_key,
+                base_url=provider.base_url,
+                model=config.model,
+            )
+            return PromptTestResultItem(
+                model=config.model,
+                provider_id=config.provider_id,
+                response=result.content,
+                input_tokens=result.input_tokens,
+                output_tokens=result.output_tokens,
+                latency_ms=result.latency_ms,
+            )
+        except Exception as e:
+            return PromptTestResultItem(
+                model=config.model,
+                provider_id=config.provider_id,
+                error=str(e),
+            )
+
+    results = await asyncio.gather(*[_call_model(cfg) for cfg in data.model_configs])
+
+    return PromptTestResponse(
+        rendered_system_prompt=rendered_system,
+        rendered_user_prompt=rendered_user,
+        results=list(results),
+    )

@@ -291,3 +291,67 @@ class ChatResponse(BaseModel):
     input_tokens: int = 0
     output_tokens: int = 0
     latency_ms: int = 0
+
+
+# ==================== Model Hub (Health / Chat) ====================
+
+
+class HealthCheckResponse(BaseModel):
+    status: str
+    latency_ms: int = 0
+    error: Optional[str] = None
+
+
+class ModelChatMessage(BaseModel):
+    role: str = Field(..., pattern="^(system|user|assistant)$")
+    content: str = Field(..., min_length=1)
+
+
+class ModelChatRequest(BaseModel):
+    provider_id: UUID
+    model: str = Field(..., min_length=1)
+    messages: list[ModelChatMessage] = Field(..., min_length=1)
+    temperature: float = Field(default=0.7, ge=0, le=2)
+    max_tokens: int = Field(default=2048, ge=1, le=128000)
+    stream: bool = False
+
+
+# ==================== Prompt Version & Test ====================
+
+
+class PromptVersionResponse(BaseModel):
+    id: UUID
+    prompt_id: UUID
+    version: int
+    system_prompt: str
+    user_prompt: str
+    change_note: Optional[str]
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class PromptTestModelConfig(BaseModel):
+    provider_id: UUID
+    model: str = Field(..., min_length=1)
+
+
+class PromptTestRequest(BaseModel):
+    variables: dict = Field(default_factory=dict)
+    model_configs: list[PromptTestModelConfig] = Field(..., min_length=1)
+
+
+class PromptTestResultItem(BaseModel):
+    model: str
+    provider_id: UUID
+    response: str = ""
+    input_tokens: int = 0
+    output_tokens: int = 0
+    latency_ms: int = 0
+    error: Optional[str] = None
+
+
+class PromptTestResponse(BaseModel):
+    rendered_system_prompt: str
+    rendered_user_prompt: str
+    results: list[PromptTestResultItem]

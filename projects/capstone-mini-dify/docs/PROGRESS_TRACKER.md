@@ -1,6 +1,6 @@
 # Mini-Dify - 开发计划进度表
 
-> 开始日期: 2026-03-xx (待定)  
+> 开始日期: 2026-03-06  
 > 预计完成: 4 周 (约 80-100 小时)  
 > 负责人: Perlou
 
@@ -9,10 +9,10 @@
 ## 📊 总体进度
 
 ```
-整体进度: ░░░░░░░░░░░░░░░░░░░░ 0%
+整体进度: ████░░░░░░░░░░░░░░░░ 24%
 
-Phase 1: ░░░░░░░░░░  0%  项目搭建与基础框架      (Week 1)
-Phase 2: ░░░░░░░░░░  0%  Model Hub + Prompt      (Week 1)
+Phase 1: ██████████ 100%  项目搭建与基础框架      (Week 1) ✅
+Phase 2: ██████████ 100%  Model Hub + Prompt      (Week 1) ✅
 Phase 3: ░░░░░░░░░░  0%  Knowledge Base (RAG)    (Week 2)
 Phase 4: ░░░░░░░░░░  0%  Agent Builder           (Week 2)
 Phase 5: ░░░░░░░░░░  0%  Workflow Engine         (Week 3)
@@ -26,50 +26,50 @@ Phase 8: ░░░░░░░░░░  0%  Testing + Deployment    (Week 4)
 ## 📅 Phase 1: 项目搭建与基础框架 (Week 1 前半)
 
 **预计工时**: ~12h  
-**状态**: ⬜ 待开始
+**状态**: ✅ 已完成
 
-| #    | 任务                                        | 预计耗时 | 状态      | 完成日期 | 备注 |
-| ---- | ------------------------------------------- | -------- | --------- | -------- | ---- |
-| 1.1  | 创建项目目录结构                            | 0.5h     | ⬜ 待开始 |          |      |
-| 1.2  | 编写项目文档 (PRD/架构/设计等)              | 3h       | ✅ 已完成 | 03-06    |      |
-| 1.3  | Docker Compose (PostgreSQL + Milvus)        | 1h       | ⬜ 待开始 |          |      |
-| 1.4  | 初始化后端 (FastAPI + SQLAlchemy + Alembic) | 2h       | ⬜ 待开始 |          |      |
-| 1.5  | 定义所有数据库模型 + Alembic 迁移           | 2h       | ⬜ 待开始 |          |      |
-| 1.6  | 初始化前端 (Vite + React + TS)              | 1h       | ⬜ 待开始 |          |      |
-| 1.7  | TailwindCSS + 全局样式配置                  | 1h       | ⬜ 待开始 |          |      |
-| 1.8  | 全局布局组件 (Sidebar + Layout)             | 1.5h     | ⬜ 待开始 |          |      |
-| 1.9  | 路由配置 (React Router)                     | 0.5h     | ⬜ 待开始 |          |      |
-| 1.10 | API 客户端封装 (Axios)                      | 1h       | ⬜ 待开始 |          |      |
+| #    | 任务                                        | 预计耗时 | 状态      | 完成日期 | 备注                                   |
+| ---- | ------------------------------------------- | -------- | --------- | -------- | -------------------------------------- |
+| 1.1  | 创建项目目录结构                            | 0.5h     | ✅ 已完成 | 03-06    |                                        |
+| 1.2  | 编写项目文档 (PRD/架构/设计等)              | 3h       | ✅ 已完成 | 03-06    |                                        |
+| 1.3  | Docker Compose (PostgreSQL + Milvus)        | 1h       | ✅ 已完成 | 03-07    |                                        |
+| 1.4  | 初始化后端 (FastAPI + SQLAlchemy + Alembic) | 2h       | ✅ 已完成 | 03-07    |                                        |
+| 1.5  | 定义所有数据库模型 + Alembic 迁移           | 2h       | ✅ 已完成 | 03-07    | Alembic 迁移基础设施已配置，模型已定义 |
+| 1.6  | 初始化前端 (Vite + React + TS)              | 1h       | ✅ 已完成 | 03-07    |                                        |
+| 1.7  | TailwindCSS + 全局样式配置                  | 1h       | ✅ 已完成 | 03-07    | 含 Design Tokens + 全局样式            |
+| 1.8  | 全局布局组件 (Sidebar + Layout)             | 1.5h     | ✅ 已完成 | 03-07    |                                        |
+| 1.9  | 路由配置 (React Router)                     | 0.5h     | ✅ 已完成 | 03-07    | 7 个页面路由已配置                     |
+| 1.10 | API 客户端封装 (Axios)                      | 1h       | ✅ 已完成 | 03-07    |                                        |
 
 **交付物**:
 
-- [ ] Docker 基础服务 (PostgreSQL + Milvus)
-- [ ] 后端骨架 (FastAPI + SQLAlchemy + Alembic 迁移)
-- [ ] 前端骨架 (Vite + React + Tailwind + 路由)
-- [ ] 全局布局 (侧栏导航 + 主内容区)
+- [x] Docker 基础服务 (PostgreSQL + Milvus)
+- [x] 后端骨架 (FastAPI + SQLAlchemy + Alembic 迁移)
+- [x] 前端骨架 (Vite + React + Tailwind + 路由)
+- [x] 全局布局 (侧栏导航 + 主内容区)
 
 ---
 
 ## 📅 Phase 2: Model Hub + Prompt Studio (Week 1 后半)
 
 **预计工时**: ~14h  
-**状态**: ⬜ 待开始
+**状态**: ✅ 已完成
 
-| #   | 任务                            | 预计耗时 | 状态      | 完成日期 | 备注 |
-| --- | ------------------------------- | -------- | --------- | -------- | ---- |
-| 2.1 | Model Hub 后端 - 供应商 CRUD    | 2h       | ⬜ 待开始 |          |      |
-| 2.2 | Model Hub 后端 - 统一模型接口   | 2h       | ⬜ 待开始 |          |      |
-| 2.3 | Model Hub 后端 - 健康检查/对话  | 1h       | ⬜ 待开始 |          |      |
-| 2.4 | Model Hub 前端 - 供应商管理页   | 2h       | ⬜ 待开始 |          |      |
-| 2.5 | Prompt 后端 - 模板 CRUD + 版本  | 2h       | ⬜ 待开始 |          |      |
-| 2.6 | Prompt 后端 - 模板渲染 + 测试   | 1.5h     | ⬜ 待开始 |          |      |
-| 2.7 | Prompt 前端 - 模板列表页        | 1.5h     | ⬜ 待开始 |          |      |
-| 2.8 | Prompt 前端 - 编辑器 + 测试面板 | 2h       | ⬜ 待开始 |          |      |
+| #   | 任务                            | 预计耗时 | 状态      | 完成日期 | 备注                               |
+| --- | ------------------------------- | -------- | --------- | -------- | ---------------------------------- |
+| 2.1 | Model Hub 后端 - 供应商 CRUD    | 2h       | ✅ 已完成 | 03-07    | 含 Pydantic schemas                |
+| 2.2 | Model Hub 后端 - 统一模型接口   | 2h       | ✅ 已完成 | 03-07    | LangChain 封装 4 供应商            |
+| 2.3 | Model Hub 后端 - 健康检查/对话  | 1h       | ✅ 已完成 | 03-07    | SSE 流式 + 非流式                  |
+| 2.4 | Model Hub 前端 - 供应商管理页   | 2h       | ✅ 已完成 | 03-07    | CRUD + 健康检查 + 对话测试         |
+| 2.5 | Prompt 后端 - 模板 CRUD + 版本  | 2h       | ✅ 已完成 | 03-07    | 版本历史 + 回滚                    |
+| 2.6 | Prompt 后端 - 模板渲染 + 测试   | 1.5h     | ✅ 已完成 | 03-07    | {{var}} 渲染 + 多模型并行测试      |
+| 2.7 | Prompt 前端 - 模板列表页        | 1.5h     | ✅ 已完成 | 03-07    | 标签筛选 + 卡片预览                |
+| 2.8 | Prompt 前端 - 编辑器 + 测试面板 | 2h       | ✅ 已完成 | 03-07    | 变量检测 + 版本历史侧栏 + 测试面板 |
 
 **交付物**:
 
-- [ ] 模型供应商管理（添加/删除/测试）
-- [ ] Prompt 模板（创建/编辑/多模型测试/版本管理）
+- [x] 模型供应商管理（添加/删除/测试）
+- [x] Prompt 模板（创建/编辑/多模型测试/版本管理）
 
 ---
 
@@ -208,25 +208,25 @@ Phase 8: ░░░░░░░░░░  0%  Testing + Deployment    (Week 4)
 
 ### 任务统计
 
-| 阶段     | 总任务数 | 已完成 | 进行中 | 完成率 |
-| -------- | -------- | ------ | ------ | ------ |
-| Phase 1  | 10       | 1      | 0      | 10%    |
-| Phase 2  | 8        | 0      | 0      | 0%     |
-| Phase 3  | 8        | 0      | 0      | 0%     |
-| Phase 4  | 6        | 0      | 0      | 0%     |
-| Phase 5  | 7        | 0      | 0      | 0%     |
-| Phase 6  | 6        | 0      | 0      | 0%     |
-| Phase 7  | 6        | 0      | 0      | 0%     |
-| Phase 8  | 7        | 0      | 0      | 0%     |
-| **总计** | **58**   | **1**  | **0**  | **2%** |
+| 阶段     | 总任务数 | 已完成 | 进行中 | 完成率  |
+| -------- | -------- | ------ | ------ | ------- |
+| Phase 1  | 10       | 10     | 0      | 100%    |
+| Phase 2  | 8        | 8      | 0      | 100%    |
+| Phase 3  | 8        | 0      | 0      | 0%      |
+| Phase 4  | 6        | 0      | 0      | 0%      |
+| Phase 5  | 7        | 0      | 0      | 0%      |
+| Phase 6  | 6        | 0      | 0      | 0%      |
+| Phase 7  | 6        | 0      | 0      | 0%      |
+| Phase 8  | 7        | 0      | 0      | 0%      |
+| **总计** | **58**   | **18** | **0**  | **31%** |
 
 ### 时间统计
 
-| 指标       | 值            |
-| ---------- | ------------- |
-| 预计总工时 | ~98 小时      |
-| 已投入工时 | ~3 小时       |
-| 项目状态   | 📝 文档规划中 |
+| 指标       | 值        |
+| ---------- | --------- |
+| 预计总工时 | ~98 小时  |
+| 已投入工时 | ~29 小时  |
+| 项目状态   | 🔄 开发中 |
 
 ---
 
@@ -254,6 +254,28 @@ Phase 8: ░░░░░░░░░░  0%  Testing + Deployment    (Week 4)
 ---
 
 ## 📋 每日更新日志
+
+### 2026-03-07
+
+- ✅ Phase 1 全部完成
+- ✅ Docker Compose 配置 (PostgreSQL 16 + Milvus 2.4)
+- ✅ 后端骨架搭建 (FastAPI + SQLAlchemy + Alembic + CORS + 健康检查)
+- ✅ 定义 8 个数据库模型 (Provider, Prompt, Dataset, Agent, Workflow, App, ConversationLog 等)
+- ✅ 注册 6 个 API 路由模块 (models, prompts, datasets, agents, workflows, apps)
+- ✅ 前端骨架搭建 (Vite + React + TypeScript)
+- ✅ TailwindCSS + Design Tokens 全局样式配置
+- ✅ 全局布局组件 (Sidebar + MainLayout)
+- ✅ 路由配置 (7 个页面: ModelHub, PromptStudio, Datasets, AgentBuilder, Workflow, Apps, Analytics)
+- ✅ Axios API 客户端封装
+- ✅ **Phase 2 全部完成**
+- ✅ 创建 `core/model_service.py` - LangChain 统一模型调用 (OpenAI/Anthropic/Google/Ollama)
+- ✅ Model Hub 后端增强 - 供应商健康检查 + SSE 流式对话端点
+- ✅ Prompt 后端增强 - 版本历史/回滚 + {{var}} 模板渲染 + 多模型并行测试
+- ✅ 新增 8 个 Pydantic schemas (HealthCheckResponse, ModelChatRequest, PromptTestRequest 等)
+- ✅ ModelHub 前端 - 供应商 CRUD + 健康检查徽标 + 对话测试弹窗
+- ✅ PromptStudio 前端 - 模板列表 (标签筛选) + 编辑器 (变量检测/版本历史/回滚) + 测试面板 (多模型对比)
+- ✅ API 客户端新增 healthCheck/chat/versions/rollback 接口
+- ✅ TypeScript 零错误 + 前端 build 成功 (311KB JS)
 
 ### 2026-03-06
 

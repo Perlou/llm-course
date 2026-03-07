@@ -41,7 +41,8 @@ export const providerApi = {
   update: (id: string, data: any) =>
     apiClient.put(`/models/providers/${id}`, data),
   delete: (id: string) => apiClient.delete(`/models/providers/${id}`),
-  test: (id: string) => apiClient.post(`/models/providers/${id}/test`),
+  healthCheck: (id: string) => apiClient.post(`/models/providers/${id}/health`),
+  chat: (data: any) => apiClient.post("/models/chat", data),
 };
 
 // ==================== Prompt API ====================
@@ -51,8 +52,10 @@ export const promptApi = {
   create: (data: any) => apiClient.post("/prompts", data),
   update: (id: string, data: any) => apiClient.put(`/prompts/${id}`, data),
   delete: (id: string) => apiClient.delete(`/prompts/${id}`),
-  test: (id: string, variables: any) =>
-    apiClient.post(`/prompts/${id}/test`, variables),
+  versions: (id: string) => apiClient.get(`/prompts/${id}/versions`),
+  rollback: (id: string, version: number) =>
+    apiClient.post(`/prompts/${id}/versions/${version}/rollback`),
+  test: (id: string, data: any) => apiClient.post(`/prompts/${id}/test`, data),
 };
 
 // ==================== Dataset API ====================
