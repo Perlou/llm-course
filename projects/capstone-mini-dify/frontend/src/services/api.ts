@@ -75,6 +75,8 @@ export const datasetApi = {
   },
   deleteDocument: (datasetId: string, docId: string) =>
     apiClient.delete(`/datasets/${datasetId}/documents/${docId}`),
+  retrieve: (id: string, data: any) =>
+    apiClient.post(`/datasets/${id}/retrieve`, data),
 };
 
 // ==================== Agent API ====================
@@ -84,6 +86,12 @@ export const agentApi = {
   create: (data: any) => apiClient.post("/agents", data),
   update: (id: string, data: any) => apiClient.put(`/agents/${id}`, data),
   delete: (id: string) => apiClient.delete(`/agents/${id}`),
+  chat: (id: string, data: any) =>
+    fetch(`${apiClient.defaults.baseURL}/agents/${id}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
 };
 
 // ==================== Tool API ====================
@@ -93,6 +101,7 @@ export const toolApi = {
   create: (data: any) => apiClient.post("/tools", data),
   update: (id: string, data: any) => apiClient.put(`/tools/${id}`, data),
   delete: (id: string) => apiClient.delete(`/tools/${id}`),
+  initBuiltins: () => apiClient.post("/tools/init-builtins"),
 };
 
 // ==================== Workflow API ====================

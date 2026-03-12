@@ -2,18 +2,23 @@
 Mini-Dify - Agent 管理 API
 """
 
+import json
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_db
 from app.models.agent import Agent, Tool
+from app.models.provider import Provider
+from app.core.agent_service import AgentRunner, BUILTIN_TOOLS
 from app.schemas import (
     AgentCreate,
     AgentUpdate,
     AgentResponse,
+    AgentChatRequest,
     ToolCreate,
     ToolResponse,
 )
@@ -21,7 +26,7 @@ from app.schemas import (
 router = APIRouter(tags=["Agent 管理"])
 
 
-# ==================== Agent ====================
+# ==================== Agent CRUD ====================
 
 
 @router.post("/agents", response_model=AgentResponse, status_code=201)
@@ -91,6 +96,66 @@ async def delete_agent(agent_id: UUID, db: AsyncSession = Depends(get_db)):
     await db.commit()
 
 
+# ==================== Agent Chat (SSE) ====================
+
+
+@router.post("/agents/{agent_id}/chat")
+async def agent_chat(
+    agent_id: UUID,
+    data: AgentChatRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Agent 对话（SSE 流式输出）"""
+    # 获取 Agent 及关联数据
+    result = await db.execute(
+        select(Agent).where(Agent.id == agent_id).options(selectinload(Agent.tools))
+    )
+    agent = result.scalar_one_or_none()
+    if not agent:
+        raise HTTPException(404, "Agent 不存在")
+
+    # 获取 Provider 配置
+    provider_config = {"provider_type": "openai", "api_key": "", "base_url": None}
+    if agent.provider_id:
+        provider = await db.get(Provider, agent.provider_id)
+        if provider:
+            provider_config = {
+                "provider_type": provider.provider_type,
+                "api_key": provider.api_key,
+                "base_url": provider.base_url,
+            }
+
+    agent_config = {
+        "system_prompt": agent.system_prompt,
+        "model_name": agent.model_name,
+        "temperature": agent.temperature,
+        "max_tokens": agent.max_tokens,
+        "strategy": agent.strategy,
+    }
+
+    tool_names = [t.name for t in agent.tools] if agent.tools else []
+    dataset_ids = [str(did) for did in agent.dataset_ids] if agent.dataset_ids else []
+    messages = [{"role": m.role, "content": m.content} for m in data.messages]
+
+    async def event_stream():
+        async for event in AgentRunner.chat_stream(
+            provider_config=provider_config,
+            agent_config=agent_config,
+            messages=messages,
+            tool_names=tool_names,
+            dataset_ids=dataset_ids,
+        ):
+            event_type = event.get("event", "message")
+            event_data = event.get("data", "")
+            yield f"event: {event_type}\ndata: {json.dumps(event_data, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
 # ==================== Tool ====================
 
 
@@ -112,6 +177,27 @@ async def create_tool(data: ToolCreate, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(tool)
     return tool
+
+
+@router.post("/tools/init-builtins")
+async def init_builtin_tools(db: AsyncSession = Depends(get_db)):
+    """初始化内置工具"""
+    created = []
+    for bt in BUILTIN_TOOLS:
+        result = await db.execute(select(Tool).where(Tool.name == bt["name"]))
+        existing = result.scalar_one_or_none()
+        if not existing:
+            tool = Tool(
+                name=bt["name"],
+                description=bt["description"],
+                tool_type="builtin",
+                parameters=bt["parameters"],
+                is_active=True,
+            )
+            db.add(tool)
+            created.append(bt["name"])
+    await db.commit()
+    return {"created": created, "message": f"初始化了 {len(created)} 个内置工具"}
 
 
 @router.put("/tools/{tool_id}", response_model=ToolResponse)

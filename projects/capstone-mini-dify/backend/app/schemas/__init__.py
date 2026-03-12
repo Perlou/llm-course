@@ -149,6 +149,24 @@ class DocumentResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class RetrieveRequest(BaseModel):
+    query: str = Field(..., min_length=1, max_length=5000)
+    top_k: int = Field(default=5, ge=1, le=20)
+
+
+class RetrieveResultItem(BaseModel):
+    content: str
+    score: float
+    document_id: str
+    document_name: str = ""
+    chunk_index: int = 0
+
+
+class RetrieveResponse(BaseModel):
+    query: str
+    results: list[RetrieveResultItem]
+
+
 # ==================== Agent ====================
 
 
@@ -193,6 +211,15 @@ class AgentResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class AgentChatMessage(BaseModel):
+    role: str = Field(..., pattern="^(user|assistant)$")
+    content: str
+
+
+class AgentChatRequest(BaseModel):
+    messages: list[AgentChatMessage] = Field(..., min_length=1)
 
 
 # ==================== Tool ====================
