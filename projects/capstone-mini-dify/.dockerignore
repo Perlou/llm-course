@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# Dependencies
+backend/venv/
+backend/.venv/
+frontend/node_modules/
+
+# Build artifacts
+frontend/dist/
+backend/__pycache__/
+**/__pycache__/
+*.pyc
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Tests
+backend/.pytest_cache/
+backend/tests/
+
+# Data
+data/uploads/*
+
+# Docs
+docs/
+*.md
+!README.md
+
+# Agent config
+.agent/
+.agents/
