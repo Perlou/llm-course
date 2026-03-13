@@ -128,3 +128,26 @@ async def delete_api_key(
         raise HTTPException(404, "API Key 不存在")
     await db.delete(api_key)
     await db.commit()
+
+
+@router.post("/{app_id}/publish")
+async def publish_app(app_id: UUID, db: AsyncSession = Depends(get_db)):
+    """发布应用"""
+    app = await db.get(App, app_id)
+    if not app:
+        raise HTTPException(404, "应用不存在")
+    app.is_published = True
+    await db.commit()
+    return {"status": "published"}
+
+
+@router.post("/{app_id}/unpublish")
+async def unpublish_app(app_id: UUID, db: AsyncSession = Depends(get_db)):
+    """取消发布"""
+    app = await db.get(App, app_id)
+    if not app:
+        raise HTTPException(404, "应用不存在")
+    app.is_published = False
+    await db.commit()
+    return {"status": "unpublished"}
+

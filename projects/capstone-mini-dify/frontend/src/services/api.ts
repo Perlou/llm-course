@@ -128,6 +128,8 @@ export const appApi = {
   create: (data: any) => apiClient.post("/apps", data),
   update: (id: string, data: any) => apiClient.put(`/apps/${id}`, data),
   delete: (id: string) => apiClient.delete(`/apps/${id}`),
+  publish: (id: string) => apiClient.post(`/apps/${id}/publish`),
+  unpublish: (id: string) => apiClient.post(`/apps/${id}/unpublish`),
   createApiKey: (id: string, name?: string) =>
     apiClient.post(`/apps/${id}/api-keys`, null, { params: { name } }),
   listApiKeys: (id: string) => apiClient.get(`/apps/${id}/api-keys`),
