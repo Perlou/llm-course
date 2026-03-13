@@ -5,6 +5,8 @@ Mini-Dify - API 网关
 
 import json
 import hashlib
+import uuid
+import time
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -13,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
 from app.models.app import App, AppApiKey
+from app.models.log import ConversationLog
 from app.models.provider import Provider
 from app.core.model_service import ModelService, ChatMessage
 from app.core.workflow_engine import WorkflowEngine
@@ -198,6 +201,7 @@ async def gateway_completion(
         messages.append(ChatMessage(role="system", content=render(system_prompt, inputs)))
     messages.append(ChatMessage(role="user", content=prompt))
 
+    start_time = time.time()
     result = await ModelService.chat(
         provider_type=provider_type,
         messages=messages,
@@ -206,6 +210,36 @@ async def gateway_completion(
         model=model_name,
         temperature=temperature,
     )
+    latency = int((time.time() - start_time) * 1000)
+
+    # 记录对话日志
+    conv_id = uuid.uuid4()
+    try:
+        user_log = ConversationLog(
+            app_id=app.id,
+            conversation_id=conv_id,
+            role="user",
+            content=prompt,
+            provider_name=provider_type,
+            model_name=model_name,
+            input_tokens=0, output_tokens=0,
+        )
+        assistant_log = ConversationLog(
+            app_id=app.id,
+            conversation_id=conv_id,
+            role="assistant",
+            content=result.content or "",
+            provider_name=provider_type,
+            model_name=model_name,
+            input_tokens=getattr(result, 'input_tokens', 0) or 0,
+            output_tokens=getattr(result, 'output_tokens', 0) or 0,
+            latency_ms=latency,
+        )
+        db.add(user_log)
+        db.add(assistant_log)
+        await db.commit()
+    except Exception:
+        pass
 
     return {"output": result.content}
 

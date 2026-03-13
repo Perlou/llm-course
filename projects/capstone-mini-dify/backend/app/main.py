@@ -14,6 +14,7 @@ from app.api.agents import router as agents_router
 from app.api.workflows import router as workflows_router
 from app.api.apps import router as apps_router
 from app.api.gateway import router as gateway_router
+from app.api.analytics import router as analytics_router
 
 settings = get_settings()
 
@@ -65,6 +66,7 @@ def create_app() -> FastAPI:
     app.include_router(workflows_router, prefix="/api/v1")
     app.include_router(apps_router, prefix="/api/v1")
     app.include_router(gateway_router, prefix="/api/v1")
+    app.include_router(analytics_router, prefix="/api/v1")
 
     return app
 

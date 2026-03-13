@@ -136,3 +136,14 @@ export const appApi = {
   deleteApiKey: (appId: string, keyId: string) =>
     apiClient.delete(`/apps/${appId}/api-keys/${keyId}`),
 };
+
+// ==================== Analytics API ====================
+export const analyticsApi = {
+  stats: () => apiClient.get("/analytics/stats"),
+  tokenTrend: (days?: number) =>
+    apiClient.get("/analytics/token-trend", { params: { days: days || 7 } }),
+  logs: (page?: number, pageSize?: number, role?: string) =>
+    apiClient.get("/analytics/logs", {
+      params: { page: page || 1, page_size: pageSize || 20, role },
+    }),
+};
