@@ -34,7 +34,19 @@
 - Docker + Docker Compose (用于 PostgreSQL 和 Milvus)
 - pnpm / npm
 
-### 启动项目
+### 方式一: Docker 一键部署 (推荐)
+
+```bash
+# 1. 克隆项目
+git clone <repo-url> && cd capstone-mini-dify
+
+# 2. 启动全部服务
+docker compose -f docker/docker-compose.yaml up -d --build
+
+# 访问: http://localhost:5173
+```
+
+### 方式二: 本地开发
 
 ```bash
 # 1. 克隆项目
@@ -50,14 +62,12 @@ source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env  # 配置 API Key 和数据库连接
 alembic upgrade head  # 执行数据库迁移
+uvicorn app.main:app --reload
 
-# 4. 前端
-cd ../frontend
-pnpm install
-
-# 5. 启动
-cd ..
-./scripts/start.sh
+# 4. 前端 (新终端)
+cd frontend
+npm install
+npm run dev
 
 # 访问: http://localhost:5173
 ```
@@ -79,15 +89,14 @@ cd ..
 
 ### 前端
 
-| 技术        | 用途       |
-| ----------- | ---------- |
-| React 18    | UI 框架    |
-| TypeScript  | 类型安全   |
-| TailwindCSS | 样式框架   |
-| React Flow  | 工作流画布 |
-| Recharts    | 图表库     |
-| Zustand     | 状态管理   |
-| Vite        | 构建工具   |
+| 技术             | 用途           |
+| ---------------- | -------------- |
+| React 18         | UI 框架        |
+| TypeScript       | 类型安全       |
+| TailwindCSS      | 样式框架       |
+| React Flow       | 工作流画布     |
+| Lucide React     | 图标库         |
+| Vite             | 构建工具       |
 
 ---
 
@@ -150,5 +159,5 @@ MIT License
 
 ---
 
-**开发状态**: 📝 设计规划中  
-**最后更新**: 2026-03-06
+**开发状态**: ✅ 已完成  
+**最后更新**: 2026-03-13
