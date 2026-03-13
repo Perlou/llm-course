@@ -272,6 +272,10 @@ class WorkflowResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class WorkflowRunRequest(BaseModel):
+    inputs: dict = Field(default_factory=dict)
+
+
 # ==================== App ====================
 
 

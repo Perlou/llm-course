@@ -113,6 +113,12 @@ export const workflowApi = {
   delete: (id: string) => apiClient.delete(`/workflows/${id}`),
   publish: (id: string) => apiClient.post(`/workflows/${id}/publish`),
   unpublish: (id: string) => apiClient.post(`/workflows/${id}/unpublish`),
+  run: (id: string, data: any) =>
+    fetch(`${apiClient.defaults.baseURL}/workflows/${id}/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
 };
 
 // ==================== App API ====================
