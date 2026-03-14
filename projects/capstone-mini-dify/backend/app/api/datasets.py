@@ -188,7 +188,9 @@ async def upload_document(
     file_type = filename.rsplit(".", 1)[-1].lower() if "." in filename else "txt"
     allowed_types = {"txt", "md", "pdf", "docx"}
     if file_type not in allowed_types:
-        raise HTTPException(400, f"不支持的文件类型: {file_type}，仅支持 {allowed_types}")
+        raise HTTPException(
+            400, f"不支持的文件类型: {file_type}，仅支持 {allowed_types}"
+        )
 
     # 保存文件
     upload_dir = os.path.join(settings.upload_dir, str(dataset_id))
